@@ -80,10 +80,22 @@ function ActivationFlow() {
   }
 
   function finish() {
-    if (!storeName.trim()) return toast.error("Nama toko wajib diisi.");
-    if (!ownerName.trim()) return toast.error("Nama pemilik wajib diisi.");
-    if (!/^\d{4,6}$/.test(pin)) return toast.error("PIN harus 4–6 angka.");
-    if (pin !== pin2) return toast.error("Konfirmasi PIN belum sama.");
+    if (!storeName.trim()) {
+      toast.error("Nama toko wajib diisi.");
+      return;
+    }
+    if (!ownerName.trim()) {
+      toast.error("Nama pemilik wajib diisi.");
+      return;
+    }
+    if (!/^\d{4,6}$/.test(pin)) {
+      toast.error("PIN harus 4–6 angka.");
+      return;
+    }
+    if (pin !== pin2) {
+      toast.error("Konfirmasi PIN belum sama.");
+      return;
+    }
 
     update((current) => {
       const seeded = seedForBusiness(current, type);
