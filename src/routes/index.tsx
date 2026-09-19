@@ -941,8 +941,9 @@ function PaymentDialog({
 
           {method?.isCash && (
             <div className="space-y-2">
-              <Label>Uang diterima</Label>
+              <Label htmlFor="cash-received">Uang diterima</Label>
               <Input
+                id="cash-received"
                 inputMode="numeric"
                 autoFocus
                 value={amount ? Number(amount.replace(/\D/g, "")).toLocaleString("id-ID") : ""}
