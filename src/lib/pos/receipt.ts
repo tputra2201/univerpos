@@ -151,7 +151,9 @@ export function buildReceipt(
 
   if (kind === "receipt") {
     out.push(divider(width));
-    sale.payments.forEach((p) => out.push(twoCol(p.methodName, money(p.amount), width)));
+    sale.payments.forEach((p) =>
+      out.push(twoCol(p.methodName, money(p.tendered ?? p.amount), width)),
+    );
     out.push(twoCol("Kembalian", money(sale.change), width));
   }
   if (sale.status !== "paid") {

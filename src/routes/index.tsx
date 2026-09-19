@@ -265,7 +265,7 @@ function KasirPage() {
   }
 
   function completeSale(payments: SalePayment[]) {
-    const paid = payments.reduce((sum, p) => sum + p.amount, 0);
+    const paid = payments.reduce((sum, p) => sum + (p.tendered ?? p.amount), 0);
     const sale: Sale = {
       ...draftSale(),
       payments,
@@ -910,7 +910,12 @@ function PaymentDialog({
     }
     onComplete([
       ...split,
-      { methodId: method.id, methodName: method.name, amount: method.isCash ? entered : remaining },
+      {
+        methodId: method.id,
+        methodName: method.name,
+        amount: remaining,
+        ...(method.isCash ? { tendered: entered } : {}),
+      },
     ]);
   }
 
@@ -941,8 +946,9 @@ function PaymentDialog({
 
           {method?.isCash && (
             <div className="space-y-2">
-              <Label>Uang diterima</Label>
+              <Label htmlFor="cash-received">Uang diterima</Label>
               <Input
+                id="cash-received"
                 inputMode="numeric"
                 autoFocus
                 value={amount ? Number(amount.replace(/\D/g, "")).toLocaleString("id-ID") : ""}

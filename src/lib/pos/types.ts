@@ -88,7 +88,10 @@ export interface CartLine {
 export interface SalePayment {
   methodId: string;
   methodName: string;
+  /** Nilai yang benar-benar masuk ke omzet (maksimal sebesar tagihan). */
   amount: number;
+  /** Uang fisik yang diterima kasir; hanya untuk pembayaran tunai. */
+  tendered?: number;
 }
 
 export type SaleStatus = "paid" | "void" | "refund";
