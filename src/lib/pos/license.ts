@@ -20,10 +20,10 @@ export function isValidStoreCode(input: string): boolean {
   if (BUILTIN_CODES.includes(code)) return true;
   const parts = code.split("-");
   if (parts.length !== 3) return false;
-  if (parts[0] !== "WO") return false;
-  const digits = parts[2];
+  const [prefix, middle = "", digits = ""] = parts;
+  if (prefix !== "WO") return false;
   if (!/^\d{3}$/.test(digits)) return false;
-  return checksum(parts[1]) % 1000 === Number(digits);
+  return checksum(middle) % 1000 === Number(digits);
 }
 
 export function generateStoreCode(name: string): string {
