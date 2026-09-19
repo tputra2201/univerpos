@@ -62,7 +62,7 @@ function Frame({ children }: { children: ReactNode }) {
 }
 
 function ActivationFlow() {
-  const { db, update } = usePos();
+  const { db, update, signIn } = usePos();
   const [step, setStep] = useState(0);
   const [code, setCode] = useState("");
   const [type, setType] = useState<BusinessType>("kuliner");
@@ -97,6 +97,7 @@ function ActivationFlow() {
       return;
     }
 
+    const owner = { id: uid("usr"), name: ownerName.trim(), role: "owner" as const, pin };
     update((current) => {
       const seeded = seedForBusiness(current, type);
       return {
@@ -107,9 +108,10 @@ function ActivationFlow() {
           storeCode: normalizeCode(code),
           name: storeName.trim(),
         },
-        users: [{ id: uid("usr"), name: ownerName.trim(), role: "owner", pin }],
+        users: [owner],
       };
     });
+    signIn(owner);
     toast.success("Toko aktif. Selamat berjualan!");
   }
 
