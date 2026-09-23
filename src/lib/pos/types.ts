@@ -11,6 +11,8 @@ export interface StoreSettings {
   taxPercent: number;
   serviceEnabled: boolean;
   servicePercent: number;
+  /** Nomor urut berikutnya untuk nomor order (format KODE-000001). */
+  orderSeq: number;
 }
 
 export interface PrinterSettings {
@@ -24,7 +26,7 @@ export interface PrinterSettings {
   deviceName: string;
 }
 
-export type UserRole = "owner" | "cashier";
+export type UserRole = "owner" | "manager" | "supervisor" | "cashier";
 
 export interface PosUser {
   id: string;
