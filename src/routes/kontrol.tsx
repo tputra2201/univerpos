@@ -11,6 +11,7 @@ import {
   deleteAccount,
   listInstallers,
   resetAccountPassword,
+  updateAccount,
 } from "@/lib/kontrol.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
