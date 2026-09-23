@@ -27,7 +27,7 @@ const BUSINESS_OPTIONS: {
   },
   {
     value: "retail",
-    title: "Retail / Toko",
+    title: "Retail / Store",
     desc: "Barcode, stok barang, satuan jual",
     icon: ShoppingBasket,
   },
@@ -68,9 +68,9 @@ export function PosGate({ children }: { children: ReactNode }) {
       <Frame>
         <Card>
           <CardHeader>
-            <CardTitle>Toko Dinonaktifkan</CardTitle>
+            <CardTitle>Store Dinonaktifkan</CardTitle>
             <CardDescription>
-              Kode toko {db.settings.storeCode} tidak aktif lagi. Hubungi penyedia aplikasi untuk mengaktifkan kembali.
+              Kode store {db.settings.storeCode} tidak aktif lagi. Hubungi penyedia aplikasi untuk mengaktifkan kembali.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -137,7 +137,7 @@ function ActivationFlow() {
 
   async function activateStore() {
     if (!storeId) {
-      toast.error("Pilih toko yang akan diaktifkan.");
+      toast.error("Pilih store yang akan diaktifkan.");
       return;
     }
     setBusy(true);
@@ -145,7 +145,7 @@ function ActivationFlow() {
     const row = Array.isArray(data) ? data[0] : null;
     setBusy(false);
     if (error || !row) {
-      toast.error("Toko tidak bisa diaktifkan. Pastikan toko masih aktif.");
+      toast.error("Store tidak bisa diaktifkan. Pastikan store masih aktif.");
       return;
     }
     await supabase.auth.signOut();
@@ -158,7 +158,7 @@ function ActivationFlow() {
 
   function finish() {
     if (!storeName.trim()) {
-      toast.error("Nama toko wajib diisi.");
+      toast.error("Nama store wajib diisi.");
       return;
     }
     if (!ownerName.trim()) {
@@ -185,13 +185,14 @@ function ActivationFlow() {
           storeCode: picked?.code ?? "",
           storeMode: picked?.mode === "online" ? "online" : "offline",
           name: storeName.trim(),
+          businessTypeName: stores.find((x) => x.id === storeId)?.business_types?.name ?? "",
         },
         serviceTypes: services,
         users: [owner],
       };
     });
     signIn(owner);
-    toast.success("Toko aktif. Selamat berjualan!");
+    toast.success("Store aktif. Selamat berjualan!");
   }
 
   return (
@@ -202,16 +203,16 @@ function ActivationFlow() {
             {step === 0 ? <KeyRound className="size-5" /> : <Store className="size-5" />}
           </div>
           <CardTitle className="text-2xl">
-            {step === 0 ? "Aktivasi oleh Installer" : step === 1 ? "Tipe Usaha" : step === 2 ? "Jenis Layanan" : "Data Toko & Pemilik"}
+            {step === 0 ? "Aktivasi oleh Installer" : step === 1 ? "Tipe Usaha" : step === 2 ? "Jenis Layanan" : "Data Store & Pemilik"}
           </CardTitle>
           <CardDescription>
             {step === 0
-              ? "Aktivasi hanya bisa dilakukan installer atau developer. Masuk, lalu pilih toko yang sudah didaftarkan."
+              ? "Aktivasi hanya bisa dilakukan installer atau developer. Masuk, lalu pilih store yang sudah didaftarkan."
               : step === 1
                 ? "Pilih tipe usaha. Fitur kasir akan menyesuaikan dan bisa diubah kapan saja."
                 : step === 2
-                  ? "Aktifkan layanan yang dipakai toko. Bisa ditambah dan diubah nanti di Pengaturan."
-                  : "Nama toko tampil di struk. PIN pemilik dipakai untuk masuk ke aplikasi."}
+                  ? "Aktifkan layanan yang dipakai store. Bisa ditambah dan diubah nanti di Pengaturan."
+                  : "Nama store tampil di struk. PIN pemilik dipakai untuk masuk ke aplikasi."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
@@ -232,7 +233,7 @@ function ActivationFlow() {
                   onKeyDown={(e) => e.key === "Enter" && installerLogin()}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Aktivasi pertama butuh koneksi internet. Pemilik toko tidak perlu mengisi bagian ini.
+                  Aktivasi pertama butuh koneksi internet. Pemilik store tidak perlu mengisi bagian ini.
                 </p>
               </div>
               <Button className="h-12 w-full text-base" disabled={busy} onClick={installerLogin}>
@@ -261,11 +262,11 @@ function ActivationFlow() {
                   </button>
                 ))}
                 {stores.length === 0 && (
-                  <p className="text-sm text-muted-foreground">Belum ada toko aktif. Daftarkan dulu di /kontrol.</p>
+                  <p className="text-sm text-muted-foreground">Belum ada store aktif. Daftarkan dulu di /kontrol.</p>
                 )}
               </div>
               <Button className="h-12 w-full text-base" disabled={busy} onClick={activateStore}>
-                Aktifkan Toko Ini
+                Aktifkan Store Ini
               </Button>
             </>
           )}
@@ -331,7 +332,7 @@ function ActivationFlow() {
           {step === 3 && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="store">Nama Toko (terdaftar di kontrol)</Label>
+                <Label htmlFor="store">Nama Store (terdaftar di kontrol)</Label>
                 <Input
                   id="store"
                   value={storeName}

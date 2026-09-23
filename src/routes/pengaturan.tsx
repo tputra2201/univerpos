@@ -30,16 +30,16 @@ import {
 export const Route = createFileRoute("/pengaturan")({
   head: () => ({
     meta: [
-      { title: "Pengaturan Toko — POS UKM" },
+      { title: "Pengaturan Store — POS UKM" },
       {
         name: "description",
         content:
-          "Atur identitas toko, tipe usaha, pajak, pengguna, metode pembayaran, printer thermal, meja, dan pencadangan data.",
+          "Atur identitas store, tipe usaha, pajak, pengguna, metode pembayaran, printer thermal, meja, dan pencadangan data.",
       },
-      { property: "og:title", content: "Pengaturan Toko — POS UKM" },
+      { property: "og:title", content: "Pengaturan Store — POS UKM" },
       {
         property: "og:description",
-        content: "Identitas toko, pajak, pengguna, metode pembayaran, printer, dan backup data.",
+        content: "Identitas store, pajak, pengguna, metode pembayaran, printer, dan backup data.",
       },
     ],
   }),
@@ -141,11 +141,11 @@ function PengaturanPage() {
 
   return (
     <div>
-      <PageHeader title="Pengaturan" description="Sesuaikan aplikasi dengan cara kerja toko Anda." />
+      <PageHeader title="Pengaturan" description="Sesuaikan aplikasi dengan cara kerja store Anda." />
 
-      <Tabs defaultValue="toko" className="p-4 md:p-6">
+      <Tabs defaultValue="store" className="p-4 md:p-6">
         <TabsList className="flex-wrap">
-          <TabsTrigger value="toko">Toko</TabsTrigger>
+          <TabsTrigger value="store">Store</TabsTrigger>
           <TabsTrigger value="layanan">Jenis Layanan</TabsTrigger>
           <TabsTrigger value="pengguna">Pengguna</TabsTrigger>
           <TabsTrigger value="pembayaran">Pembayaran</TabsTrigger>
@@ -155,17 +155,18 @@ function PengaturanPage() {
           <TabsTrigger value="data">Data</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="toko" className="space-y-4">
+        <TabsContent value="store" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Identitas Toko</CardTitle>
-              <CardDescription>Tampil di bagian atas setiap struk.</CardDescription>
+              <CardTitle className="text-base">Identitas Store</CardTitle>
+              <CardDescription>Nama store dan tipe usaha mengikuti data yang terdaftar di panel kontrol.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3 md:grid-cols-2">
-              <Field label="Nama toko">
+              <Field label="Nama store">
                 <Input
                   value={db.settings.name}
-                  onChange={(e) => setSettings({ name: e.target.value })}
+                  readOnly
+                  disabled
                   className="h-11"
                 />
               </Field>
@@ -184,21 +185,17 @@ function PengaturanPage() {
                 />
               </Field>
               <Field label="Tipe usaha">
-                <Select
-                  value={db.settings.businessType}
-                  onValueChange={(v) => changeBusinessType(v as BusinessType)}
-                >
-                  <SelectTrigger className="h-11">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="kuliner">Kuliner / Kafe</SelectItem>
-                    <SelectItem value="retail">Retail / Toko</SelectItem>
-                    <SelectItem value="jasa">Jasa / Salon & Servis</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Input
+                  value={
+                    db.settings.businessTypeName ||
+                    { kuliner: "Kuliner", retail: "Retail", jasa: "Jasa" }[db.settings.businessType]
+                  }
+                  readOnly
+                  disabled
+                  className="h-11"
+                />
               </Field>
-              <Field label="Kode toko (aktivasi)">
+              <Field label="Kode store (aktivasi)">
                 <Input value={db.settings.storeCode} readOnly className="h-11 font-mono" />
               </Field>
             </CardContent>

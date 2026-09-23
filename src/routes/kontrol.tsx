@@ -32,9 +32,9 @@ export const Route = createFileRoute("/kontrol")({
   head: () => ({
     meta: [
       { title: "Kontrol Developer — POS UKM" },
-      { name: "description", content: "Panel developer untuk mendaftarkan toko dan akun installer POS." },
+      { name: "description", content: "Panel developer untuk mendaftarkan store dan akun installer POS." },
       { property: "og:title", content: "Kontrol Developer — POS UKM" },
-      { property: "og:description", content: "Daftarkan toko dan kelola akun installer." },
+      { property: "og:description", content: "Daftarkan store dan kelola akun installer." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
@@ -118,13 +118,13 @@ function KontrolPage() {
             </CardContent>
           </Card>
         ) : (
-          <Tabs defaultValue="toko">
+          <Tabs defaultValue="store">
             <TabsList>
-              <TabsTrigger value="toko">Toko</TabsTrigger>
+              <TabsTrigger value="store">Store</TabsTrigger>
               <TabsTrigger value="tipe">Tipe Usaha</TabsTrigger>
               <TabsTrigger value="akun">Installer & Developer</TabsTrigger>
             </TabsList>
-            <TabsContent value="toko">
+            <TabsContent value="store">
               <StoresPanel />
             </TabsContent>
             <TabsContent value="tipe">
@@ -179,7 +179,7 @@ function DevLogin() {
         <CardDescription>
           {noDev
             ? "Belum ada developer terdaftar. Akun pertama otomatis menjadi developer."
-            : "Masuk untuk mengelola toko dan akun installer."}
+            : "Masuk untuk mengelola store dan akun installer."}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -362,7 +362,7 @@ function StoresPanel() {
   }, [load]);
 
   async function add(): Promise<unknown> {
-    if (!form.name.trim()) return toast.error("Nama toko wajib diisi.");
+    if (!form.name.trim()) return toast.error("Nama store wajib diisi.");
     if (!form.business_type_id) return toast.error("Pilih tipe usaha.");
     const code = (form.code.trim() || randomCode(form.name)).toUpperCase();
     const { error } = await supabase.from("stores").insert({
@@ -372,8 +372,8 @@ function StoresPanel() {
       notes: form.notes.trim(),
       business_type_id: form.business_type_id,
     });
-    if (error) return toast.error(error.message.includes("duplicate") ? "Kode toko sudah dipakai." : error.message);
-    toast.success(`Toko terdaftar dengan kode ${code}`);
+    if (error) return toast.error(error.message.includes("duplicate") ? "Kode store sudah dipakai." : error.message);
+    toast.success(`Store terdaftar dengan kode ${code}`);
     setForm({ name: "", code: "", mode: "offline", notes: "", business_type_id: "" });
     void load();
     return undefined;
@@ -386,7 +386,7 @@ function StoresPanel() {
   }
 
   async function remove(s: StoreRow) {
-    if (!confirm(`Hapus toko ${s.name}?`)) return;
+    if (!confirm(`Hapus store ${s.name}?`)) return;
     const { error } = await supabase.from("stores").delete().eq("id", s.id);
     if (error) toast.error(error.message);
     void load();
@@ -396,19 +396,19 @@ function StoresPanel() {
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Daftarkan Toko Baru</CardTitle>
+          <CardTitle className="text-base">Daftarkan Store Baru</CardTitle>
           <CardDescription>
-            Mode offline: dicek hanya saat aktivasi. Mode online: perangkat mengecek status toko setiap kali
-            dibuka saat ada internet, dan terkunci bila toko dinonaktifkan.
+            Mode offline: dicek hanya saat aktivasi. Mode online: perangkat mengecek status store setiap kali
+            dibuka saat ada internet, dan terkunci bila store dinonaktifkan.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
-            <Label htmlFor="st-name">Nama Toko</Label>
+            <Label htmlFor="st-name">Nama Store</Label>
             <Input id="st-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="st-code">Kode Toko (kosongkan = otomatis)</Label>
+            <Label htmlFor="st-code">Kode Store (kosongkan = otomatis)</Label>
             <Input
               id="st-code"
               className="font-mono"
@@ -448,14 +448,14 @@ function StoresPanel() {
             <Input id="st-notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
           </div>
           <Button className="sm:col-span-2" onClick={add}>
-            Daftarkan Toko
+            Daftarkan Store
           </Button>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Toko Terdaftar ({stores.length})</CardTitle>
+          <CardTitle className="text-base">Store Terdaftar ({stores.length})</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           {stores.map((s) => (
@@ -495,7 +495,7 @@ function StoresPanel() {
               </Button>
             </div>
           ))}
-          {stores.length === 0 && <p className="text-sm text-muted-foreground">Belum ada toko.</p>}
+          {stores.length === 0 && <p className="text-sm text-muted-foreground">Belum ada store.</p>}
         </CardContent>
       </Card>
     </div>
@@ -564,7 +564,7 @@ function AccountsPanel({ selfId }: { selfId: string }) {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Buat Akun</CardTitle>
-          <CardDescription>Installer memakai akun ini untuk mengaktifkan aplikasi kasir di perangkat toko.</CardDescription>
+          <CardDescription>Installer memakai akun ini untuk mengaktifkan aplikasi kasir di perangkat store.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
