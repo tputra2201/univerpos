@@ -24,9 +24,10 @@ import { computeTotals, lineTotal } from "@/lib/pos/calc";
 import { rupiah, uid } from "@/lib/pos/format";
 import { buildReceipt } from "@/lib/pos/receipt";
 import { printViaDialog } from "@/lib/pos/print";
+import { getServiceTypes } from "@/lib/pos/seed";
 import { CART_STORAGE_KEY, readLocal, writeLocal } from "@/lib/pos/storage";
 import { canAuthorizeVoid, formatOrderNo, roleLabel } from "@/lib/pos/roles";
-import type { CartLine, HeldOrder, Product, Sale, SalePayment } from "@/lib/pos/types";
+import type { CartLine, HeldOrder, ServiceType, Product, Sale, SalePayment } from "@/lib/pos/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -75,6 +76,8 @@ interface CartState {
   billDiscount: number;
   /** "" = belum memilih layanan */
   orderType: string;
+  /** id jenis layanan terpilih */
+  serviceId?: string;
   /** id pesanan tersimpan yang sedang dibuka */
   heldId?: string;
   /** id pesanan dapur (Processing) terkait */
@@ -223,7 +226,8 @@ function KasirPage() {
   function ensureOrderNo(): string {
     if (cart.orderNo) return cart.orderNo;
     const seq = Math.max(1, settings.orderSeq || 1);
-    const no = formatOrderNo(cart.orderType, seq);
+    const svc = getServiceTypes(db).find((x) => x.id === cart.serviceId);
+    const no = svc ? `${svc.code}-${String(seq).padStart(6, "0")}` : formatOrderNo(cart.orderType, seq);
     update((current) => ({
       ...current,
       settings: { ...current.settings, orderSeq: Math.max(1, current.settings.orderSeq || 1) + 1 },
@@ -407,6 +411,7 @@ function KasirPage() {
       customerName: held.customerName,
       billDiscount: 0,
       orderType: held.orderType || "Take Out",
+      serviceId: held.serviceId,
       heldId: held.id,
       note: held.note ?? "",
       orderNo: held.orderNo ?? "",
@@ -683,8 +688,8 @@ function KasirPage() {
             <DialogTitle>New Order</DialogTitle>
           </DialogHeader>
           <ServicePicker
-            onPick={(orderType, tableName) => {
-              setCart((prev) => ({ ...EMPTY_CART, ...(prev.lines.length ? prev : {}), orderType, tableName }));
+            onPick={(orderType, tableName, serviceId) => {
+              setCart((prev) => ({ ...EMPTY_CART, ...(prev.lines.length ? prev : {}), orderType, tableName, serviceId }));
               setPickerOpen(false);
             }}
             onOpenHeld={(id) => {
@@ -803,12 +808,15 @@ function ServicePicker({
   onPick,
   onOpenHeld,
 }: {
-  onPick: (orderType: string, tableName: string) => void;
+  onPick: (orderType: string, tableName: string, serviceId: string) => void;
   onOpenHeld: (id: string) => void;
 }) {
   const { db } = usePos();
-  const [mode, setMode] = useState<"" | "dinein" | "online">("");
+  const [picked, setPicked] = useState<ServiceType | null>(null);
+  const mode = picked?.kind === "dinein" ? "dinein" : picked?.kind === "online" ? "online" : "";
+  const services = getServiceTypes(db).filter((x) => x.active);
   const channels = (db.onlineChannels ?? []).filter((c) => c.active);
+  const ICON = { takeout: ShoppingBag, dinein: Utensils, online: Bike } as const;
 
   const big =
     "flex min-h-28 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-border bg-card p-5 text-center transition-colors hover:border-primary hover:bg-primary/5";
@@ -817,36 +825,47 @@ function ServicePicker({
     <div className="flex w-full flex-col gap-5">
       <div>
         <h1 className="text-lg font-bold">
-          {mode === "dinein" ? "Pilih Meja / Room" : mode === "online" ? "Pilih Online Order" : "Pilih Jenis Layanan"}
+          {mode === "dinein" ? `${picked?.name} — Pilih Meja / Room` : mode === "online" ? `${picked?.name} — Pilih Aplikasi` : "Pilih Jenis Layanan"}
         </h1>
         <p className="text-sm text-muted-foreground">
           {mode === "" ? "Tentukan layanan sebelum memilih menu." : "Ketuk salah satu untuk lanjut ke menu."}
         </p>
+        {mode !== "" && (
+          <Button variant="link" className="h-auto px-0" onClick={() => setPicked(null)}>
+            ← Kembali ke jenis layanan
+          </Button>
+        )}
       </div>
 
       {mode === "" && (
         <div className="grid gap-3 sm:grid-cols-3">
-          <button type="button" className={big} onClick={() => onPick("Take Out", "")}>
-            <ShoppingBag className="size-8 text-primary" />
-            <span className="text-lg font-semibold">Take Out</span>
-          </button>
-          <button type="button" className={big} onClick={() => setMode("dinein")}>
-            <Utensils className="size-8 text-primary" />
-            <span className="text-lg font-semibold">Dine In</span>
-            <span className="text-xs text-muted-foreground">Pilih no. meja/room</span>
-          </button>
-          <button type="button" className={big} onClick={() => setMode("online")}>
-            <Bike className="size-8 text-primary" />
-            <span className="text-lg font-semibold">Online Order</span>
-            <span className="text-xs text-muted-foreground">GrabFood, GoFood, dll.</span>
-          </button>
+          {services.map((svc) => {
+            const Icon = ICON[svc.kind];
+            return (
+              <button
+                key={svc.id}
+                type="button"
+                className={big}
+                onClick={() => (svc.kind === "takeout" ? onPick(svc.name, "", svc.id) : setPicked(svc))}
+              >
+                <Icon className="size-8 text-primary" />
+                <span className="text-lg font-semibold">{svc.name}</span>
+                <span className="font-mono text-xs text-muted-foreground">{svc.code}</span>
+              </button>
+            );
+          })}
+          {services.length === 0 && (
+            <p className="col-span-full text-sm text-muted-foreground">
+              Belum ada jenis layanan aktif. Atur di Pengaturan → Jenis Layanan.
+            </p>
+          )}
         </div>
       )}
 
       {mode === "dinein" && (
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
           {db.tables.map((t) => {
-            const held = db.heldOrders.find((h) => h.orderType === "Dine In" && h.tableName === t.name);
+            const held = db.heldOrders.find((h) => !!h.tableName && h.tableName === t.name);
             return (
               <button
                 key={t.id}
@@ -856,7 +875,7 @@ function ServicePicker({
                   " min-h-20" +
                   (held ? " border-accent bg-accent text-accent-foreground hover:bg-accent/80" : "")
                 }
-                onClick={() => (held ? onOpenHeld(held.id) : onPick("Dine In", t.name))}
+                onClick={() => (held ? onOpenHeld(held.id) : onPick(picked!.name, t.name, picked!.id))}
               >
                 <span className="text-lg font-semibold">{t.name}</span>
                 {held && (
@@ -878,7 +897,7 @@ function ServicePicker({
       {mode === "online" && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {channels.map((c) => (
-            <button key={c.id} type="button" className={big + " min-h-20"} onClick={() => onPick(c.name, "")}>
+            <button key={c.id} type="button" className={big + " min-h-20"} onClick={() => onPick(c.name, "", picked!.id)}>
               <span className="text-lg font-semibold">{c.name}</span>
             </button>
           ))}
@@ -971,7 +990,8 @@ function CartPanel({
   return (
     <div className="flex h-full flex-col">
       <div className="space-y-2 border-b px-4 py-3">
-        {cart.orderType === "Dine In" && (
+        {(getServiceTypes(db).find((x) => x.id === cart.serviceId)?.kind === "dinein" ||
+          (!cart.serviceId && cart.orderType === "Dine In")) && (
           <div className="flex flex-wrap gap-2">
             {db.tables.map((t) => (
               <button
