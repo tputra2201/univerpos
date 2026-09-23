@@ -309,7 +309,7 @@ function KasirPage() {
       }
       return { ...prev, lines };
     });
-    setVoidLine(null);
+    setVoidTarget(null);
     toast.success("Item di-void dengan otorisasi " + byName + ".");
   }
 
