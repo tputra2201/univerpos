@@ -76,6 +76,12 @@ interface CartState {
   orderType: string;
   /** id pesanan tersimpan yang sedang dibuka */
   heldId?: string;
+  /** catatan pesanan */
+  note: string;
+  /** nomor order, format KODE-000001 */
+  orderNo: string;
+  /** sudah dikirim ke dapur */
+  sentToKitchen: boolean;
 }
 
 const EMPTY_CART: CartState = {
@@ -84,6 +90,9 @@ const EMPTY_CART: CartState = {
   customerName: "",
   billDiscount: 0,
   orderType: "",
+  note: "",
+  orderNo: "",
+  sentToKitchen: false,
 };
 
 function KasirPage() {
