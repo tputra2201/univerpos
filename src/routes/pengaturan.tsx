@@ -318,13 +318,15 @@ function PengaturanPage() {
                 <Field label="Peran">
                   <Select
                     value={newUser.role}
-                    onValueChange={(v) => setNewUser({ ...newUser, role: v as "owner" | "cashier" })}
+                    onValueChange={(v) => setNewUser({ ...newUser, role: v as UserRole })}
                   >
-                    <SelectTrigger className="h-10 w-32">
+                    <SelectTrigger className="h-10 w-36">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="cashier">Kasir</SelectItem>
+                      <SelectItem value="supervisor">Supervisor</SelectItem>
+                      <SelectItem value="manager">Manager</SelectItem>
                       <SelectItem value="owner">Pemilik</SelectItem>
                     </SelectContent>
                   </Select>
