@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ReleasesPanel } from "@/components/pos/releases-panel";
 
 export const Route = createFileRoute("/kontrol")({
   head: () => ({
@@ -123,6 +124,7 @@ function KontrolPage() {
               <TabsTrigger value="store">Store</TabsTrigger>
               <TabsTrigger value="tipe">Tipe Usaha</TabsTrigger>
               <TabsTrigger value="akun">Installer & Developer</TabsTrigger>
+              <TabsTrigger value="rilis">Rilis & Update</TabsTrigger>
             </TabsList>
             <TabsContent value="store">
               <StoresPanel />
@@ -132,6 +134,9 @@ function KontrolPage() {
             </TabsContent>
             <TabsContent value="akun">
               <AccountsPanel selfId={user.id} />
+            </TabsContent>
+            <TabsContent value="rilis">
+              <ReleasesPanel />
             </TabsContent>
           </Tabs>
         )}

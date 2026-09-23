@@ -12,6 +12,7 @@ import { bluetoothSupported, pickBluetoothPrinter } from "@/lib/pos/print";
 import { getServiceTypes, seedForBusiness } from "@/lib/pos/seed";
 import type { BusinessType, PosDatabase, Sale, ServiceKind, ServiceType, UserRole } from "@/lib/pos/types";
 import { roleLabel } from "@/lib/pos/roles";
+import { UpdateCard } from "@/components/pos/update-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -281,6 +282,7 @@ function PengaturanPage() {
               </Button>
             </CardContent>
           </Card>
+          <UpdateCard />
         </TabsContent>
 
         <TabsContent value="pengguna" className="space-y-4">
