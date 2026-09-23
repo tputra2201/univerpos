@@ -325,6 +325,7 @@ function KasirPage() {
       tableName: cart.tableName,
       customerName: cart.customerName,
       orderType: cart.orderType,
+      serviceId: cart.serviceId,
       orderNo,
       note: cart.note,
       sentToKitchen: override.sentToKitchen ?? cart.sentToKitchen,
