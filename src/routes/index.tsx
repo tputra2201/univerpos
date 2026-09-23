@@ -582,6 +582,12 @@ function KasirPage() {
         showStaff={settings.businessType === "jasa"}
       />
 
+      <VoidDialog
+        line={voidTarget}
+        onClose={() => setVoidTarget(null)}
+        onConfirm={voidLine}
+      />
+
       <PaymentDialog
         open={payOpen}
         onOpenChange={setPayOpen}
