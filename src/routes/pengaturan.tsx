@@ -247,6 +247,42 @@ function PengaturanPage() {
               )}
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Nomor Order</CardTitle>
+              <CardDescription>
+                Format [kode layanan]-[6 digit]. TO = Take Out, DI = Dine In, OL = Online Order.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Field label="Nomor urut berikutnya">
+                <Input
+                  id="order-seq"
+                  inputMode="numeric"
+                  value={String(db.settings.orderSeq)}
+                  onChange={(e) =>
+                    setSettings({
+                      orderSeq: Math.max(1, Number(e.target.value.replace(/\D/g, "")) || 1),
+                    })
+                  }
+                  className="tabular h-11 max-w-32 font-mono"
+                />
+              </Field>
+              <p className="text-sm text-muted-foreground">
+                Contoh nomor berikutnya: <span className="font-mono">DI-{String(db.settings.orderSeq).padStart(6, "0")}</span>
+              </p>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setSettings({ orderSeq: 1 });
+                  toast.success("Nomor order direset ke 000001.");
+                }}
+              >
+                Reset nomor order
+              </Button>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="pengguna" className="space-y-4">
