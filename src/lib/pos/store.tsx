@@ -1,3 +1,4 @@
+import type React from "react";
 import {
   createContext,
   useCallback,
@@ -29,7 +30,9 @@ interface PosContextValue {
   signOut: () => void;
 }
 
-const PosContext = createContext<PosContextValue | null>(null);
+// Simpan konteks di globalThis agar tetap sama saat modul dimuat ulang (hot reload).
+const g = globalThis as { __posContext?: React.Context<PosContextValue | null> };
+const PosContext = (g.__posContext ??= createContext<PosContextValue | null>(null));
 
 export function PosProvider({ children }: { children: ReactNode }) {
   const [db, setDb] = useState<PosDatabase>(() => emptyDatabase());
