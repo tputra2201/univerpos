@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as KontrolRouteImport } from './routes/kontrol'
 import { Route as LaporanRouteImport } from './routes/laporan'
 import { Route as PengaturanRouteImport } from './routes/pengaturan'
 import { Route as ProdukRouteImport } from './routes/produk'
@@ -18,6 +19,11 @@ import { Route as TransaksiRouteImport } from './routes/transaksi'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KontrolRoute = KontrolRouteImport.update({
+  id: '/kontrol',
+  path: '/kontrol',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LaporanRoute = LaporanRouteImport.update({
@@ -43,6 +49,7 @@ const TransaksiRoute = TransaksiRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/kontrol': typeof KontrolRoute
   '/laporan': typeof LaporanRoute
   '/pengaturan': typeof PengaturanRoute
   '/produk': typeof ProdukRoute
@@ -50,6 +57,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/kontrol': typeof KontrolRoute
   '/laporan': typeof LaporanRoute
   '/pengaturan': typeof PengaturanRoute
   '/produk': typeof ProdukRoute
@@ -58,6 +66,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/kontrol': typeof KontrolRoute
   '/laporan': typeof LaporanRoute
   '/pengaturan': typeof PengaturanRoute
   '/produk': typeof ProdukRoute
@@ -65,14 +74,23 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/laporan' | '/pengaturan' | '/produk' | '/transaksi'
+  fullPaths:
+    '/' | '/kontrol' | '/laporan' | '/pengaturan' | '/produk' | '/transaksi'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/laporan' | '/pengaturan' | '/produk' | '/transaksi'
-  id: '__root__' | '/' | '/laporan' | '/pengaturan' | '/produk' | '/transaksi'
+  to: '/' | '/kontrol' | '/laporan' | '/pengaturan' | '/produk' | '/transaksi'
+  id:
+    | '__root__'
+    | '/'
+    | '/kontrol'
+    | '/laporan'
+    | '/pengaturan'
+    | '/produk'
+    | '/transaksi'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  KontrolRoute: typeof KontrolRoute
   LaporanRoute: typeof LaporanRoute
   PengaturanRoute: typeof PengaturanRoute
   ProdukRoute: typeof ProdukRoute
@@ -86,6 +104,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kontrol': {
+      id: '/kontrol'
+      path: '/kontrol'
+      fullPath: '/kontrol'
+      preLoaderRoute: typeof KontrolRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/laporan': {
@@ -121,6 +146,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  KontrolRoute: KontrolRoute,
   LaporanRoute: LaporanRoute,
   PengaturanRoute: PengaturanRoute,
   ProdukRoute: ProdukRoute,
