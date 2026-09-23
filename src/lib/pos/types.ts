@@ -91,6 +91,11 @@ export interface CartLine {
   note: string;
   discount: number;
   staffName: string;
+  /** Sudah dikirim ke dapur: tidak bisa dihapus, hanya bisa di-void. */
+  sentToKitchen?: boolean;
+  voided?: boolean;
+  voidReason?: string;
+  voidedBy?: string;
 }
 
 export interface SalePayment {
