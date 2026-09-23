@@ -931,11 +931,6 @@ function ServicePicker({
         </div>
       )}
 
-      {mode !== "" && (
-        <Button variant="ghost" className="h-11 self-start" onClick={() => setMode("")}>
-          ← Kembali
-        </Button>
-      )}
     </div>
   );
 }
