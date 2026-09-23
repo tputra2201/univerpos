@@ -816,11 +816,24 @@ function CartPanel({
             ))}
           </div>
         )}
+        {cart.orderNo && (
+          <p className="tabular font-mono text-xs font-semibold text-primary">
+            Nomor order {cart.orderNo}
+          </p>
+        )}
         <Input
           value={cart.customerName}
           onChange={(e) => setCart((prev) => ({ ...prev, customerName: e.target.value }))}
           placeholder={type === "jasa" ? "Nama pelanggan" : "Nama pelanggan (opsional)"}
           className="h-10"
+        />
+        <Textarea
+          id="order-note"
+          value={cart.note}
+          onChange={(e) => setCart((prev) => ({ ...prev, note: e.target.value }))}
+          placeholder="Catatan pesanan (opsional)"
+          className="min-h-9"
+          rows={2}
         />
       </div>
 
