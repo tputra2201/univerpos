@@ -9,8 +9,8 @@ import { usePos } from "@/lib/pos/store";
 import { uid } from "@/lib/pos/format";
 import { buildReceipt } from "@/lib/pos/receipt";
 import { bluetoothSupported, pickBluetoothPrinter } from "@/lib/pos/print";
-import { seedForBusiness } from "@/lib/pos/seed";
-import type { BusinessType, PosDatabase, Sale, UserRole } from "@/lib/pos/types";
+import { getServiceTypes, seedForBusiness } from "@/lib/pos/seed";
+import type { BusinessType, PosDatabase, Sale, ServiceKind, ServiceType, UserRole } from "@/lib/pos/types";
 import { roleLabel } from "@/lib/pos/roles";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -146,6 +146,7 @@ function PengaturanPage() {
       <Tabs defaultValue="toko" className="p-4 md:p-6">
         <TabsList className="flex-wrap">
           <TabsTrigger value="toko">Toko</TabsTrigger>
+          <TabsTrigger value="layanan">Jenis Layanan</TabsTrigger>
           <TabsTrigger value="pengguna">Pengguna</TabsTrigger>
           <TabsTrigger value="pembayaran">Pembayaran</TabsTrigger>
           <TabsTrigger value="printer">Printer</TabsTrigger>
@@ -252,7 +253,7 @@ function PengaturanPage() {
             <CardHeader>
               <CardTitle className="text-base">Nomor Order</CardTitle>
               <CardDescription>
-                Format [kode layanan]-[6 digit]. TO = Take Out, DI = Dine In, OL = Online Order.
+                Format [kode layanan]-[6 digit]. Kode tiap layanan diatur di tab Jenis Layanan.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -681,6 +682,10 @@ function PengaturanPage() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="layanan" className="space-y-4">
+          <ServiceTypesCard />
+        </TabsContent>
+
         <TabsContent value="online" className="space-y-4">
           <Card>
             <CardHeader>
@@ -837,5 +842,116 @@ function ToggleRow({
       </div>
       <Switch checked={checked} onCheckedChange={onCheckedChange} />
     </div>
+  );
+}
+
+const KIND_LABEL: Record<ServiceKind, string> = {
+  takeout: "Langsung ke menu (seperti Take Out)",
+  dinein: "Pilih meja/room (seperti Dine In)",
+  online: "Pilih aplikasi online (seperti Online Order)",
+};
+
+export function ServiceTypesCard() {
+  const { db, update } = usePos();
+  const services = getServiceTypes(db);
+  const [draft, setDraft] = useState({ name: "", code: "", kind: "takeout" as ServiceKind });
+
+  function save(next: ServiceType[]) {
+    update((current) => ({ ...current, serviceTypes: next }));
+  }
+  function patch(id: string, values: Partial<ServiceType>) {
+    save(services.map((x) => (x.id === id ? { ...x, ...values } : x)));
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Jenis Layanan</CardTitle>
+        <CardDescription>
+          Hanya layanan yang aktif yang muncul di halaman kasir. Kode dipakai di nomor order, mis. TO-000001.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {services.map((svc) => (
+          <div key={svc.id} className="flex flex-wrap items-center gap-2 rounded-lg border p-3">
+            <Input
+              aria-label="Nama layanan"
+              value={svc.name}
+              onChange={(e) => patch(svc.id, { name: e.target.value })}
+              className="h-10 w-40"
+            />
+            <Input
+              aria-label="Kode layanan"
+              value={svc.code}
+              onChange={(e) => patch(svc.id, { code: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4) })}
+              className="h-10 w-20 font-mono"
+            />
+            <Select value={svc.kind} onValueChange={(v) => patch(svc.id, { kind: v as ServiceKind })}>
+              <SelectTrigger className="h-10 w-72">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(KIND_LABEL) as ServiceKind[]).map((k) => (
+                  <SelectItem key={k} value={k}>
+                    {KIND_LABEL[k]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <label className="ml-auto flex items-center gap-2 text-sm">
+              <Switch checked={svc.active} onCheckedChange={(v) => patch(svc.id, { active: v })} />
+              {svc.active ? "Aktif" : "Nonaktif"}
+            </label>
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label={`Hapus ${svc.name}`}
+              onClick={() => save(services.filter((x) => x.id !== svc.id))}
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          </div>
+        ))}
+        <div className="flex flex-wrap gap-2">
+          <Input
+            placeholder="Nama layanan baru, mis. Delivery"
+            value={draft.name}
+            onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+            className="h-10 w-56"
+          />
+          <Input
+            placeholder="Kode"
+            value={draft.code}
+            onChange={(e) => setDraft({ ...draft, code: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4) })}
+            className="h-10 w-20 font-mono"
+          />
+          <Select value={draft.kind} onValueChange={(v) => setDraft({ ...draft, kind: v as ServiceKind })}>
+            <SelectTrigger className="h-10 w-72">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {(Object.keys(KIND_LABEL) as ServiceKind[]).map((k) => (
+                <SelectItem key={k} value={k}>
+                  {KIND_LABEL[k]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            className="gap-2"
+            onClick={() => {
+              if (!draft.name.trim() || !draft.code) {
+                toast.error("Nama dan kode layanan wajib diisi.");
+                return;
+              }
+              save([...services, { id: uid("svc"), name: draft.name.trim(), code: draft.code, kind: draft.kind, active: true }]);
+              setDraft({ name: "", code: "", kind: "takeout" });
+            }}
+          >
+            <Plus className="size-4" /> Tambah
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
