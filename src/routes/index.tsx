@@ -101,6 +101,7 @@ function KasirPage() {
   const { settings } = db;
   const [cart, setCart] = useState<CartState>(EMPTY_CART);
   const [hydrated, setHydrated] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [categoryId, setCategoryId] = useState<string>("all");
   const [variantProduct, setVariantProduct] = useState<Product | null>(null);
@@ -138,6 +139,11 @@ function KasirPage() {
   }, [db.products, query, categoryId]);
 
   function addProduct(product: Product, variantName = "", priceDelta = 0) {
+    if (!cart.orderType) {
+      toast.error("Pilih jenis layanan dulu.");
+      setPickerOpen(true);
+      return;
+    }
     setCart((prev) => {
       const existing = prev.lines.find(
         (l) => l.productId === product.id && l.variantName === variantName && !l.note,
@@ -380,13 +386,15 @@ function KasirPage() {
 
   const itemCount = cart.lines.filter((l) => !l.voided).reduce((sum, l) => sum + l.qty, 0);
 
-  if (hydrated && !cart.orderType) {
-    return (
-      <ServicePicker
-        onPick={(orderType, tableName) => setCart((prev) => ({ ...prev, orderType, tableName }))}
-        onOpenHeld={(id) => recallOrder(id)}
-      />
-    );
+  useEffect(() => {
+    if (hydrated && !cart.orderType && cart.lines.length === 0) setPickerOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated]);
+
+  function newOrder() {
+    if (cart.lines.length > 0) holdOrder();
+    else setCart(EMPTY_CART);
+    setPickerOpen(true);
   }
 
   return (
@@ -397,24 +405,20 @@ function KasirPage() {
           <div className="flex items-center justify-between gap-2 rounded-lg bg-primary/10 px-3 py-2">
             <span className="text-sm font-semibold text-primary">
               {cart.orderNo && <span className="tabular mr-2 font-mono">{cart.orderNo}</span>}
-              {cart.orderType}
+              {cart.orderType || "Belum pilih layanan"}
               {cart.tableName && ` • ${cart.tableName}`}
               {cart.sentToKitchen && <span className="ml-2 text-xs">• sudah di dapur</span>}
             </span>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-8"
-              onClick={() => {
-                if (cart.lines.length > 0) {
-                  toast.error("Tahan atau selesaikan pesanan ini dulu sebelum ganti layanan.");
-                  return;
-                }
-                setCart(EMPTY_CART);
-              }}
-            >
-              Ganti layanan
-            </Button>
+            <div className="flex gap-2">
+              {!cart.orderType && (
+                <Button size="sm" variant="outline" className="h-8" onClick={() => setPickerOpen(true)}>
+                  Pilih layanan
+                </Button>
+              )}
+              <Button size="sm" className="h-8 gap-1" onClick={newOrder}>
+                <Plus className="size-4" /> New Order
+              </Button>
+            </div>
           </div>
           <div className="flex gap-2">
             <div className="relative flex-1">
@@ -594,6 +598,24 @@ function KasirPage() {
         onComplete={completeSale}
       />
 
+      <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
+        <DialogContent className="max-h-[90vh] overflow-auto sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>New Order</DialogTitle>
+          </DialogHeader>
+          <ServicePicker
+            onPick={(orderType, tableName) => {
+              setCart((prev) => ({ ...EMPTY_CART, ...(prev.lines.length ? prev : {}), orderType, tableName }));
+              setPickerOpen(false);
+            }}
+            onOpenHeld={(id) => {
+              recallOrder(id);
+              setPickerOpen(false);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
       <Sheet open={heldOpen} onOpenChange={setHeldOpen}>
         <SheetContent side="right" className="w-full sm:max-w-sm">
           <SheetHeader>
@@ -668,9 +690,9 @@ function ServicePicker({
     "flex min-h-28 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-border bg-card p-5 text-center transition-colors hover:border-primary hover:bg-primary/5";
 
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-56px)] w-full max-w-3xl flex-col justify-center gap-6 p-4 lg:min-h-screen">
+    <div className="flex w-full flex-col gap-5">
       <div>
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-lg font-bold">
           {mode === "dinein" ? "Pilih Meja / Room" : mode === "online" ? "Pilih Online Order" : "Pilih Jenis Layanan"}
         </h1>
         <p className="text-sm text-muted-foreground">
@@ -741,6 +763,27 @@ function ServicePicker({
               Belum ada aplikasi online aktif. Atur di Pengaturan → Online Order.
             </p>
           )}
+        </div>
+      )}
+
+      {mode === "" && db.heldOrders.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-sm font-semibold">Pesanan Tertahan</p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {db.heldOrders.map((h) => (
+              <button
+                key={h.id}
+                type="button"
+                className="rounded-lg border-2 border-accent bg-accent/10 p-3 text-left hover:bg-accent/20"
+                onClick={() => onOpenHeld(h.id)}
+              >
+                <p className="font-semibold">{h.label}</p>
+                <p className="text-xs text-muted-foreground">
+                  {h.items.filter((i) => !i.voided).reduce((s, i) => s + i.qty, 0)} item • Buka pesanan
+                </p>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
