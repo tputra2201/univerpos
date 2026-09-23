@@ -148,6 +148,16 @@ export interface HeldOrder {
   sentToKitchen?: boolean;
 }
 
+export interface KitchenOrder {
+  id: string;
+  orderNo: string;
+  label: string;
+  createdAt: string;
+  items: CartLine[];
+  note?: string;
+  status: "processing" | "done";
+}
+
 export interface Shift {
   id: string;
   openedAt: string;
@@ -170,5 +180,6 @@ export interface PosDatabase {
   onlineChannels: OnlineChannel[];
   sales: Sale[];
   heldOrders: HeldOrder[];
+  kitchenOrders?: KitchenOrder[];
   shifts: Shift[];
 }
