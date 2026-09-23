@@ -63,6 +63,7 @@ function headerLines(
 function itemLines(sale: Sale, width: number, withPrice: boolean): string[] {
   const out: string[] = [];
   for (const item of sale.items) {
+    if (item.voided) continue;
     const title = item.variantName ? `${item.name} (${item.variantName})` : item.name;
     wrap(title, width).forEach((l) => out.push(l));
     if (withPrice) {
