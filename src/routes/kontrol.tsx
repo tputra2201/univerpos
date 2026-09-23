@@ -347,7 +347,10 @@ function AccountsPanel({ selfId }: { selfId: string }) {
   const create = useServerFn(createAccount);
   const del = useServerFn(deleteAccount);
   const reset = useServerFn(resetAccountPassword);
+  const save = useServerFn(updateAccount);
   const [rows, setRows] = useState<AccountRow[]>([]);
+  const [edit, setEdit] = useState<{ userId: string; name: string; email: string } | null>(null);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "", role: "installer" as "installer" | "developer" });
 
   const load = useCallback(async () => {
