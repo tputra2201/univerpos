@@ -606,12 +606,18 @@ function KasirPage() {
                     size="icon"
                     variant="ghost"
                     aria-label="Hapus"
-                    onClick={() =>
+                    onClick={() => {
+                      if (h.sentToKitchen) {
+                        toast.error(
+                          "Pesanan sudah dikirim ke dapur. Buka pesanan lalu void itemnya dengan otorisasi supervisor.",
+                        );
+                        return;
+                      }
                       update((current) => ({
                         ...current,
                         heldOrders: current.heldOrders.filter((x) => x.id !== h.id),
-                      }))
-                    }
+                      }));
+                    }}
                   >
                     <X className="size-4" />
                   </Button>
