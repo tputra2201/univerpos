@@ -260,7 +260,7 @@ function PengaturanPage() {
                 <Input
                   id="order-seq"
                   inputMode="numeric"
-                  value={String(db.settings.orderSeq)}
+                  value={String(db.settings.orderSeq ?? 1)}
                   onChange={(e) =>
                     setSettings({
                       orderSeq: Math.max(1, Number(e.target.value.replace(/\D/g, "")) || 1),
@@ -270,7 +270,7 @@ function PengaturanPage() {
                 />
               </Field>
               <p className="text-sm text-muted-foreground">
-                Contoh nomor berikutnya: <span className="font-mono">DI-{String(db.settings.orderSeq).padStart(6, "0")}</span>
+                Contoh nomor berikutnya: <span className="font-mono">DI-{String(db.settings.orderSeq ?? 1).padStart(6, "0")}</span>
               </p>
               <Button
                 variant="secondary"
