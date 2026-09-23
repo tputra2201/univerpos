@@ -9,6 +9,7 @@ import { usePos } from "@/lib/pos/store";
 import { dateTime, rupiah } from "@/lib/pos/format";
 import { buildReceipt } from "@/lib/pos/receipt";
 import type { Sale } from "@/lib/pos/types";
+import { canAuthorizeVoid } from "@/lib/pos/roles";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

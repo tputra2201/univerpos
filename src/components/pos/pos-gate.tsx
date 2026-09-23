@@ -6,6 +6,7 @@ import { isValidStoreCode, normalizeCode } from "@/lib/pos/license";
 import { seedForBusiness } from "@/lib/pos/seed";
 import { uid } from "@/lib/pos/format";
 import type { BusinessType } from "@/lib/pos/types";
+import { roleLabel } from "@/lib/pos/roles";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

@@ -11,6 +11,7 @@ import {
   WifiOff,
 } from "lucide-react";
 import { usePos } from "@/lib/pos/store";
+import { canManage, roleLabel } from "@/lib/pos/roles";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 
