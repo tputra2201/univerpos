@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_releases: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string
+          version: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string
+          version?: string
+        }
+        Relationships: []
+      }
       business_types: {
         Row: {
           base_kind: string
@@ -41,6 +62,7 @@ export type Database = {
       stores: {
         Row: {
           active: boolean
+          app_version: string
           business_type_id: string | null
           code: string
           created_at: string
@@ -54,6 +76,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          app_version?: string
           business_type_id?: string | null
           code: string
           created_at?: string
@@ -67,6 +90,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          app_version?: string
           business_type_id?: string | null
           code?: string
           created_at?: string
@@ -84,6 +108,47 @@ export type Database = {
             columns: ["business_type_id"]
             isOneToOne: false
             referencedRelation: "business_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      update_requests: {
+        Row: {
+          created_at: string
+          current_version: string
+          decided_at: string | null
+          id: string
+          requested_by: string
+          status: string
+          store_id: string
+          target_version: string
+        }
+        Insert: {
+          created_at?: string
+          current_version?: string
+          decided_at?: string | null
+          id?: string
+          requested_by?: string
+          status?: string
+          store_id: string
+          target_version?: string
+        }
+        Update: {
+          created_at?: string
+          current_version?: string
+          decided_at?: string | null
+          id?: string
+          requested_by?: string
+          status?: string
+          store_id?: string
+          target_version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "update_requests_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
             referencedColumns: ["id"]
           },
         ]
@@ -142,6 +207,28 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      latest_release: {
+        Args: never
+        Returns: {
+          notes: string
+          version: string
+        }[]
+      }
+      mark_update_applied: {
+        Args: { _id: string; _version: string }
+        Returns: undefined
+      }
+      request_update: {
+        Args: { _by: string; _code: string; _current: string }
+        Returns: string
+      }
+      update_request_status: {
+        Args: { _id: string }
+        Returns: {
+          status: string
+          target_version: string
+        }[]
       }
     }
     Enums: {
