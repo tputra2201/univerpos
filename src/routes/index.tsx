@@ -506,7 +506,7 @@ function KasirPage() {
             </div>
             <Button variant="secondary" className="h-11 gap-2" onClick={() => setKitchenOpen(true)}>
               <ChefHat className="size-4" />
-              <span className="hidden sm:inline">Processing</span>
+              <span className="hidden sm:inline">Diproses</span>
               {processingCount > 0 && <Badge variant="default">{processingCount}</Badge>}
             </Button>
             <Button variant="secondary" className="h-11 gap-2" onClick={() => setHeldOpen(true)}>
@@ -750,7 +750,7 @@ function KasirPage() {
                   <div className="flex items-center justify-between gap-2">
                     <p className="font-semibold">{k.label || k.orderNo}</p>
                     <Badge variant={k.status === "processing" ? "default" : "secondary"}>
-                      {k.status === "processing" ? "Processing" : "Done"}
+                      {k.status === "processing" ? "Diproses" : "Done"}
                     </Badge>
                   </div>
                   <ul className="mt-1 text-sm">
@@ -781,7 +781,7 @@ function KasirPage() {
                       }))
                     }
                   >
-                    {k.status === "processing" ? "Tandai Done" : "Kembalikan ke Processing"}
+                    {k.status === "processing" ? "Tandai Done" : "Kembalikan ke Diproses"}
                   </Button>
                 </div>
               ))}
