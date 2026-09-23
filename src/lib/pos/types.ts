@@ -149,7 +149,7 @@ export interface Sale {
 }
 
 export interface HeldOrder {
-  serviceId?: string;
+  serviceId?: string | undefined;
   id: string;
   label: string;
   createdAt: string;

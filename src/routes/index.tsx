@@ -77,7 +77,7 @@ interface CartState {
   /** "" = belum memilih layanan */
   orderType: string;
   /** id jenis layanan terpilih */
-  serviceId?: string;
+  serviceId?: string | undefined;
   /** id pesanan tersimpan yang sedang dibuka */
   heldId?: string;
   /** id pesanan dapur (Processing) terkait */
