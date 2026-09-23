@@ -296,7 +296,7 @@ function LoginScreen() {
               >
                 {u.name}
                 <span className="ml-1 text-xs opacity-70">
-                  {u.role === "owner" ? "Pemilik" : "Kasir"}
+                  {roleLabel(u.role)}
                 </span>
               </button>
             ))}

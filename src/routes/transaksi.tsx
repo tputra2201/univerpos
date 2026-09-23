@@ -186,7 +186,7 @@ function TransaksiPage() {
             <Button variant="secondary" className="gap-2" onClick={() => detail && reprint(detail)}>
               <Printer className="size-4" /> Cetak ulang
             </Button>
-            {detail?.status === "paid" && currentUser?.role === "owner" && (
+            {detail?.status === "paid" && canAuthorizeVoid(currentUser?.role) && (
               <>
                 <Button
                   variant="secondary"

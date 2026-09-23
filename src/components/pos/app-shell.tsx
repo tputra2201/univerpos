@@ -38,7 +38,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const items = NAV.filter((n) => !n.ownerOnly || currentUser?.role === "owner");
+  const items = NAV.filter((n) => !n.ownerOnly || canManage(currentUser?.role));
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -83,7 +83,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="text-sm">
             <p className="font-semibold">{currentUser?.name}</p>
             <p className="text-xs text-sidebar-foreground/60">
-              {currentUser?.role === "owner" ? "Pemilik" : "Kasir"}
+              {currentUser ? roleLabel(currentUser.role) : "Kasir"}
             </p>
           </div>
           <Button
