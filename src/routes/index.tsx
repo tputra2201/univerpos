@@ -1269,3 +1269,81 @@ function PaymentDialog({
     </Dialog>
   );
 }
+
+function VoidDialog({
+  line,
+  onClose,
+  onConfirm,
+}: {
+  line: CartLine | null;
+  onClose: () => void;
+  onConfirm: (lineId: string, reason: string, byName: string) => void;
+}) {
+  const { db } = usePos();
+  const [pin, setPin] = useState("");
+  const [reason, setReason] = useState("");
+
+  useEffect(() => {
+    if (line) {
+      setPin("");
+      setReason("");
+    }
+  }, [line]);
+
+  function submit() {
+    if (!line) return;
+    const approver = db.users.find((u) => u.pin === pin && canAuthorizeVoid(u.role));
+    if (!approver) {
+      toast.error("PIN tidak valid atau peran tidak berwenang. Perlu supervisor/manager.");
+      return;
+    }
+    if (!reason.trim()) {
+      toast.error("Alasan void wajib diisi.");
+      return;
+    }
+    onConfirm(line.lineId, reason.trim(), `${approver.name} (${roleLabel(approver.role)})`);
+    toast.success("Item di-void.");
+  }
+
+  return (
+    <Dialog open={!!line} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Void item</DialogTitle>
+          <DialogDescription>
+            {line?.name} sudah dikirim ke dapur, jadi tidak bisa dihapus. Void memerlukan otorisasi
+            supervisor atau manager.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-3">
+          <div className="grid gap-1.5">
+            <Label htmlFor="void-reason">Alasan</Label>
+            <Input
+              id="void-reason"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Contoh: salah input"
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="void-pin">PIN supervisor/manager</Label>
+            <Input
+              id="void-pin"
+              type="password"
+              inputMode="numeric"
+              value={pin}
+              onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              placeholder="••••"
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="secondary" onClick={onClose}>
+            Batal
+          </Button>
+          <Button onClick={submit}>Void item</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
