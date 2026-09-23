@@ -11,6 +11,9 @@ import {
   Pause,
   Play,
   X,
+  ShoppingBag,
+  Utensils,
+  Bike,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PosGate } from "@/components/pos/pos-gate";
@@ -313,9 +316,6 @@ function KasirPage() {
     return (
       <ServicePicker
         onPick={(orderType, tableName) => setCart((prev) => ({ ...prev, orderType, tableName }))}
-        heldCount={db.heldOrders.length}
-        onHeld={() => setHeldOpen(true)}
-        heldDialog={null}
       />
     );
   }
@@ -560,6 +560,83 @@ function KasirPage() {
         title={printTitle}
         lines={printLines ?? []}
       />
+    </div>
+  );
+}
+
+function ServicePicker({ onPick }: { onPick: (orderType: string, tableName: string) => void }) {
+  const { db } = usePos();
+  const [mode, setMode] = useState<"" | "dinein" | "online">("");
+  const channels = (db.onlineChannels ?? []).filter((c) => c.active);
+
+  const big =
+    "flex min-h-28 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-border bg-card p-5 text-center transition-colors hover:border-primary hover:bg-primary/5";
+
+  return (
+    <div className="mx-auto flex min-h-[calc(100vh-56px)] w-full max-w-3xl flex-col justify-center gap-6 p-4 lg:min-h-screen">
+      <div>
+        <h1 className="text-2xl font-bold">
+          {mode === "dinein" ? "Pilih Meja / Room" : mode === "online" ? "Pilih Online Order" : "Pilih Jenis Layanan"}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          {mode === "" ? "Tentukan layanan sebelum memilih menu." : "Ketuk salah satu untuk lanjut ke menu."}
+        </p>
+      </div>
+
+      {mode === "" && (
+        <div className="grid gap-3 sm:grid-cols-3">
+          <button type="button" className={big} onClick={() => onPick("Take Out", "")}>
+            <ShoppingBag className="size-8 text-primary" />
+            <span className="text-lg font-semibold">Take Out</span>
+          </button>
+          <button type="button" className={big} onClick={() => setMode("dinein")}>
+            <Utensils className="size-8 text-primary" />
+            <span className="text-lg font-semibold">Dine In</span>
+            <span className="text-xs text-muted-foreground">Pilih no. meja/room</span>
+          </button>
+          <button type="button" className={big} onClick={() => setMode("online")}>
+            <Bike className="size-8 text-primary" />
+            <span className="text-lg font-semibold">Online Order</span>
+            <span className="text-xs text-muted-foreground">GrabFood, GoFood, dll.</span>
+          </button>
+        </div>
+      )}
+
+      {mode === "dinein" && (
+        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
+          {db.tables.map((t) => (
+            <button key={t.id} type="button" className={big + " min-h-20"} onClick={() => onPick("Dine In", t.name)}>
+              <span className="text-lg font-semibold">{t.name}</span>
+            </button>
+          ))}
+          {db.tables.length === 0 && (
+            <p className="col-span-full text-sm text-muted-foreground">
+              Belum ada meja. Tambahkan di Pengaturan → Meja & Staf.
+            </p>
+          )}
+        </div>
+      )}
+
+      {mode === "online" && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {channels.map((c) => (
+            <button key={c.id} type="button" className={big + " min-h-20"} onClick={() => onPick(c.name, "")}>
+              <span className="text-lg font-semibold">{c.name}</span>
+            </button>
+          ))}
+          {channels.length === 0 && (
+            <p className="col-span-full text-sm text-muted-foreground">
+              Belum ada aplikasi online aktif. Atur di Pengaturan → Online Order.
+            </p>
+          )}
+        </div>
+      )}
+
+      {mode !== "" && (
+        <Button variant="ghost" className="h-11 self-start" onClick={() => setMode("")}>
+          ← Kembali
+        </Button>
+      )}
     </div>
   );
 }
