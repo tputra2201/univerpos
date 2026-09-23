@@ -160,6 +160,22 @@ function LaporanPage() {
     toast.success("Kasir ditutup.");
   }
 
+  const voidRows = db.sales
+    .filter((s) => isSameDay(s.createdAt, today))
+    .flatMap((s) => {
+      if (s.status === "void")
+        return [{ key: s.id, title: `Pesanan ${s.orderNo || s.code} (seluruhnya)`, at: s.createdAt, reason: s.reason || "-", amount: s.total }];
+      return s.items
+        .filter((i) => i.voided)
+        .map((i) => ({
+          key: s.id + i.lineId,
+          title: `${i.qty}× ${i.name} — ${s.orderNo || s.code}`,
+          at: s.createdAt,
+          reason: `${i.voidReason ?? "-"} — ${i.voidedBy ?? ""}`,
+          amount: i.unitPrice * i.qty - i.discount,
+        }));
+    });
+
   return (
     <div>
       <PageHeader
@@ -205,6 +221,32 @@ function LaporanPage() {
             hint={activeShift ? `Kas awal ${rupiah(activeShift.openingCash)}` : undefined}
           />
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Laporan Void Hari Ini</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            {voidRows.length === 0 && <p className="text-muted-foreground">Belum ada void hari ini.</p>}
+            {voidRows.map((v) => (
+              <div key={v.key} className="flex justify-between gap-3 border-b pb-2 last:border-0">
+                <div>
+                  <p className="font-semibold">{v.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {dateTime(v.at)} • {v.reason}
+                  </p>
+                </div>
+                <span className="tabular font-semibold text-destructive">{rupiah(v.amount)}</span>
+              </div>
+            ))}
+            {voidRows.length > 0 && (
+              <div className="flex justify-between pt-1 font-semibold">
+                <span>Total void</span>
+                <span className="tabular">{rupiah(voidRows.reduce((a, v) => a + v.amount, 0))}</span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <div className="grid gap-4 lg:grid-cols-2">
           <Card>
