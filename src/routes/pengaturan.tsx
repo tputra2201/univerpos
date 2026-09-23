@@ -57,7 +57,7 @@ function PengaturanPage() {
   const [printLines, setPrintLines] = useState<string[] | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const [newUser, setNewUser] = useState({ name: "", pin: "", role: "cashier" as "owner" | "cashier" });
+  const [newUser, setNewUser] = useState({ name: "", pin: "", role: "cashier" as UserRole });
   const [newMethod, setNewMethod] = useState("");
   const [newChannel, setNewChannel] = useState("");
   const [newTable, setNewTable] = useState("");
