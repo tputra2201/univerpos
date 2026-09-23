@@ -889,6 +889,7 @@ function CartPanel({
                       variant="secondary"
                       className="size-8"
                       aria-label="Kurangi"
+                      disabled={line.voided || line.sentToKitchen}
                       onClick={() => onChangeQty(line.lineId, -1)}
                     >
                       <Minus className="size-3.5" />
@@ -899,23 +900,36 @@ function CartPanel({
                       variant="secondary"
                       className="size-8"
                       aria-label="Tambah"
+                      disabled={line.voided}
                       onClick={() => onChangeQty(line.lineId, 1)}
                     >
                       <Plus className="size-3.5" />
                     </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="size-8 text-muted-foreground"
-                      aria-label="Hapus"
-                      onClick={() => onRemoveLine(line.lineId)}
-                    >
-                      <Trash2 className="size-3.5" />
-                    </Button>
+                    {line.sentToKitchen ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 px-2 text-xs font-semibold text-destructive"
+                        disabled={line.voided}
+                        onClick={() => onRemoveLine(line.lineId)}
+                      >
+                        Void
+                      </Button>
+                    ) : (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="size-8 text-muted-foreground"
+                        aria-label="Hapus"
+                        onClick={() => onRemoveLine(line.lineId)}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    )}
                   </div>
                 </div>
                 <p className="tabular mt-1 text-right text-sm font-semibold">
-                  {rupiah(lineTotal(line))}
+                  {line.voided ? "—" : rupiah(lineTotal(line))}
                 </p>
               </li>
             ))}
