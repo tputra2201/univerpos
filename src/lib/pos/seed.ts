@@ -40,7 +40,7 @@ export function emptyDatabase(): PosDatabase {
       activated: false,
       storeCode: "",
       businessType: "kuliner",
-      name: "Toko Saya",
+      name: "Store Saya",
       address: "",
       phone: "",
       taxEnabled: false,

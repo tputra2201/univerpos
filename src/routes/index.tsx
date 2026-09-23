@@ -222,7 +222,7 @@ function KasirPage() {
     setEditLine(null);
   }
 
-  /** Ambil nomor order yang sudah ada, atau buat baru dari nomor urut toko. */
+  /** Ambil nomor order yang sudah ada, atau buat baru dari nomor urut store. */
   function ensureOrderNo(): string {
     if (cart.orderNo) return cart.orderNo;
     const seq = Math.max(1, settings.orderSeq || 1);

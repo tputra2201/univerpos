@@ -4,6 +4,8 @@ export interface StoreSettings {
   activated: boolean;
   storeCode: string;
   businessType: BusinessType;
+  /** Nama tipe usaha dari panel kontrol. */
+  businessTypeName?: string;
   name: string;
   address: string;
   phone: string;
