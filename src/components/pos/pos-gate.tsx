@@ -95,7 +95,9 @@ function ActivationFlow() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [installerOk, setInstallerOk] = useState(false);
-  const [stores, setStores] = useState<{ id: string; code: string; name: string; mode: string }[]>([]);
+  const [stores, setStores] = useState<
+    { id: string; code: string; name: string; mode: string; business_types: { name: string; base_kind: string } | null }[]
+  >([]);
   const [storeId, setStoreId] = useState("");
   const [picked, setPicked] = useState<{ code: string; name: string; mode: string } | null>(null);
   const [services, setServices] = useState(() => getServiceTypes(db));
@@ -125,10 +127,10 @@ function ActivationFlow() {
     }
     const { data: rows } = await supabase
       .from("stores")
-      .select("id, code, name, mode")
+      .select("id, code, name, mode, business_types(name, base_kind)")
       .eq("active", true)
       .order("name");
-    setStores(rows ?? []);
+    setStores((rows as unknown as typeof stores) ?? []);
     setInstallerOk(true);
     setBusy(false);
   }
@@ -149,7 +151,9 @@ function ActivationFlow() {
     await supabase.auth.signOut();
     setPicked(row);
     setStoreName(row.name);
-    setStep(1);
+    const kind = stores.find((x) => x.id === storeId)?.business_types?.base_kind;
+    setType(kind === "retail" || kind === "jasa" ? kind : "kuliner");
+    setStep(2);
   }
 
   function finish() {
@@ -252,6 +256,7 @@ function ActivationFlow() {
                     <span className="block font-semibold">{st.name}</span>
                     <span className="block font-mono text-xs text-muted-foreground">
                       {st.code} • {st.mode === "online" ? "Online" : "Offline"}
+                      {st.business_types && ` • ${st.business_types.name}`}
                     </span>
                   </button>
                 ))}
@@ -326,13 +331,12 @@ function ActivationFlow() {
           {step === 3 && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="store">Nama Toko</Label>
+                <Label htmlFor="store">Nama Toko (terdaftar di kontrol)</Label>
                 <Input
                   id="store"
-                  autoFocus
                   value={storeName}
-                  onChange={(e) => setStoreName(e.target.value)}
-                  placeholder={db.settings.name}
+                  readOnly
+                  disabled
                   className="h-11"
                 />
               </div>
@@ -340,6 +344,7 @@ function ActivationFlow() {
                 <Label htmlFor="owner">Nama Pemilik</Label>
                 <Input
                   id="owner"
+                  autoFocus
                   value={ownerName}
                   onChange={(e) => setOwnerName(e.target.value)}
                   className="h-11"
