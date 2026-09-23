@@ -262,7 +262,7 @@ function PengaturanPage() {
                 <div key={u.id} className="flex items-center gap-2 rounded-lg border p-3">
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold">{u.name}</p>
-                    <Badge variant="secondary">{u.role === "owner" ? "Pemilik" : "Kasir"}</Badge>
+                    <Badge variant="secondary">{roleLabel(u.role)}</Badge>
                   </div>
                   <Input
                     value={u.pin}
