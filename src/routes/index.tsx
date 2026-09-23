@@ -69,9 +69,17 @@ interface CartState {
   tableName: string;
   customerName: string;
   billDiscount: number;
+  /** "" = belum memilih layanan */
+  orderType: string;
 }
 
-const EMPTY_CART: CartState = { lines: [], tableName: "", customerName: "", billDiscount: 0 };
+const EMPTY_CART: CartState = {
+  lines: [],
+  tableName: "",
+  customerName: "",
+  billDiscount: 0,
+  orderType: "",
+};
 
 function KasirPage() {
   const { db, update, currentUser } = usePos();
@@ -188,6 +196,7 @@ function KasirPage() {
       change: 0,
       tableName: cart.tableName,
       customerName: cart.customerName,
+      orderType: cart.orderType,
       status,
       reason: "",
     };
@@ -211,11 +220,12 @@ function KasirPage() {
       heldOrders: [
         {
           id: uid("hold"),
-          label: cart.tableName || cart.customerName || "Pesanan",
+          label: [cart.orderType, cart.tableName || cart.customerName].filter(Boolean).join(" • ") || "Pesanan",
           createdAt: new Date().toISOString(),
           items: cart.lines,
           tableName: cart.tableName,
           customerName: cart.customerName,
+          orderType: cart.orderType,
         },
         ...current.heldOrders,
       ],
@@ -234,11 +244,12 @@ function KasirPage() {
       heldOrders: [
         {
           id: uid("hold"),
-          label: cart.tableName || cart.customerName || "Pesanan",
+          label: [cart.orderType, cart.tableName || cart.customerName].filter(Boolean).join(" • ") || "Pesanan",
           createdAt: new Date().toISOString(),
           items: cart.lines,
           tableName: cart.tableName,
           customerName: cart.customerName,
+          orderType: cart.orderType,
         },
         ...current.heldOrders,
       ],
@@ -255,6 +266,7 @@ function KasirPage() {
       tableName: held.tableName,
       customerName: held.customerName,
       billDiscount: 0,
+      orderType: held.orderType || "Take Out",
     });
     update((current) => ({
       ...current,
@@ -297,11 +309,36 @@ function KasirPage() {
 
   const itemCount = cart.lines.reduce((sum, l) => sum + l.qty, 0);
 
+  if (hydrated && !cart.orderType) {
+    return (
+      <ServicePicker
+        onPick={(orderType, tableName) => setCart((prev) => ({ ...prev, orderType, tableName }))}
+        heldCount={db.heldOrders.length}
+        onHeld={() => setHeldOpen(true)}
+        heldDialog={null}
+      />
+    );
+  }
+
   return (
     <div className="flex min-h-[calc(100vh-56px)] flex-col lg:h-screen lg:flex-row">
       {/* Daftar produk */}
       <section className="flex min-w-0 flex-1 flex-col">
         <div className="space-y-3 border-b bg-card px-4 py-3">
+          <div className="flex items-center justify-between gap-2 rounded-lg bg-primary/10 px-3 py-2">
+            <span className="text-sm font-semibold text-primary">
+              {cart.orderType}
+              {cart.tableName && ` • ${cart.tableName}`}
+            </span>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8"
+              onClick={() => setCart((prev) => ({ ...prev, orderType: "", tableName: "" }))}
+            >
+              Ganti layanan
+            </Button>
+          </div>
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -578,7 +615,7 @@ function CartPanel({
   return (
     <div className="flex h-full flex-col">
       <div className="space-y-2 border-b px-4 py-3">
-        {type === "kuliner" && (
+        {cart.orderType === "Dine In" && (
           <div className="flex flex-wrap gap-2">
             {db.tables.map((t) => (
               <button
@@ -587,7 +624,7 @@ function CartPanel({
                 onClick={() =>
                   setCart((prev) => ({
                     ...prev,
-                    tableName: prev.tableName === t.name ? "" : t.name,
+                    tableName: t.name,
                   }))
                 }
                 className={`rounded-lg border px-3 py-1.5 text-xs font-medium ${
