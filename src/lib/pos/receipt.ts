@@ -121,10 +121,21 @@ export function buildReceipt(
     const out: string[] = [];
     out.push(center("PESANAN DAPUR", width));
     out.push(divider(width, "="));
-    out.push(twoCol(sale.tableName || sale.orderType || sale.customerName || "Take Out", sale.code, width));
+    out.push(
+      twoCol(
+        sale.tableName || sale.orderType || sale.customerName || "Take Out",
+        sale.orderNo || sale.code,
+        width,
+      ),
+    );
+    if (sale.orderType) out.push(sale.orderType);
     out.push(new Date(sale.createdAt).toLocaleString("id-ID"));
     out.push(divider(width));
     itemLines(sale, width, false).forEach((l) => out.push(l));
+    if (sale.note) {
+      out.push(divider(width));
+      wrap("CATATAN: " + sale.note, width).forEach((l) => out.push(l));
+    }
     out.push(divider(width));
     for (let i = 0; i < printer.marginBottom; i++) out.push("");
     return out;
