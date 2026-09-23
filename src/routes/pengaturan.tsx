@@ -10,7 +10,8 @@ import { uid } from "@/lib/pos/format";
 import { buildReceipt } from "@/lib/pos/receipt";
 import { bluetoothSupported, pickBluetoothPrinter } from "@/lib/pos/print";
 import { seedForBusiness } from "@/lib/pos/seed";
-import type { BusinessType, PosDatabase, Sale } from "@/lib/pos/types";
+import type { BusinessType, PosDatabase, Sale, UserRole } from "@/lib/pos/types";
+import { roleLabel } from "@/lib/pos/roles";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,7 +57,7 @@ function PengaturanPage() {
   const [printLines, setPrintLines] = useState<string[] | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const [newUser, setNewUser] = useState({ name: "", pin: "", role: "cashier" as "owner" | "cashier" });
+  const [newUser, setNewUser] = useState({ name: "", pin: "", role: "cashier" as UserRole });
   const [newMethod, setNewMethod] = useState("");
   const [newChannel, setNewChannel] = useState("");
   const [newTable, setNewTable] = useState("");
@@ -246,6 +247,42 @@ function PengaturanPage() {
               )}
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Nomor Order</CardTitle>
+              <CardDescription>
+                Format [kode layanan]-[6 digit]. TO = Take Out, DI = Dine In, OL = Online Order.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Field label="Nomor urut berikutnya">
+                <Input
+                  id="order-seq"
+                  inputMode="numeric"
+                  value={String(db.settings.orderSeq ?? 1)}
+                  onChange={(e) =>
+                    setSettings({
+                      orderSeq: Math.max(1, Number(e.target.value.replace(/\D/g, "")) || 1),
+                    })
+                  }
+                  className="tabular h-11 max-w-32 font-mono"
+                />
+              </Field>
+              <p className="text-sm text-muted-foreground">
+                Contoh nomor berikutnya: <span className="font-mono">DI-{String(db.settings.orderSeq ?? 1).padStart(6, "0")}</span>
+              </p>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setSettings({ orderSeq: 1 });
+                  toast.success("Nomor order direset ke 000001.");
+                }}
+              >
+                Reset nomor order
+              </Button>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="pengguna" className="space-y-4">
@@ -261,7 +298,7 @@ function PengaturanPage() {
                 <div key={u.id} className="flex items-center gap-2 rounded-lg border p-3">
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold">{u.name}</p>
-                    <Badge variant="secondary">{u.role === "owner" ? "Pemilik" : "Kasir"}</Badge>
+                    <Badge variant="secondary">{roleLabel(u.role)}</Badge>
                   </div>
                   <Input
                     value={u.pin}
@@ -317,13 +354,15 @@ function PengaturanPage() {
                 <Field label="Peran">
                   <Select
                     value={newUser.role}
-                    onValueChange={(v) => setNewUser({ ...newUser, role: v as "owner" | "cashier" })}
+                    onValueChange={(v) => setNewUser({ ...newUser, role: v as UserRole })}
                   >
-                    <SelectTrigger className="h-10 w-32">
+                    <SelectTrigger className="h-10 w-36">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="cashier">Kasir</SelectItem>
+                      <SelectItem value="supervisor">Supervisor</SelectItem>
+                      <SelectItem value="manager">Manager</SelectItem>
                       <SelectItem value="owner">Pemilik</SelectItem>
                     </SelectContent>
                   </Select>

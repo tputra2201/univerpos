@@ -13,10 +13,11 @@ export function lineTotal(line: CartLine): number {
 }
 
 export function computeTotals(
-  lines: CartLine[],
+  allLines: CartLine[],
   settings: StoreSettings,
   billDiscount: number,
 ): Totals {
+  const lines = allLines.filter((l) => !l.voided);
   const gross = lines.reduce((sum, l) => sum + l.unitPrice * l.qty, 0);
   const itemDiscount = lines.reduce((sum, l) => sum + l.discount, 0);
   const discount = Math.min(gross, itemDiscount + Math.max(0, billDiscount));

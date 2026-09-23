@@ -35,6 +35,7 @@ export function emptyDatabase(): PosDatabase {
       taxPercent: 11,
       serviceEnabled: false,
       servicePercent: 5,
+      orderSeq: 1,
     },
     printer: {
       paperWidth: 32,

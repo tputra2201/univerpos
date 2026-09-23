@@ -25,6 +25,7 @@ import { rupiah, uid } from "@/lib/pos/format";
 import { buildReceipt } from "@/lib/pos/receipt";
 import { printViaDialog } from "@/lib/pos/print";
 import { CART_STORAGE_KEY, readLocal, writeLocal } from "@/lib/pos/storage";
+import { canAuthorizeVoid, formatOrderNo, roleLabel } from "@/lib/pos/roles";
 import type { CartLine, Product, Sale, SalePayment } from "@/lib/pos/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,6 +77,12 @@ interface CartState {
   orderType: string;
   /** id pesanan tersimpan yang sedang dibuka */
   heldId?: string;
+  /** catatan pesanan */
+  note: string;
+  /** nomor order, format KODE-000001 */
+  orderNo: string;
+  /** sudah dikirim ke dapur */
+  sentToKitchen: boolean;
 }
 
 const EMPTY_CART: CartState = {
@@ -84,6 +91,9 @@ const EMPTY_CART: CartState = {
   customerName: "",
   billDiscount: 0,
   orderType: "",
+  note: "",
+  orderNo: "",
+  sentToKitchen: false,
 };
 
 function KasirPage() {
@@ -95,6 +105,7 @@ function KasirPage() {
   const [categoryId, setCategoryId] = useState<string>("all");
   const [variantProduct, setVariantProduct] = useState<Product | null>(null);
   const [editLine, setEditLine] = useState<CartLine | null>(null);
+  const [voidTarget, setVoidTarget] = useState<CartLine | null>(null);
   const [payOpen, setPayOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [heldOpen, setHeldOpen] = useState(false);
@@ -163,6 +174,12 @@ function KasirPage() {
   }
 
   function changeQty(lineId: string, delta: number) {
+    const target = cart.lines.find((l) => l.lineId === lineId);
+    if (!target || target.voided) return;
+    if (target.sentToKitchen && delta < 0) {
+      toast.error("Item sudah dikirim ke dapur. Gunakan Void untuk membatalkan.");
+      return;
+    }
     setCart((prev) => ({
       ...prev,
       lines: prev.lines
@@ -172,6 +189,13 @@ function KasirPage() {
   }
 
   function removeLine(lineId: string) {
+    const target = cart.lines.find((l) => l.lineId === lineId);
+    if (!target) return;
+    if (target.sentToKitchen) {
+      if (target.voided) return;
+      setVoidTarget(target);
+      return;
+    }
     setCart((prev) => ({ ...prev, lines: prev.lines.filter((l) => l.lineId !== lineId) }));
   }
 
@@ -183,14 +207,30 @@ function KasirPage() {
     setEditLine(null);
   }
 
-  function draftSale(status: Sale["status"] = "paid"): Sale {
+  /** Ambil nomor order yang sudah ada, atau buat baru dari nomor urut toko. */
+  function ensureOrderNo(): string {
+    if (cart.orderNo) return cart.orderNo;
+    const seq = Math.max(1, settings.orderSeq || 1);
+    const no = formatOrderNo(cart.orderType, seq);
+    update((current) => ({
+      ...current,
+      settings: { ...current.settings, orderSeq: Math.max(1, current.settings.orderSeq || 1) + 1 },
+    }));
+    setCart((prev) => ({ ...prev, orderNo: no }));
+    return no;
+  }
+
+  function draftSale(
+    status: Sale["status"] = "paid",
+    override: { lines?: CartLine[]; orderNo?: string } = {},
+  ): Sale {
     return {
       id: uid("sale"),
       code: "TRX" + new Date().toISOString().slice(2, 10).replace(/-/g, "") + "-" +
         String(db.sales.length + 1).padStart(4, "0"),
       createdAt: new Date().toISOString(),
       userName: currentUser?.name ?? "Kasir",
-      items: cart.lines,
+      items: override.lines ?? cart.lines,
       subtotal: totals.subtotal,
       discount: totals.discount,
       tax: totals.tax,
@@ -202,6 +242,8 @@ function KasirPage() {
       tableName: cart.tableName,
       customerName: cart.customerName,
       orderType: cart.orderType,
+      orderNo: override.orderNo ?? cart.orderNo,
+      note: cart.note,
       status,
       reason: "",
     };
@@ -214,30 +256,41 @@ function KasirPage() {
 
   function printBill() {
     if (cart.lines.length === 0) return;
-    showPrint("Bill Sementara", buildReceipt("bill", draftSale(), settings, db.printer));
+    const orderNo = ensureOrderNo();
+    showPrint("Bill Sementara", buildReceipt("bill", draftSale("paid", { orderNo }), settings, db.printer));
   }
 
   function sendToKitchen() {
-    if (cart.lines.length === 0) return;
-    const sale = draftSale();
-    saveHeld();
+    if (cart.lines.filter((l) => !l.voided).length === 0) return;
+    const orderNo = ensureOrderNo();
+    const lines = cart.lines.map((l) => ({ ...l, sentToKitchen: true }));
+    const sale = draftSale("paid", { lines, orderNo });
+    saveHeld({ lines, orderNo, sentToKitchen: true });
     const order = buildReceipt("order", sale, settings, db.printer);
     const label = buildReceipt("label", sale, settings, db.printer);
     printViaDialog([...order, "", ...label], db.printer.paperWidth);
-    setCart(EMPTY_CART);
-    toast.success("Pesanan dikirim ke dapur dan disimpan sebagai pesanan tertahan.");
+    setCart((prev) => ({ ...prev, lines, orderNo, sentToKitchen: true }));
+    toast.success(`Pesanan ${orderNo} dikirim ke dapur.`);
   }
 
-  function saveHeld() {
+  function saveHeld(
+    override: { lines?: CartLine[]; orderNo?: string; sentToKitchen?: boolean } = {},
+  ) {
     const id = cart.heldId ?? uid("hold");
+    const orderNo = override.orderNo ?? cart.orderNo;
     const entry = {
       id,
-      label: [cart.orderType, cart.tableName || cart.customerName].filter(Boolean).join(" • ") || "Pesanan",
+      label:
+        [orderNo, cart.orderType, cart.tableName || cart.customerName].filter(Boolean).join(" • ") ||
+        "Pesanan",
       createdAt: db.heldOrders.find((h) => h.id === id)?.createdAt ?? new Date().toISOString(),
-      items: cart.lines,
+      items: override.lines ?? cart.lines,
       tableName: cart.tableName,
       customerName: cart.customerName,
       orderType: cart.orderType,
+      orderNo,
+      note: cart.note,
+      sentToKitchen: override.sentToKitchen ?? cart.sentToKitchen,
     };
     update((current) => ({
       ...current,
@@ -245,13 +298,32 @@ function KasirPage() {
         ? current.heldOrders.map((h) => (h.id === id ? entry : h))
         : [entry, ...current.heldOrders],
     }));
+    return id;
   }
 
   function holdOrder() {
     if (cart.lines.length === 0) return;
+    ensureOrderNo();
     saveHeld();
     setCart(EMPTY_CART);
-    toast.success("Pesanan disimpan. Silakan buka pesanan baru.");
+    setCartOpen(false);
+    toast.success("Pesanan ditahan. Silakan buka pesanan baru.");
+  }
+
+  function voidLine(lineId: string, reason: string, byName: string) {
+    const lines = cart.lines.map((l) =>
+      l.lineId === lineId ? { ...l, voided: true, voidReason: reason, voidedBy: byName } : l,
+    );
+    setCart((prev) => ({ ...prev, lines }));
+    if (cart.heldId) {
+      const heldId = cart.heldId;
+      update((current) => ({
+        ...current,
+        heldOrders: current.heldOrders.map((h) => (h.id === heldId ? { ...h, items: lines } : h)),
+      }));
+    }
+    setVoidTarget(null);
+    toast.success("Item di-void dengan otorisasi " + byName + ".");
   }
 
   function recallOrder(id: string) {
@@ -264,6 +336,9 @@ function KasirPage() {
       billDiscount: 0,
       orderType: held.orderType || "Take Out",
       heldId: held.id,
+      note: held.note ?? "",
+      orderNo: held.orderNo ?? "",
+      sentToKitchen: held.sentToKitchen ?? held.items.some((i) => i.sentToKitchen),
     });
     setHeldOpen(false);
     setCartOpen(true);
@@ -303,7 +378,7 @@ function KasirPage() {
     }
   }
 
-  const itemCount = cart.lines.reduce((sum, l) => sum + l.qty, 0);
+  const itemCount = cart.lines.filter((l) => !l.voided).reduce((sum, l) => sum + l.qty, 0);
 
   if (hydrated && !cart.orderType) {
     return (
@@ -321,14 +396,22 @@ function KasirPage() {
         <div className="space-y-3 border-b bg-card px-4 py-3">
           <div className="flex items-center justify-between gap-2 rounded-lg bg-primary/10 px-3 py-2">
             <span className="text-sm font-semibold text-primary">
+              {cart.orderNo && <span className="tabular mr-2 font-mono">{cart.orderNo}</span>}
               {cart.orderType}
               {cart.tableName && ` • ${cart.tableName}`}
+              {cart.sentToKitchen && <span className="ml-2 text-xs">• sudah di dapur</span>}
             </span>
             <Button
               size="sm"
               variant="ghost"
               className="h-8"
-              onClick={() => setCart((prev) => ({ ...prev, orderType: "", tableName: "" }))}
+              onClick={() => {
+                if (cart.lines.length > 0) {
+                  toast.error("Tahan atau selesaikan pesanan ini dulu sebelum ganti layanan.");
+                  return;
+                }
+                setCart(EMPTY_CART);
+              }}
             >
               Ganti layanan
             </Button>
@@ -498,6 +581,12 @@ function KasirPage() {
         showStaff={settings.businessType === "jasa"}
       />
 
+      <VoidDialog
+        line={voidTarget}
+        onClose={() => setVoidTarget(null)}
+        onConfirm={voidLine}
+      />
+
       <PaymentDialog
         open={payOpen}
         onOpenChange={setPayOpen}
@@ -522,12 +611,18 @@ function KasirPage() {
                     size="icon"
                     variant="ghost"
                     aria-label="Hapus"
-                    onClick={() =>
+                    onClick={() => {
+                      if (h.sentToKitchen) {
+                        toast.error(
+                          "Pesanan sudah dikirim ke dapur. Buka pesanan lalu void itemnya dengan otorisasi supervisor.",
+                        );
+                        return;
+                      }
                       update((current) => ({
                         ...current,
                         heldOrders: current.heldOrders.filter((x) => x.id !== h.id),
-                      }))
-                    }
+                      }));
+                    }}
                   >
                     <X className="size-4" />
                   </Button>
@@ -732,11 +827,24 @@ function CartPanel({
             ))}
           </div>
         )}
+        {cart.orderNo && (
+          <p className="tabular font-mono text-xs font-semibold text-primary">
+            Nomor order {cart.orderNo}
+          </p>
+        )}
         <Input
           value={cart.customerName}
           onChange={(e) => setCart((prev) => ({ ...prev, customerName: e.target.value }))}
           placeholder={type === "jasa" ? "Nama pelanggan" : "Nama pelanggan (opsional)"}
           className="h-10"
+        />
+        <Textarea
+          id="order-note"
+          value={cart.note}
+          onChange={(e) => setCart((prev) => ({ ...prev, note: e.target.value }))}
+          placeholder="Catatan pesanan (opsional)"
+          className="min-h-9"
+          rows={2}
         />
       </div>
 
@@ -748,19 +856,35 @@ function CartPanel({
         ) : (
           <ul className="space-y-1">
             {cart.lines.map((line) => (
-              <li key={line.lineId} className="rounded-lg p-2 hover:bg-muted/60">
+              <li
+                key={line.lineId}
+                className={`rounded-lg p-2 hover:bg-muted/60 ${line.voided ? "opacity-60" : ""}`}
+              >
                 <div className="flex items-start justify-between gap-2">
                   <button
                     type="button"
                     className="min-w-0 flex-1 text-left"
+                    disabled={line.voided}
                     onClick={() => onEditLine(line)}
                   >
-                    <p className="truncate text-sm font-semibold">
+                    <p
+                      className={`truncate text-sm font-semibold ${line.voided ? "line-through" : ""}`}
+                    >
                       {line.name}
                       {line.variantName && (
                         <span className="text-muted-foreground"> · {line.variantName}</span>
                       )}
                     </p>
+                    {line.voided ? (
+                      <p className="text-xs font-medium text-destructive">
+                        VOID{line.voidReason ? ` · ${line.voidReason}` : ""}
+                        {line.voidedBy ? ` · oleh ${line.voidedBy}` : ""}
+                      </p>
+                    ) : (
+                      line.sentToKitchen && (
+                        <p className="text-xs font-medium text-primary">Sudah di dapur</p>
+                      )
+                    )}
                     <p className="tabular text-xs text-muted-foreground">
                       {rupiah(line.unitPrice)}
                       {line.discount > 0 && ` · diskon ${rupiah(line.discount)}`}
@@ -776,6 +900,7 @@ function CartPanel({
                       variant="secondary"
                       className="size-8"
                       aria-label="Kurangi"
+                      disabled={line.voided || line.sentToKitchen}
                       onClick={() => onChangeQty(line.lineId, -1)}
                     >
                       <Minus className="size-3.5" />
@@ -786,23 +911,36 @@ function CartPanel({
                       variant="secondary"
                       className="size-8"
                       aria-label="Tambah"
+                      disabled={line.voided}
                       onClick={() => onChangeQty(line.lineId, 1)}
                     >
                       <Plus className="size-3.5" />
                     </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="size-8 text-muted-foreground"
-                      aria-label="Hapus"
-                      onClick={() => onRemoveLine(line.lineId)}
-                    >
-                      <Trash2 className="size-3.5" />
-                    </Button>
+                    {line.sentToKitchen ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 px-2 text-xs font-semibold text-destructive"
+                        disabled={line.voided}
+                        onClick={() => onRemoveLine(line.lineId)}
+                      >
+                        Void
+                      </Button>
+                    ) : (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="size-8 text-muted-foreground"
+                        aria-label="Hapus"
+                        onClick={() => onRemoveLine(line.lineId)}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    )}
                   </div>
                 </div>
                 <p className="tabular mt-1 text-right text-sm font-semibold">
-                  {rupiah(lineTotal(line))}
+                  {line.voided ? "—" : rupiah(lineTotal(line))}
                 </p>
               </li>
             ))}
@@ -853,14 +991,14 @@ function CartPanel({
           >
             <ReceiptText className="size-4" /> Bill
           </Button>
-          {type === "kuliner" ? (
+          {type === "kuliner" && cart.lines.some((l) => !l.sentToKitchen && !l.voided) ? (
             <Button
               variant="secondary"
               className="h-11 gap-2"
               disabled={cart.lines.length === 0}
               onClick={onKitchen}
             >
-              <ChefHat className="size-4" /> Ke Dapur
+              <ChefHat className="size-4" /> Sent to Kitchen
             </Button>
           ) : (
             <Button
@@ -869,7 +1007,7 @@ function CartPanel({
               disabled={cart.lines.length === 0}
               onClick={onHold}
             >
-              <Pause className="size-4" /> Tahan
+              <Pause className="size-4" /> Hold
             </Button>
           )}
         </div>
@@ -1125,6 +1263,84 @@ function PaymentDialog({
           <Button className="h-12 text-base font-bold" onClick={finish}>
             Selesaikan
           </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function VoidDialog({
+  line,
+  onClose,
+  onConfirm,
+}: {
+  line: CartLine | null;
+  onClose: () => void;
+  onConfirm: (lineId: string, reason: string, byName: string) => void;
+}) {
+  const { db } = usePos();
+  const [pin, setPin] = useState("");
+  const [reason, setReason] = useState("");
+
+  useEffect(() => {
+    if (line) {
+      setPin("");
+      setReason("");
+    }
+  }, [line]);
+
+  function submit() {
+    if (!line) return;
+    const approver = db.users.find((u) => u.pin === pin && canAuthorizeVoid(u.role));
+    if (!approver) {
+      toast.error("PIN tidak valid atau peran tidak berwenang. Perlu supervisor/manager.");
+      return;
+    }
+    if (!reason.trim()) {
+      toast.error("Alasan void wajib diisi.");
+      return;
+    }
+    onConfirm(line.lineId, reason.trim(), `${approver.name} (${roleLabel(approver.role)})`);
+    toast.success("Item di-void.");
+  }
+
+  return (
+    <Dialog open={!!line} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Void item</DialogTitle>
+          <DialogDescription>
+            {line?.name} sudah dikirim ke dapur, jadi tidak bisa dihapus. Void memerlukan otorisasi
+            supervisor atau manager.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-3">
+          <div className="grid gap-1.5">
+            <Label htmlFor="void-reason">Alasan</Label>
+            <Input
+              id="void-reason"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Contoh: salah input"
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="void-pin">PIN supervisor/manager</Label>
+            <Input
+              id="void-pin"
+              type="password"
+              inputMode="numeric"
+              value={pin}
+              onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              placeholder="••••"
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="secondary" onClick={onClose}>
+            Batal
+          </Button>
+          <Button onClick={submit}>Void item</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

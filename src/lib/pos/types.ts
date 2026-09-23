@@ -11,6 +11,8 @@ export interface StoreSettings {
   taxPercent: number;
   serviceEnabled: boolean;
   servicePercent: number;
+  /** Nomor urut berikutnya untuk nomor order (format KODE-000001). */
+  orderSeq: number;
 }
 
 export interface PrinterSettings {
@@ -24,7 +26,7 @@ export interface PrinterSettings {
   deviceName: string;
 }
 
-export type UserRole = "owner" | "cashier";
+export type UserRole = "owner" | "manager" | "supervisor" | "cashier";
 
 export interface PosUser {
   id: string;
@@ -89,6 +91,11 @@ export interface CartLine {
   note: string;
   discount: number;
   staffName: string;
+  /** Sudah dikirim ke dapur: tidak bisa dihapus, hanya bisa di-void. */
+  sentToKitchen?: boolean;
+  voided?: boolean;
+  voidReason?: string;
+  voidedBy?: string;
 }
 
 export interface SalePayment {
@@ -120,6 +127,10 @@ export interface Sale {
   customerName: string;
   /** Jenis layanan: Take Out, Dine In, atau nama kanal online. */
   orderType?: string;
+  /** Nomor order, format KODE-000001. */
+  orderNo?: string;
+  /** Catatan pesanan (tingkat transaksi). */
+  note?: string;
   status: SaleStatus;
   reason: string;
 }
@@ -132,6 +143,9 @@ export interface HeldOrder {
   tableName: string;
   customerName: string;
   orderType?: string;
+  orderNo?: string;
+  note?: string;
+  sentToKitchen?: boolean;
 }
 
 export interface Shift {

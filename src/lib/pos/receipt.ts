@@ -63,6 +63,7 @@ function headerLines(
 function itemLines(sale: Sale, width: number, withPrice: boolean): string[] {
   const out: string[] = [];
   for (const item of sale.items) {
+    if (item.voided) continue;
     const title = item.variantName ? `${item.name} (${item.variantName})` : item.name;
     wrap(title, width).forEach((l) => out.push(l));
     if (withPrice) {
@@ -103,9 +104,9 @@ export function buildReceipt(
 
   if (kind === "label") {
     const out: string[] = [];
-    sale.items.forEach((item, idx) => {
+    sale.items.filter((i) => !i.voided).forEach((item, idx) => {
       if (idx > 0) out.push(divider(width, "="));
-      out.push(center(sale.customerName || sale.tableName || sale.code, width));
+      out.push(center(sale.orderNo || sale.customerName || sale.tableName || sale.code, width));
       wrap(item.variantName ? `${item.name} - ${item.variantName}` : item.name, width).forEach(
         (l) => out.push(l),
       );
@@ -120,10 +121,21 @@ export function buildReceipt(
     const out: string[] = [];
     out.push(center("PESANAN DAPUR", width));
     out.push(divider(width, "="));
-    out.push(twoCol(sale.tableName || sale.orderType || sale.customerName || "Take Out", sale.code, width));
+    out.push(
+      twoCol(
+        sale.tableName || sale.orderType || sale.customerName || "Take Out",
+        sale.orderNo || sale.code,
+        width,
+      ),
+    );
+    if (sale.orderType) out.push(sale.orderType);
     out.push(new Date(sale.createdAt).toLocaleString("id-ID"));
     out.push(divider(width));
     itemLines(sale, width, false).forEach((l) => out.push(l));
+    if (sale.note) {
+      out.push(divider(width));
+      wrap("CATATAN: " + sale.note, width).forEach((l) => out.push(l));
+    }
     out.push(divider(width));
     for (let i = 0; i < printer.marginBottom; i++) out.push("");
     return out;
@@ -135,6 +147,7 @@ export function buildReceipt(
     out.push(center("BILL / TAGIHAN SEMENTARA", width));
     out.push(divider(width, "="));
   }
+  if (sale.orderNo) out.push(twoCol("Order", sale.orderNo, width));
   out.push(twoCol("No", sale.code, width));
   out.push(twoCol("Kasir", sale.userName, width));
   out.push(twoCol("Waktu", new Date(sale.createdAt).toLocaleString("id-ID"), width));
@@ -143,6 +156,7 @@ export function buildReceipt(
   if (sale.customerName) out.push(twoCol("Pelanggan", sale.customerName, width));
   out.push(divider(width));
   itemLines(sale, width, true).forEach((l) => out.push(l));
+  if (sale.note) wrap("Catatan: " + sale.note, width).forEach((l) => out.push(l));
   out.push(divider(width));
   out.push(twoCol("Subtotal", money(sale.subtotal), width));
   if (sale.discount > 0) out.push(twoCol("Diskon", "-" + money(sale.discount), width));
