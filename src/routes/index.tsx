@@ -105,6 +105,7 @@ function KasirPage() {
   const [categoryId, setCategoryId] = useState<string>("all");
   const [variantProduct, setVariantProduct] = useState<Product | null>(null);
   const [editLine, setEditLine] = useState<CartLine | null>(null);
+  const [voidTarget, setVoidTarget] = useState<CartLine | null>(null);
   const [payOpen, setPayOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [heldOpen, setHeldOpen] = useState(false);
