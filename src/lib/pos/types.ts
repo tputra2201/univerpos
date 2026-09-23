@@ -13,6 +13,8 @@ export interface StoreSettings {
   servicePercent: number;
   /** Nomor urut berikutnya untuk nomor order (format KODE-000001). */
   orderSeq: number;
+  /** Mode toko dari panel kontrol: online dicek berkala, offline hanya saat aktivasi. */
+  storeMode?: "online" | "offline";
 }
 
 export interface PrinterSettings {
@@ -76,6 +78,17 @@ export interface OnlineChannel {
   active: boolean;
 }
 
+export type ServiceKind = "takeout" | "dinein" | "online";
+
+export interface ServiceType {
+  id: string;
+  name: string;
+  /** Kode untuk nomor order, mis. TO / DI / OL */
+  code: string;
+  kind: ServiceKind;
+  active: boolean;
+}
+
 export interface Staff {
   id: string;
   name: string;
@@ -136,6 +149,7 @@ export interface Sale {
 }
 
 export interface HeldOrder {
+  serviceId?: string;
   id: string;
   label: string;
   createdAt: string;
@@ -179,6 +193,7 @@ export interface PosDatabase {
   tables: TableRef[];
   staff: Staff[];
   onlineChannels: OnlineChannel[];
+  serviceTypes?: ServiceType[];
   sales: Sale[];
   heldOrders: HeldOrder[];
   kitchenOrders?: KitchenOrder[];

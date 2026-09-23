@@ -1,4 +1,4 @@
-import type { BusinessType, PosDatabase, Product } from "./types";
+import type { BusinessType, PosDatabase, Product, ServiceType } from "./types";
 import { uid } from "./format";
 
 function p(
@@ -19,6 +19,18 @@ function p(
     variants: [],
     ...extra,
   };
+}
+
+export function defaultServiceTypes(): ServiceType[] {
+  return [
+    { id: "svc_takeout", name: "Take Out", code: "TO", kind: "takeout", active: true },
+    { id: "svc_dinein", name: "Dine In", code: "DI", kind: "dinein", active: true },
+    { id: "svc_online", name: "Online Order", code: "OL", kind: "online", active: true },
+  ];
+}
+
+export function getServiceTypes(db: PosDatabase): ServiceType[] {
+  return db.serviceTypes ?? defaultServiceTypes();
 }
 
 export function emptyDatabase(): PosDatabase {
@@ -63,6 +75,7 @@ export function emptyDatabase(): PosDatabase {
       { id: "oc_gofood", name: "GoFood", active: true },
       { id: "oc_shopee", name: "ShopeeFood", active: true },
     ],
+    serviceTypes: defaultServiceTypes(),
     sales: [],
     heldOrders: [],
     kitchenOrders: [],
