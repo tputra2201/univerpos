@@ -174,6 +174,12 @@ function KasirPage() {
   }
 
   function changeQty(lineId: string, delta: number) {
+    const target = cart.lines.find((l) => l.lineId === lineId);
+    if (!target || target.voided) return;
+    if (target.sentToKitchen && delta < 0) {
+      toast.error("Item sudah dikirim ke dapur. Gunakan Void untuk membatalkan.");
+      return;
+    }
     setCart((prev) => ({
       ...prev,
       lines: prev.lines
@@ -183,6 +189,13 @@ function KasirPage() {
   }
 
   function removeLine(lineId: string) {
+    const target = cart.lines.find((l) => l.lineId === lineId);
+    if (!target) return;
+    if (target.sentToKitchen) {
+      if (target.voided) return;
+      setVoidTarget(target);
+      return;
+    }
     setCart((prev) => ({ ...prev, lines: prev.lines.filter((l) => l.lineId !== lineId) }));
   }
 
