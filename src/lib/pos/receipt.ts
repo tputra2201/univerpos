@@ -156,6 +156,7 @@ export function buildReceipt(
   if (sale.customerName) out.push(twoCol("Pelanggan", sale.customerName, width));
   out.push(divider(width));
   itemLines(sale, width, true).forEach((l) => out.push(l));
+  if (sale.note) wrap("Catatan: " + sale.note, width).forEach((l) => out.push(l));
   out.push(divider(width));
   out.push(twoCol("Subtotal", money(sale.subtotal), width));
   if (sale.discount > 0) out.push(twoCol("Diskon", "-" + money(sale.discount), width));
