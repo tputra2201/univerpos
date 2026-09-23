@@ -104,9 +104,9 @@ export function buildReceipt(
 
   if (kind === "label") {
     const out: string[] = [];
-    sale.items.forEach((item, idx) => {
+    sale.items.filter((i) => !i.voided).forEach((item, idx) => {
       if (idx > 0) out.push(divider(width, "="));
-      out.push(center(sale.customerName || sale.tableName || sale.code, width));
+      out.push(center(sale.orderNo || sale.customerName || sale.tableName || sale.code, width));
       wrap(item.variantName ? `${item.name} - ${item.variantName}` : item.name, width).forEach(
         (l) => out.push(l),
       );
