@@ -376,6 +376,21 @@ function AccountsPanel({ selfId }: { selfId: string }) {
     }
   }
 
+  async function saveEdit() {
+    if (!edit) return;
+    setSaving(true);
+    try {
+      await save({ data: { userId: edit.userId, name: edit.name, email: edit.email } });
+      toast.success("Akun diperbarui.");
+      setEdit(null);
+      void load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Gagal memperbarui akun.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="space-y-4">
       <Card>
