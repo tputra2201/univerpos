@@ -229,6 +229,7 @@ function StoresPanel() {
     toast.success(`Toko terdaftar dengan kode ${code}`);
     setForm({ name: "", code: "", mode: "offline", notes: "" });
     void load();
+    return undefined;
   }
 
   async function patch(id: string, values: Partial<StoreRow>) {
