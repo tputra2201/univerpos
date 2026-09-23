@@ -193,14 +193,30 @@ function KasirPage() {
     setEditLine(null);
   }
 
-  function draftSale(status: Sale["status"] = "paid"): Sale {
+  /** Ambil nomor order yang sudah ada, atau buat baru dari nomor urut toko. */
+  function ensureOrderNo(): string {
+    if (cart.orderNo) return cart.orderNo;
+    const seq = Math.max(1, settings.orderSeq || 1);
+    const no = formatOrderNo(cart.orderType, seq);
+    update((current) => ({
+      ...current,
+      settings: { ...current.settings, orderSeq: Math.max(1, current.settings.orderSeq || 1) + 1 },
+    }));
+    setCart((prev) => ({ ...prev, orderNo: no }));
+    return no;
+  }
+
+  function draftSale(
+    status: Sale["status"] = "paid",
+    override: { lines?: CartLine[]; orderNo?: string } = {},
+  ): Sale {
     return {
       id: uid("sale"),
       code: "TRX" + new Date().toISOString().slice(2, 10).replace(/-/g, "") + "-" +
         String(db.sales.length + 1).padStart(4, "0"),
       createdAt: new Date().toISOString(),
       userName: currentUser?.name ?? "Kasir",
-      items: cart.lines,
+      items: override.lines ?? cart.lines,
       subtotal: totals.subtotal,
       discount: totals.discount,
       tax: totals.tax,
@@ -212,6 +228,8 @@ function KasirPage() {
       tableName: cart.tableName,
       customerName: cart.customerName,
       orderType: cart.orderType,
+      orderNo: override.orderNo ?? cart.orderNo,
+      note: cart.note,
       status,
       reason: "",
     };
@@ -224,30 +242,41 @@ function KasirPage() {
 
   function printBill() {
     if (cart.lines.length === 0) return;
-    showPrint("Bill Sementara", buildReceipt("bill", draftSale(), settings, db.printer));
+    const orderNo = ensureOrderNo();
+    showPrint("Bill Sementara", buildReceipt("bill", draftSale("paid", { orderNo }), settings, db.printer));
   }
 
   function sendToKitchen() {
-    if (cart.lines.length === 0) return;
-    const sale = draftSale();
-    saveHeld();
+    if (cart.lines.filter((l) => !l.voided).length === 0) return;
+    const orderNo = ensureOrderNo();
+    const lines = cart.lines.map((l) => ({ ...l, sentToKitchen: true }));
+    const sale = draftSale("paid", { lines, orderNo });
+    saveHeld({ lines, orderNo, sentToKitchen: true });
     const order = buildReceipt("order", sale, settings, db.printer);
     const label = buildReceipt("label", sale, settings, db.printer);
     printViaDialog([...order, "", ...label], db.printer.paperWidth);
-    setCart(EMPTY_CART);
-    toast.success("Pesanan dikirim ke dapur dan disimpan sebagai pesanan tertahan.");
+    setCart((prev) => ({ ...prev, lines, orderNo, sentToKitchen: true }));
+    toast.success(`Pesanan ${orderNo} dikirim ke dapur.`);
   }
 
-  function saveHeld() {
+  function saveHeld(
+    override: { lines?: CartLine[]; orderNo?: string; sentToKitchen?: boolean } = {},
+  ) {
     const id = cart.heldId ?? uid("hold");
+    const orderNo = override.orderNo ?? cart.orderNo;
     const entry = {
       id,
-      label: [cart.orderType, cart.tableName || cart.customerName].filter(Boolean).join(" • ") || "Pesanan",
+      label:
+        [orderNo, cart.orderType, cart.tableName || cart.customerName].filter(Boolean).join(" • ") ||
+        "Pesanan",
       createdAt: db.heldOrders.find((h) => h.id === id)?.createdAt ?? new Date().toISOString(),
-      items: cart.lines,
+      items: override.lines ?? cart.lines,
       tableName: cart.tableName,
       customerName: cart.customerName,
       orderType: cart.orderType,
+      orderNo,
+      note: cart.note,
+      sentToKitchen: override.sentToKitchen ?? cart.sentToKitchen,
     };
     update((current) => ({
       ...current,
@@ -255,13 +284,33 @@ function KasirPage() {
         ? current.heldOrders.map((h) => (h.id === id ? entry : h))
         : [entry, ...current.heldOrders],
     }));
+    return id;
   }
 
   function holdOrder() {
     if (cart.lines.length === 0) return;
+    ensureOrderNo();
     saveHeld();
     setCart(EMPTY_CART);
-    toast.success("Pesanan disimpan. Silakan buka pesanan baru.");
+    setCartOpen(false);
+    toast.success("Pesanan ditahan. Silakan buka pesanan baru.");
+  }
+
+  function voidLine(lineId: string, reason: string, byName: string) {
+    setCart((prev) => {
+      const lines = prev.lines.map((l) =>
+        l.lineId === lineId ? { ...l, voided: true, voidReason: reason, voidedBy: byName } : l,
+      );
+      if (prev.heldId) {
+        update((current) => ({
+          ...current,
+          heldOrders: current.heldOrders.map((h) => (h.id === prev.heldId ? { ...h, items: lines } : h)),
+        }));
+      }
+      return { ...prev, lines };
+    });
+    setVoidLine(null);
+    toast.success("Item di-void dengan otorisasi " + byName + ".");
   }
 
   function recallOrder(id: string) {
@@ -274,6 +323,9 @@ function KasirPage() {
       billDiscount: 0,
       orderType: held.orderType || "Take Out",
       heldId: held.id,
+      note: held.note ?? "",
+      orderNo: held.orderNo ?? "",
+      sentToKitchen: held.sentToKitchen ?? held.items.some((i) => i.sentToKitchen),
     });
     setHeldOpen(false);
     setCartOpen(true);
