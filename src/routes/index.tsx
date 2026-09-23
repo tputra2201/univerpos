@@ -980,7 +980,7 @@ function CartPanel({
           >
             <ReceiptText className="size-4" /> Bill
           </Button>
-          {type === "kuliner" && !cart.sentToKitchen ? (
+          {type === "kuliner" && cart.lines.some((l) => !l.sentToKitchen && !l.voided) ? (
             <Button
               variant="secondary"
               className="h-11 gap-2"
