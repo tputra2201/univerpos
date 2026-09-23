@@ -42,7 +42,7 @@ export function UpdateCard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, reqId]);
 
-  async function request() {
+  async function request(): Promise<unknown> {
     setBusy(true);
     const { data, error } = await supabase.rpc("request_update", {
       _code: db.settings.storeCode,
@@ -55,10 +55,11 @@ export function UpdateCard() {
     setReqId(data as string);
     setStatus("pending");
     toast.success("Permintaan update terkirim ke developer.");
+    return undefined;
   }
 
-  async function apply() {
-    if (!latest || !reqId) return;
+  async function apply(): Promise<unknown> {
+    if (!latest || !reqId) return undefined;
     setBusy(true);
     // Cadangan otomatis sebelum update.
     const blob = new Blob([JSON.stringify(db, null, 2)], { type: "application/json" });
@@ -77,6 +78,7 @@ export function UpdateCard() {
       for (const k of await caches.keys()) await caches.delete(k);
     }
     window.location.reload();
+    return undefined;
   }
 
   const hasUpdate = latest && latest.version !== current;
