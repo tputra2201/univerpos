@@ -146,7 +146,7 @@ export interface HeldOrder {
   orderNo?: string;
   note?: string;
   sentToKitchen?: boolean;
-  kitchenId?: string;
+  kitchenId?: string | undefined;
 }
 
 export interface KitchenOrder {

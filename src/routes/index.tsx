@@ -78,7 +78,7 @@ interface CartState {
   /** id pesanan tersimpan yang sedang dibuka */
   heldId?: string;
   /** id pesanan dapur (Processing) terkait */
-  kitchenId?: string;
+  kitchenId?: string | undefined;
   /** catatan pesanan */
   note: string;
   /** nomor order, format KODE-000001 */
