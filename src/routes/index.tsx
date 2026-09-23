@@ -845,19 +845,35 @@ function CartPanel({
         ) : (
           <ul className="space-y-1">
             {cart.lines.map((line) => (
-              <li key={line.lineId} className="rounded-lg p-2 hover:bg-muted/60">
+              <li
+                key={line.lineId}
+                className={`rounded-lg p-2 hover:bg-muted/60 ${line.voided ? "opacity-60" : ""}`}
+              >
                 <div className="flex items-start justify-between gap-2">
                   <button
                     type="button"
                     className="min-w-0 flex-1 text-left"
+                    disabled={line.voided}
                     onClick={() => onEditLine(line)}
                   >
-                    <p className="truncate text-sm font-semibold">
+                    <p
+                      className={`truncate text-sm font-semibold ${line.voided ? "line-through" : ""}`}
+                    >
                       {line.name}
                       {line.variantName && (
                         <span className="text-muted-foreground"> · {line.variantName}</span>
                       )}
                     </p>
+                    {line.voided ? (
+                      <p className="text-xs font-medium text-destructive">
+                        VOID{line.voidReason ? ` · ${line.voidReason}` : ""}
+                        {line.voidedBy ? ` · oleh ${line.voidedBy}` : ""}
+                      </p>
+                    ) : (
+                      line.sentToKitchen && (
+                        <p className="text-xs font-medium text-primary">Sudah di dapur</p>
+                      )
+                    )}
                     <p className="tabular text-xs text-muted-foreground">
                       {rupiah(line.unitPrice)}
                       {line.discount > 0 && ` · diskon ${rupiah(line.discount)}`}
