@@ -435,13 +435,54 @@ function AccountsPanel({ selfId }: { selfId: string }) {
         <CardContent className="space-y-2">
           {rows.map((r) => (
             <div key={r.id} className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
-              <div className="flex-1">
-                <p className="font-semibold">{r.display_name || r.email}</p>
-                <p className="text-xs text-muted-foreground">{r.email}</p>
-              </div>
-              <Badge variant={r.role === "developer" ? "default" : "secondary"}>
-                {r.role === "developer" ? "Developer" : "Installer"}
-              </Badge>
+              {edit?.userId === r.user_id ? (
+                <div className="grid w-full gap-2 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <Label htmlFor={`ed-name-${r.id}`}>Nama</Label>
+                    <Input
+                      id={`ed-name-${r.id}`}
+                      value={edit.name}
+                      onChange={(e) => setEdit({ ...edit, name: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor={`ed-email-${r.id}`}>Email</Label>
+                    <Input
+                      id={`ed-email-${r.id}`}
+                      type="email"
+                      value={edit.email}
+                      onChange={(e) => setEdit({ ...edit, email: e.target.value })}
+                    />
+                  </div>
+                  <div className="flex gap-2 sm:col-span-2">
+                    <Button size="sm" disabled={saving} onClick={saveEdit}>
+                      {saving ? "Menyimpan…" : "Simpan"}
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setEdit(null)}>
+                      Batal
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex-1">
+                    <p className="font-semibold">{r.display_name || r.email}</p>
+                    <p className="text-xs text-muted-foreground">{r.email}</p>
+                  </div>
+                  <Badge variant={r.role === "developer" ? "default" : "secondary"}>
+                    {r.role === "developer" ? "Developer" : "Installer"}
+                  </Badge>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setEdit({ userId: r.user_id, name: r.display_name, email: r.email })
+                    }
+                  >
+                    Edit
+                  </Button>
+                </>
+              )}
               <Button
                 size="sm"
                 variant="outline"
