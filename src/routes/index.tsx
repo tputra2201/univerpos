@@ -77,6 +77,8 @@ interface CartState {
   orderType: string;
   /** id pesanan tersimpan yang sedang dibuka */
   heldId?: string;
+  /** id pesanan dapur (Processing) terkait */
+  kitchenId?: string;
   /** catatan pesanan */
   note: string;
   /** nomor order, format KODE-000001 */
@@ -110,6 +112,9 @@ function KasirPage() {
   const [payOpen, setPayOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [heldOpen, setHeldOpen] = useState(false);
+  const [kitchenOpen, setKitchenOpen] = useState(false);
+  const kitchenOrders = db.kitchenOrders ?? [];
+  const processingCount = kitchenOrders.filter((k) => k.status === "processing").length;
   const [printLines, setPrintLines] = useState<string[] | null>(null);
   const [printTitle, setPrintTitle] = useState("Struk");
 
@@ -271,17 +276,38 @@ function KasirPage() {
     const orderNo = ensureOrderNo();
     const lines = cart.lines.map((l) => ({ ...l, sentToKitchen: true }));
     const sale = draftSale("paid", { lines, orderNo });
-    saveHeld({ lines, orderNo, sentToKitchen: true });
+    const kitchenId = cart.kitchenId ?? uid("kit");
+    const kEntry = {
+      id: kitchenId,
+      orderNo,
+      label: [orderNo, cart.orderType, cart.tableName || cart.customerName].filter(Boolean).join(" • "),
+      createdAt: new Date().toISOString(),
+      items: lines.filter((l) => !l.voided),
+      note: cart.note,
+      status: "processing" as const,
+    };
+    update((current) => {
+      const list = current.kitchenOrders ?? [];
+      return {
+        ...current,
+        kitchenOrders: list.some((k) => k.id === kitchenId)
+          ? list.map((k) => (k.id === kitchenId ? { ...kEntry, createdAt: k.createdAt } : k))
+          : [kEntry, ...list],
+      };
+    });
+    // Kalau pesanan ini memang sudah tertahan, perbarui isinya (tanpa membuat duplikat).
+    if (cart.heldId) saveHeld({ lines, orderNo, sentToKitchen: true });
     const order = buildReceipt("order", sale, settings, db.printer);
     const label = buildReceipt("label", sale, settings, db.printer);
     printViaDialog([...order, "", ...label], db.printer.paperWidth);
-    setCart((prev) => ({ ...prev, lines, orderNo, sentToKitchen: true }));
+    setCart((prev) => ({ ...prev, lines, orderNo, sentToKitchen: true, kitchenId }));
     toast.success(`Pesanan ${orderNo} dikirim ke dapur.`);
   }
 
   function saveHeld(
     override: { lines?: CartLine[]; orderNo?: string; sentToKitchen?: boolean } = {},
   ) {
+    const kitchenId = cart.kitchenId;
     const id = cart.heldId ?? uid("hold");
     const orderNo = override.orderNo ?? cart.orderNo;
     const entry = {
@@ -297,6 +323,7 @@ function KasirPage() {
       orderNo,
       note: cart.note,
       sentToKitchen: override.sentToKitchen ?? cart.sentToKitchen,
+      kitchenId,
     };
     update((current) => ({
       ...current,
@@ -345,6 +372,7 @@ function KasirPage() {
       note: held.note ?? "",
       orderNo: held.orderNo ?? "",
       sentToKitchen: held.sentToKitchen ?? held.items.some((i) => i.sentToKitchen),
+      kitchenId: held.kitchenId,
     });
     setHeldOpen(false);
     setCartOpen(true);
@@ -437,6 +465,11 @@ function KasirPage() {
                 <Barcode className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               )}
             </div>
+            <Button variant="secondary" className="h-11 gap-2" onClick={() => setKitchenOpen(true)}>
+              <ChefHat className="size-4" />
+              <span className="hidden sm:inline">Processing</span>
+              {processingCount > 0 && <Badge variant="default">{processingCount}</Badge>}
+            </Button>
             <Button variant="secondary" className="h-11 gap-2" onClick={() => setHeldOpen(true)}>
               <Play className="size-4" />
               <span className="hidden sm:inline">Tertahan</span>
@@ -661,6 +694,62 @@ function KasirPage() {
                 </Button>
               </div>
             ))}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={kitchenOpen} onOpenChange={setKitchenOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-sm">
+          <SheetHeader>
+            <SheetTitle>Pesanan Dapur</SheetTitle>
+          </SheetHeader>
+          <div className="space-y-2 overflow-auto px-4 pb-6">
+            {kitchenOrders.length === 0 && (
+              <p className="text-sm text-muted-foreground">Belum ada pesanan di dapur.</p>
+            )}
+            {[...kitchenOrders]
+              .sort((a, b) => (a.status === b.status ? 0 : a.status === "processing" ? -1 : 1))
+              .slice(0, 50)
+              .map((k) => (
+                <div key={k.id} className={"rounded-lg border p-3 " + (k.status === "done" ? "opacity-60" : "")}>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-semibold">{k.label || k.orderNo}</p>
+                    <Badge variant={k.status === "processing" ? "default" : "secondary"}>
+                      {k.status === "processing" ? "Processing" : "Done"}
+                    </Badge>
+                  </div>
+                  <ul className="mt-1 text-sm">
+                    {k.items.map((i) => (
+                      <li key={i.lineId}>
+                        {i.qty}× {i.name}
+                        {i.variantName && ` (${i.variantName})`}
+                        {i.note && <span className="text-muted-foreground"> — {i.note}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                  {k.note && <p className="mt-1 text-xs text-muted-foreground">Catatan: {k.note}</p>}
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(k.createdAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                  <Button
+                    size="sm"
+                    variant={k.status === "processing" ? "default" : "outline"}
+                    className="mt-2 w-full"
+                    onClick={() =>
+                      update((current) => ({
+                        ...current,
+                        kitchenOrders: (current.kitchenOrders ?? []).map((x) =>
+                          x.id === k.id
+                            ? { ...x, status: x.status === "processing" ? "done" : "processing" }
+                            : x,
+                        ),
+                      }))
+                    }
+                  >
+                    {k.status === "processing" ? "Tandai Done" : "Kembalikan ke Processing"}
+                  </Button>
+                </div>
+              ))}
           </div>
         </SheetContent>
       </Sheet>

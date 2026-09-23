@@ -146,6 +146,7 @@ export interface HeldOrder {
   orderNo?: string;
   note?: string;
   sentToKitchen?: boolean;
+  kitchenId?: string;
 }
 
 export interface KitchenOrder {
