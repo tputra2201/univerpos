@@ -25,6 +25,7 @@ import { rupiah, uid } from "@/lib/pos/format";
 import { buildReceipt } from "@/lib/pos/receipt";
 import { printViaDialog } from "@/lib/pos/print";
 import { CART_STORAGE_KEY, readLocal, writeLocal } from "@/lib/pos/storage";
+import { canAuthorizeVoid, formatOrderNo, roleLabel } from "@/lib/pos/roles";
 import type { CartLine, Product, Sale, SalePayment } from "@/lib/pos/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
