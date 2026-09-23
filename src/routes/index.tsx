@@ -26,7 +26,7 @@ import { buildReceipt } from "@/lib/pos/receipt";
 import { printViaDialog } from "@/lib/pos/print";
 import { CART_STORAGE_KEY, readLocal, writeLocal } from "@/lib/pos/storage";
 import { canAuthorizeVoid, formatOrderNo, roleLabel } from "@/lib/pos/roles";
-import type { CartLine, Product, Sale, SalePayment } from "@/lib/pos/types";
+import type { CartLine, HeldOrder, Product, Sale, SalePayment } from "@/lib/pos/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -113,6 +113,7 @@ function KasirPage() {
   const [cartOpen, setCartOpen] = useState(false);
   const [heldOpen, setHeldOpen] = useState(false);
   const [kitchenOpen, setKitchenOpen] = useState(false);
+  const [voidHeld, setVoidHeld] = useState<HeldOrder | null>(null);
   const kitchenOrders = db.kitchenOrders ?? [];
   const processingCount = kitchenOrders.filter((k) => k.status === "processing").length;
   const [printLines, setPrintLines] = useState<string[] | null>(null);
@@ -357,6 +358,44 @@ function KasirPage() {
     }
     setVoidTarget(null);
     toast.success("Item di-void dengan otorisasi " + byName + ".");
+  }
+
+  function voidHeldOrder(id: string, reason: string, byName: string) {
+    const held = db.heldOrders.find((h) => h.id === id);
+    if (!held) return;
+    const t = computeTotals(held.items, settings, 0);
+    const sale: Sale = {
+      id: uid("sale"),
+      code: "VOID" + new Date().toISOString().slice(2, 10).replace(/-/g, "") + "-" +
+        String(db.sales.length + 1).padStart(4, "0"),
+      createdAt: new Date().toISOString(),
+      userName: currentUser?.name ?? "Kasir",
+      items: held.items,
+      subtotal: t.subtotal,
+      discount: t.discount,
+      tax: t.tax,
+      service: t.service,
+      total: t.total,
+      payments: [],
+      paid: 0,
+      change: 0,
+      tableName: held.tableName,
+      customerName: held.customerName,
+      orderType: held.orderType ?? "",
+      orderNo: held.orderNo ?? "",
+      note: held.note ?? "",
+      status: "void",
+      reason: `${reason} — disetujui ${byName}`,
+    };
+    update((current) => ({
+      ...current,
+      sales: [sale, ...current.sales],
+      heldOrders: current.heldOrders.filter((h) => h.id !== id),
+      kitchenOrders: (current.kitchenOrders ?? []).filter((k) => k.id !== held.kitchenId),
+    }));
+    if (cart.heldId === id) setCart(EMPTY_CART);
+    setVoidHeld(null);
+    toast.success(`Pesanan ${held.orderNo || held.label} di-void oleh ${byName}.`);
   }
 
   function recallOrder(id: string) {
@@ -624,6 +663,13 @@ function KasirPage() {
         onConfirm={voidLine}
       />
 
+      <VoidDialog
+        whole
+        line={voidHeld ? { lineId: voidHeld.id, name: voidHeld.orderNo || voidHeld.label } : null}
+        onClose={() => setVoidHeld(null)}
+        onConfirm={voidHeldOrder}
+      />
+
       <PaymentDialog
         open={payOpen}
         onOpenChange={setPayOpen}
@@ -665,19 +711,8 @@ function KasirPage() {
                   <Button
                     size="icon"
                     variant="ghost"
-                    aria-label="Hapus"
-                    onClick={() => {
-                      if (h.sentToKitchen) {
-                        toast.error(
-                          "Pesanan sudah dikirim ke dapur. Buka pesanan lalu void itemnya dengan otorisasi supervisor.",
-                        );
-                        return;
-                      }
-                      update((current) => ({
-                        ...current,
-                        heldOrders: current.heldOrders.filter((x) => x.id !== h.id),
-                      }));
-                    }}
+                    aria-label="Void pesanan"
+                    onClick={() => setVoidHeld(h)}
                   >
                     <X className="size-4" />
                   </Button>
@@ -1403,10 +1438,12 @@ function PaymentDialog({
 
 function VoidDialog({
   line,
+  whole = false,
   onClose,
   onConfirm,
 }: {
-  line: CartLine | null;
+  line: { lineId: string; name: string } | null;
+  whole?: boolean;
   onClose: () => void;
   onConfirm: (lineId: string, reason: string, byName: string) => void;
 }) {
@@ -1433,17 +1470,18 @@ function VoidDialog({
       return;
     }
     onConfirm(line.lineId, reason.trim(), `${approver.name} (${roleLabel(approver.role)})`);
-    toast.success("Item di-void.");
   }
 
   return (
     <Dialog open={!!line} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Void item</DialogTitle>
+          <DialogTitle>{whole ? "VOID pesanan" : "Void item"}</DialogTitle>
           <DialogDescription>
-            {line?.name} sudah dikirim ke dapur, jadi tidak bisa dihapus. Void memerlukan otorisasi
-            supervisor atau manager.
+            {whole
+              ? `Seluruh pesanan ${line?.name ?? ""} akan di-void dan tercatat di laporan void.`
+              : `${line?.name ?? ""} sudah dikirim ke dapur, jadi tidak bisa dihapus.`}{" "}
+            Void memerlukan otorisasi supervisor atau manager.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3">
@@ -1472,7 +1510,9 @@ function VoidDialog({
           <Button variant="secondary" onClick={onClose}>
             Batal
           </Button>
-          <Button onClick={submit}>Void item</Button>
+          <Button variant={whole ? "destructive" : "default"} onClick={submit}>
+            {whole ? "VOID pesanan" : "Void item"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
