@@ -481,41 +481,41 @@ function AccountsPanel({ selfId }: { selfId: string }) {
                   >
                     Edit
                   </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={async () => {
+                      const pw = prompt("Sandi baru (min. 8 karakter):");
+                      if (!pw) return;
+                      try {
+                        await reset({ data: { userId: r.user_id, password: pw } });
+                        toast.success("Sandi diperbarui.");
+                      } catch (e) {
+                        toast.error(e instanceof Error ? e.message : "Gagal");
+                      }
+                    }}
+                  >
+                    Ganti sandi
+                  </Button>
+                  {r.user_id !== selfId && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label={`Hapus ${r.email}`}
+                      onClick={async () => {
+                        if (!confirm(`Hapus akun ${r.email}?`)) return;
+                        try {
+                          await del({ data: { userId: r.user_id } });
+                          void load();
+                        } catch (e) {
+                          toast.error(e instanceof Error ? e.message : "Gagal");
+                        }
+                      }}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  )}
                 </>
-              )}
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={async () => {
-                  const pw = prompt("Sandi baru (min. 8 karakter):");
-                  if (!pw) return;
-                  try {
-                    await reset({ data: { userId: r.user_id, password: pw } });
-                    toast.success("Sandi diperbarui.");
-                  } catch (e) {
-                    toast.error(e instanceof Error ? e.message : "Gagal");
-                  }
-                }}
-              >
-                Ganti sandi
-              </Button>
-              {r.user_id !== selfId && (
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  aria-label={`Hapus ${r.email}`}
-                  onClick={async () => {
-                    if (!confirm(`Hapus akun ${r.email}?`)) return;
-                    try {
-                      await del({ data: { userId: r.user_id } });
-                      void load();
-                    } catch (e) {
-                      toast.error(e instanceof Error ? e.message : "Gagal");
-                    }
-                  }}
-                >
-                  <Trash2 className="size-4" />
-                </Button>
               )}
             </div>
           ))}
