@@ -980,14 +980,14 @@ function CartPanel({
           >
             <ReceiptText className="size-4" /> Bill
           </Button>
-          {type === "kuliner" ? (
+          {type === "kuliner" && !cart.sentToKitchen ? (
             <Button
               variant="secondary"
               className="h-11 gap-2"
               disabled={cart.lines.length === 0}
               onClick={onKitchen}
             >
-              <ChefHat className="size-4" /> Ke Dapur
+              <ChefHat className="size-4" /> Sent to Kitchen
             </Button>
           ) : (
             <Button
@@ -996,7 +996,7 @@ function CartPanel({
               disabled={cart.lines.length === 0}
               onClick={onHold}
             >
-              <Pause className="size-4" /> Tahan
+              <Pause className="size-4" /> Hold
             </Button>
           )}
         </div>
