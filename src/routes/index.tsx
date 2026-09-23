@@ -311,18 +311,17 @@ function KasirPage() {
   }
 
   function voidLine(lineId: string, reason: string, byName: string) {
-    setCart((prev) => {
-      const lines = prev.lines.map((l) =>
-        l.lineId === lineId ? { ...l, voided: true, voidReason: reason, voidedBy: byName } : l,
-      );
-      if (prev.heldId) {
-        update((current) => ({
-          ...current,
-          heldOrders: current.heldOrders.map((h) => (h.id === prev.heldId ? { ...h, items: lines } : h)),
-        }));
-      }
-      return { ...prev, lines };
-    });
+    const lines = cart.lines.map((l) =>
+      l.lineId === lineId ? { ...l, voided: true, voidReason: reason, voidedBy: byName } : l,
+    );
+    setCart((prev) => ({ ...prev, lines }));
+    if (cart.heldId) {
+      const heldId = cart.heldId;
+      update((current) => ({
+        ...current,
+        heldOrders: current.heldOrders.map((h) => (h.id === heldId ? { ...h, items: lines } : h)),
+      }));
+    }
     setVoidTarget(null);
     toast.success("Item di-void dengan otorisasi " + byName + ".");
   }
