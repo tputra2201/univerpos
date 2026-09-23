@@ -89,6 +89,35 @@ export const deleteAccount = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/** Memperbarui nama dan email akun (developer/installer). */
+export const updateAccount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        userId: z.string().uuid(),
+        name: z.string().trim().min(1).max(80),
+        email: z.string().trim().email().max(255),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertDeveloper(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
+      email: data.email,
+      email_confirm: true,
+      user_metadata: { name: data.name },
+    });
+    if (error) throw new Error(error.message);
+    const { error: roleErr } = await supabaseAdmin
+      .from("user_roles")
+      .update({ display_name: data.name, email: data.email })
+      .eq("user_id", data.userId);
+    if (roleErr) throw new Error(roleErr.message);
+    return { ok: true };
+  });
+
 export const resetAccountPassword = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
