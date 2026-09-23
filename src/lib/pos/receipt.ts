@@ -147,6 +147,7 @@ export function buildReceipt(
     out.push(center("BILL / TAGIHAN SEMENTARA", width));
     out.push(divider(width, "="));
   }
+  if (sale.orderNo) out.push(twoCol("Order", sale.orderNo, width));
   out.push(twoCol("No", sale.code, width));
   out.push(twoCol("Kasir", sale.userName, width));
   out.push(twoCol("Waktu", new Date(sale.createdAt).toLocaleString("id-ID"), width));
