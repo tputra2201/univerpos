@@ -379,7 +379,7 @@ function KasirPage() {
     }
   }
 
-  const itemCount = cart.lines.reduce((sum, l) => sum + l.qty, 0);
+  const itemCount = cart.lines.filter((l) => !l.voided).reduce((sum, l) => sum + l.qty, 0);
 
   if (hydrated && !cart.orderType) {
     return (
