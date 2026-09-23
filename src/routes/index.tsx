@@ -74,6 +74,8 @@ interface CartState {
   billDiscount: number;
   /** "" = belum memilih layanan */
   orderType: string;
+  /** id pesanan tersimpan yang sedang dibuka */
+  heldId?: string;
 }
 
 const EMPTY_CART: CartState = {
@@ -218,21 +220,7 @@ function KasirPage() {
   function sendToKitchen() {
     if (cart.lines.length === 0) return;
     const sale = draftSale();
-    update((current) => ({
-      ...current,
-      heldOrders: [
-        {
-          id: uid("hold"),
-          label: [cart.orderType, cart.tableName || cart.customerName].filter(Boolean).join(" • ") || "Pesanan",
-          createdAt: new Date().toISOString(),
-          items: cart.lines,
-          tableName: cart.tableName,
-          customerName: cart.customerName,
-          orderType: cart.orderType,
-        },
-        ...current.heldOrders,
-      ],
-    }));
+    saveHeld();
     const order = buildReceipt("order", sale, settings, db.printer);
     const label = buildReceipt("label", sale, settings, db.printer);
     printViaDialog([...order, "", ...label], db.printer.paperWidth);
@@ -240,25 +228,30 @@ function KasirPage() {
     toast.success("Pesanan dikirim ke dapur dan disimpan sebagai pesanan tertahan.");
   }
 
-  function holdOrder() {
-    if (cart.lines.length === 0) return;
+  function saveHeld() {
+    const id = cart.heldId ?? uid("hold");
+    const entry = {
+      id,
+      label: [cart.orderType, cart.tableName || cart.customerName].filter(Boolean).join(" • ") || "Pesanan",
+      createdAt: db.heldOrders.find((h) => h.id === id)?.createdAt ?? new Date().toISOString(),
+      items: cart.lines,
+      tableName: cart.tableName,
+      customerName: cart.customerName,
+      orderType: cart.orderType,
+    };
     update((current) => ({
       ...current,
-      heldOrders: [
-        {
-          id: uid("hold"),
-          label: [cart.orderType, cart.tableName || cart.customerName].filter(Boolean).join(" • ") || "Pesanan",
-          createdAt: new Date().toISOString(),
-          items: cart.lines,
-          tableName: cart.tableName,
-          customerName: cart.customerName,
-          orderType: cart.orderType,
-        },
-        ...current.heldOrders,
-      ],
+      heldOrders: current.heldOrders.some((h) => h.id === id)
+        ? current.heldOrders.map((h) => (h.id === id ? entry : h))
+        : [entry, ...current.heldOrders],
     }));
+  }
+
+  function holdOrder() {
+    if (cart.lines.length === 0) return;
+    saveHeld();
     setCart(EMPTY_CART);
-    toast.success("Pesanan ditahan.");
+    toast.success("Pesanan disimpan. Silakan buka pesanan baru.");
   }
 
   function recallOrder(id: string) {
@@ -270,11 +263,8 @@ function KasirPage() {
       customerName: held.customerName,
       billDiscount: 0,
       orderType: held.orderType || "Take Out",
+      heldId: held.id,
     });
-    update((current) => ({
-      ...current,
-      heldOrders: current.heldOrders.filter((h) => h.id !== id),
-    }));
     setHeldOpen(false);
     setCartOpen(true);
   }
@@ -290,6 +280,9 @@ function KasirPage() {
     update((current) => ({
       ...current,
       sales: [sale, ...current.sales],
+      heldOrders: cart.heldId
+        ? current.heldOrders.filter((h) => h.id !== cart.heldId)
+        : current.heldOrders,
       products: current.products.map((p) => {
         const sold = sale.items
           .filter((i) => i.productId === p.id)
@@ -316,6 +309,7 @@ function KasirPage() {
     return (
       <ServicePicker
         onPick={(orderType, tableName) => setCart((prev) => ({ ...prev, orderType, tableName }))}
+        onOpenHeld={(id) => recallOrder(id)}
       />
     );
   }
@@ -564,7 +558,13 @@ function KasirPage() {
   );
 }
 
-function ServicePicker({ onPick }: { onPick: (orderType: string, tableName: string) => void }) {
+function ServicePicker({
+  onPick,
+  onOpenHeld,
+}: {
+  onPick: (orderType: string, tableName: string) => void;
+  onOpenHeld: (id: string) => void;
+}) {
   const { db } = usePos();
   const [mode, setMode] = useState<"" | "dinein" | "online">("");
   const channels = (db.onlineChannels ?? []).filter((c) => c.active);
@@ -604,11 +604,28 @@ function ServicePicker({ onPick }: { onPick: (orderType: string, tableName: stri
 
       {mode === "dinein" && (
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
-          {db.tables.map((t) => (
-            <button key={t.id} type="button" className={big + " min-h-20"} onClick={() => onPick("Dine In", t.name)}>
-              <span className="text-lg font-semibold">{t.name}</span>
-            </button>
-          ))}
+          {db.tables.map((t) => {
+            const held = db.heldOrders.find((h) => h.orderType === "Dine In" && h.tableName === t.name);
+            return (
+              <button
+                key={t.id}
+                type="button"
+                className={
+                  big +
+                  " min-h-20" +
+                  (held ? " border-accent bg-accent text-accent-foreground hover:bg-accent/80" : "")
+                }
+                onClick={() => (held ? onOpenHeld(held.id) : onPick("Dine In", t.name))}
+              >
+                <span className="text-lg font-semibold">{t.name}</span>
+                {held && (
+                  <span className="text-xs font-medium">
+                    Terisi • {held.items.reduce((s, i) => s + i.qty, 0)} item
+                  </span>
+                )}
+              </button>
+            );
+          })}
           {db.tables.length === 0 && (
             <p className="col-span-full text-sm text-muted-foreground">
               Belum ada meja. Tambahkan di Pengaturan → Meja & Staf.
