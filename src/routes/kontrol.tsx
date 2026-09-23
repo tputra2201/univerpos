@@ -219,7 +219,7 @@ function StoresPanel() {
     void load();
   }, [load]);
 
-  async function add() {
+  async function add(): Promise<unknown> {
     if (!form.name.trim()) return toast.error("Nama toko wajib diisi.");
     const code = (form.code.trim() || randomCode(form.name)).toUpperCase();
     const { error } = await supabase
