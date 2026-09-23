@@ -127,6 +127,10 @@ export interface Sale {
   customerName: string;
   /** Jenis layanan: Take Out, Dine In, atau nama kanal online. */
   orderType?: string;
+  /** Nomor order, format KODE-000001. */
+  orderNo?: string;
+  /** Catatan pesanan (tingkat transaksi). */
+  note?: string;
   status: SaleStatus;
   reason: string;
 }
@@ -139,6 +143,9 @@ export interface HeldOrder {
   tableName: string;
   customerName: string;
   orderType?: string;
+  orderNo?: string;
+  note?: string;
+  sentToKitchen?: boolean;
 }
 
 export interface Shift {
