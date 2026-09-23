@@ -397,14 +397,22 @@ function KasirPage() {
         <div className="space-y-3 border-b bg-card px-4 py-3">
           <div className="flex items-center justify-between gap-2 rounded-lg bg-primary/10 px-3 py-2">
             <span className="text-sm font-semibold text-primary">
+              {cart.orderNo && <span className="tabular mr-2 font-mono">{cart.orderNo}</span>}
               {cart.orderType}
               {cart.tableName && ` • ${cart.tableName}`}
+              {cart.sentToKitchen && <span className="ml-2 text-xs">• sudah di dapur</span>}
             </span>
             <Button
               size="sm"
               variant="ghost"
               className="h-8"
-              onClick={() => setCart((prev) => ({ ...prev, orderType: "", tableName: "" }))}
+              onClick={() => {
+                if (cart.lines.length > 0) {
+                  toast.error("Tahan atau selesaikan pesanan ini dulu sebelum ganti layanan.");
+                  return;
+                }
+                setCart(EMPTY_CART);
+              }}
             >
               Ganti layanan
             </Button>
