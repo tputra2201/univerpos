@@ -58,6 +58,7 @@ function PengaturanPage() {
 
   const [newUser, setNewUser] = useState({ name: "", pin: "", role: "cashier" as "owner" | "cashier" });
   const [newMethod, setNewMethod] = useState("");
+  const [newChannel, setNewChannel] = useState("");
   const [newTable, setNewTable] = useState("");
   const [newStaff, setNewStaff] = useState("");
 
@@ -148,6 +149,7 @@ function PengaturanPage() {
           <TabsTrigger value="pembayaran">Pembayaran</TabsTrigger>
           <TabsTrigger value="printer">Printer</TabsTrigger>
           <TabsTrigger value="operasional">Meja & Staf</TabsTrigger>
+          <TabsTrigger value="online">Online Order</TabsTrigger>
           <TabsTrigger value="data">Data</TabsTrigger>
         </TabsList>
 
@@ -631,6 +633,73 @@ function PengaturanPage() {
                       staff: [...current.staff, { id: uid("stf"), name: newStaff.trim() }],
                     }));
                     setNewStaff("");
+                  }}
+                >
+                  Tambah
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="online" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Aplikasi Online Order</CardTitle>
+              <CardDescription>
+                Pilihan yang aktif tampil saat kasir memilih layanan "Online Order".
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {(db.onlineChannels ?? []).map((c) => (
+                <div key={c.id} className="flex items-center justify-between rounded-lg border px-3 py-2">
+                  <span className="font-medium">{c.name}</span>
+                  <div className="flex items-center gap-3">
+                    <Switch
+                      checked={c.active}
+                      onCheckedChange={(v) =>
+                        update((current) => ({
+                          ...current,
+                          onlineChannels: current.onlineChannels.map((x) =>
+                            x.id === c.id ? { ...x, active: v } : x,
+                          ),
+                        }))
+                      }
+                    />
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label={`Hapus ${c.name}`}
+                      onClick={() =>
+                        update((current) => ({
+                          ...current,
+                          onlineChannels: current.onlineChannels.filter((x) => x.id !== c.id),
+                        }))
+                      }
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              <div className="flex gap-2">
+                <Input
+                  value={newChannel}
+                  onChange={(e) => setNewChannel(e.target.value)}
+                  placeholder="Nama aplikasi, mis. Maxim Food"
+                  className="h-10 max-w-64"
+                />
+                <Button
+                  onClick={() => {
+                    if (!newChannel.trim()) return;
+                    update((current) => ({
+                      ...current,
+                      onlineChannels: [
+                        ...(current.onlineChannels ?? []),
+                        { id: uid("oc"), name: newChannel.trim(), active: true },
+                      ],
+                    }));
+                    setNewChannel("");
                   }}
                 >
                   Tambah

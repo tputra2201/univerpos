@@ -120,7 +120,7 @@ export function buildReceipt(
     const out: string[] = [];
     out.push(center("PESANAN DAPUR", width));
     out.push(divider(width, "="));
-    out.push(twoCol(sale.tableName || sale.customerName || "Take Away", sale.code, width));
+    out.push(twoCol(sale.tableName || sale.orderType || sale.customerName || "Take Out", sale.code, width));
     out.push(new Date(sale.createdAt).toLocaleString("id-ID"));
     out.push(divider(width));
     itemLines(sale, width, false).forEach((l) => out.push(l));
@@ -138,6 +138,7 @@ export function buildReceipt(
   out.push(twoCol("No", sale.code, width));
   out.push(twoCol("Kasir", sale.userName, width));
   out.push(twoCol("Waktu", new Date(sale.createdAt).toLocaleString("id-ID"), width));
+  if (sale.orderType) out.push(twoCol("Layanan", sale.orderType, width));
   if (sale.tableName) out.push(twoCol("Meja", sale.tableName, width));
   if (sale.customerName) out.push(twoCol("Pelanggan", sale.customerName, width));
   out.push(divider(width));

@@ -57,6 +57,11 @@ export function emptyDatabase(): PosDatabase {
     ],
     tables: [],
     staff: [],
+    onlineChannels: [
+      { id: "oc_grab", name: "GrabFood", active: true },
+      { id: "oc_gofood", name: "GoFood", active: true },
+      { id: "oc_shopee", name: "ShopeeFood", active: true },
+    ],
     sales: [],
     heldOrders: [],
     shifts: [],

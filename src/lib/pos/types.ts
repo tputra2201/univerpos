@@ -68,6 +68,12 @@ export interface TableRef {
   name: string;
 }
 
+export interface OnlineChannel {
+  id: string;
+  name: string;
+  active: boolean;
+}
+
 export interface Staff {
   id: string;
   name: string;
@@ -112,6 +118,8 @@ export interface Sale {
   change: number;
   tableName: string;
   customerName: string;
+  /** Jenis layanan: Take Out, Dine In, atau nama kanal online. */
+  orderType?: string;
   status: SaleStatus;
   reason: string;
 }
@@ -123,6 +131,7 @@ export interface HeldOrder {
   items: CartLine[];
   tableName: string;
   customerName: string;
+  orderType?: string;
 }
 
 export interface Shift {
@@ -144,6 +153,7 @@ export interface PosDatabase {
   paymentMethods: PaymentMethod[];
   tables: TableRef[];
   staff: Staff[];
+  onlineChannels: OnlineChannel[];
   sales: Sale[];
   heldOrders: HeldOrder[];
   shifts: Shift[];
