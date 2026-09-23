@@ -14,9 +14,34 @@ export type Database = {
   }
   public: {
     Tables: {
+      business_types: {
+        Row: {
+          base_kind: string
+          created_at: string
+          description: string
+          id: string
+          name: string
+        }
+        Insert: {
+          base_kind?: string
+          created_at?: string
+          description?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          base_kind?: string
+          created_at?: string
+          description?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       stores: {
         Row: {
           active: boolean
+          business_type_id: string | null
           code: string
           created_at: string
           device_count: number
@@ -29,6 +54,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          business_type_id?: string | null
           code: string
           created_at?: string
           device_count?: number
@@ -41,6 +67,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          business_type_id?: string | null
           code?: string
           created_at?: string
           device_count?: number
@@ -51,7 +78,15 @@ export type Database = {
           name?: string
           notes?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "stores_business_type_id_fkey"
+            columns: ["business_type_id"]
+            isOneToOne: false
+            referencedRelation: "business_types"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
