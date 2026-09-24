@@ -459,10 +459,6 @@ function KasirPage() {
 
   const itemCount = cart.lines.filter((l) => !l.voided).reduce((sum, l) => sum + l.qty, 0);
 
-  useEffect(() => {
-    if (hydrated && !cart.orderType && cart.lines.length === 0) setPickerOpen(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated]);
 
   function newOrder() {
     if (cart.lines.length > 0) holdOrder();
@@ -483,11 +479,6 @@ function KasirPage() {
               {cart.sentToKitchen && <span className="ml-2 text-xs">• sudah di dapur</span>}
             </span>
             <div className="flex gap-2">
-              {!cart.orderType && (
-                <Button size="sm" variant="outline" className="h-8" onClick={() => setPickerOpen(true)}>
-                  Pilih layanan
-                </Button>
-              )}
               <Button size="sm" className="h-8 gap-1" onClick={newOrder}>
                 <Plus className="size-4" /> New Order
               </Button>
