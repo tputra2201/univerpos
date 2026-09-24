@@ -1,3 +1,4 @@
+import { daysLeft, formatExpiry } from "@/lib/pos/expiry";
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { Bluetooth, Download, Plus, Trash2, Upload, Printer } from "lucide-react";

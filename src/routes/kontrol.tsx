@@ -1,3 +1,4 @@
+import { daysLeft } from "@/lib/pos/expiry";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -57,6 +58,7 @@ interface StoreRow {
   last_activated_by: string;
   business_type_id: string | null;
   activation_key: string;
+  expires_at: string | null;
 }
 
 interface DeviceRow {
@@ -409,7 +411,7 @@ function BusinessTypesPanel() {
 function StoresPanel() {
   const [stores, setStores] = useState<StoreRow[]>([]);
   const [types, setTypes] = useState<BizType[]>([]);
-  const [form, setForm] = useState({ name: "", code: "", mode: "offline", notes: "", business_type_id: "", max_devices: "1" });
+  const [form, setForm] = useState({ name: "", code: "", mode: "offline", notes: "", business_type_id: "", max_devices: "1", expires_at: "" });
 
   const load = useCallback(async () => {
     const [{ data, error }, { data: bt }] = await Promise.all([
@@ -436,10 +438,11 @@ function StoresPanel() {
       notes: form.notes.trim(),
       business_type_id: form.business_type_id,
       max_devices: Math.max(0, Math.floor(Number(form.max_devices) || 0)),
+      expires_at: form.expires_at || null,
     });
     if (error) return toast.error(error.message.includes("duplicate") ? "Kode store sudah dipakai." : error.message);
     toast.success(`Store terdaftar dengan kode ${code}`);
-    setForm({ name: "", code: "", mode: "offline", notes: "", business_type_id: "", max_devices: "1" });
+    setForm({ name: "", code: "", mode: "offline", notes: "", business_type_id: "", max_devices: "1", expires_at: "" });
     void load();
     return undefined;
   }
@@ -519,6 +522,10 @@ function StoresPanel() {
             />
           </div>
           <div className="space-y-1">
+            <Label htmlFor="st-exp">Masa Berlaku Sampai (kosong = tanpa batas)</Label>
+            <Input id="st-exp" type="date" value={form.expires_at} onChange={(e) => setForm({ ...form, expires_at: e.target.value })} />
+          </div>
+          <div className="space-y-1">
             <Label htmlFor="st-notes">Catatan</Label>
             <Input id="st-notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
           </div>
@@ -568,6 +575,19 @@ function StoresPanel() {
                   {s.notes && ` • ${s.notes}`}
                 </p>
               </div>
+              <label className="flex items-center gap-1 text-xs text-muted-foreground">
+                Berlaku s/d
+                <Input
+                  type="date"
+                  className={"h-9 w-40 " + ((daysLeft(s.expires_at) ?? 99) <= 10 ? "border-destructive text-destructive" : "")}
+                  aria-label={`Masa berlaku ${s.name}`}
+                  defaultValue={s.expires_at ?? ""}
+                  onBlur={(e) => {
+                    const v = e.target.value || null;
+                    if (v !== s.expires_at) void patch(s.id, { expires_at: v });
+                  }}
+                />
+              </label>
               <label className="flex items-center gap-1 text-xs text-muted-foreground">
                 Maks
                 <Input
