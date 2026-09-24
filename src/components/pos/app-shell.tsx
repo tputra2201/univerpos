@@ -14,7 +14,8 @@ import { usePos } from "@/lib/pos/store";
 import { canManage, roleLabel } from "@/lib/pos/roles";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
-import { KeyRound } from "lucide-react";
+import { KeyRound, UserPen } from "lucide-react";
+import { EditUserForm } from "@/components/pos/edit-user";
 import { ChangePinForm } from "@/components/pos/change-pin";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -99,6 +100,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <LogOut className="size-4" /> Keluar
           </Button>
           <ChangePinButton full />
+          <EditProfileButton full />
         </div>
       </aside>
 
@@ -109,6 +111,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <p className="text-xs text-muted-foreground">{currentUser?.name}</p>
           </div>
           <div className="flex items-center">
+          <EditProfileButton />
           <ChangePinButton />
           <Button variant="ghost" size="icon" onClick={signOut} aria-label="Keluar">
             <LogOut className="size-4" />
@@ -185,6 +188,42 @@ function ChangePinButton({ full }: { full?: boolean }) {
             onCancel={() => setOpen(false)}
             onSave={(pin) => {
               const next = { ...currentUser, pin, mustChangePin: false };
+              update((cur) => ({ ...cur, users: cur.users.map((u) => (u.id === next.id ? next : u)) }));
+              signIn(next);
+              setOpen(false);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+function EditProfileButton({ full }: { full?: boolean }) {
+  const { currentUser, update, signIn } = usePos();
+  const [open, setOpen] = useState(false);
+  if (!currentUser) return null;
+  return (
+    <>
+      {full ? (
+        <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={() => setOpen(true)}>
+          <UserPen className="size-4" /> Profil Saya
+        </Button>
+      ) : (
+        <Button variant="ghost" size="icon" aria-label="Profil Saya" onClick={() => setOpen(true)}>
+          <UserPen className="size-4" />
+        </Button>
+      )}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Profil Saya</DialogTitle>
+          </DialogHeader>
+          <EditUserForm
+            self
+            user={currentUser}
+            onCancel={() => setOpen(false)}
+            onSave={(next) => {
               update((cur) => ({ ...cur, users: cur.users.map((u) => (u.id === next.id ? next : u)) }));
               signIn(next);
               setOpen(false);

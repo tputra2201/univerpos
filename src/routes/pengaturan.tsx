@@ -1,5 +1,7 @@
 import { deliverPin, pinMessage, randomPin } from "@/lib/pos/pin";
+import { EditUserForm } from "@/components/pos/edit-user";
 import { daysLeft, formatExpiry } from "@/lib/pos/expiry";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { Bluetooth, Download, Plus, Trash2, Upload, Printer } from "lucide-react";
@@ -381,6 +383,8 @@ function PengaturanPage() {
                   >
                     Kirim Ulang PIN
                   </Button>
+                  <EditUserButton user={u} />
+                  
                   {db.users.length > 1 && (
                     <Button
                       size="icon"
@@ -1041,5 +1045,28 @@ export function ServiceTypesCard() {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function EditUserButton({ user }: { user: import("@/lib/pos/types").PosUser }) {
+  const { update } = usePos();
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button size="sm" variant="outline" onClick={() => setOpen(true)}>Edit</Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit Pengguna</DialogTitle></DialogHeader>
+          <EditUserForm
+            user={user}
+            onCancel={() => setOpen(false)}
+            onSave={(next) => {
+              update((cur) => ({ ...cur, users: cur.users.map((x) => (x.id === next.id ? next : x)) }));
+              setOpen(false);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
