@@ -147,7 +147,7 @@ function PengaturanPage() {
       <PageHeader title="Pengaturan" description="Sesuaikan aplikasi dengan cara kerja store Anda." />
 
       <Tabs defaultValue="store" className="p-4 md:p-6">
-        <TabsList className="flex-wrap">
+        <TabsList>
           <TabsTrigger value="store">Store</TabsTrigger>
           <TabsTrigger value="layanan">Jenis Layanan</TabsTrigger>
           <TabsTrigger value="pengguna">Pengguna</TabsTrigger>
