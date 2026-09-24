@@ -1,3 +1,4 @@
+import { BrandIcon, useBranding } from "@/lib/pos/branding";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
@@ -429,6 +430,7 @@ function ActivationFlow() {
 }
 
 function LoginScreen() {
+  const brand = useBranding();
   const { db, signIn, update } = usePos();
   const [selected, setSelected] = useState(db.users[0]?.id ?? "");
   const [pin, setPin] = useState("");

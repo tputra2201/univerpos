@@ -11,6 +11,7 @@ import {
   WifiOff,
 } from "lucide-react";
 import { usePos } from "@/lib/pos/store";
+import { BrandIcon, useBranding } from "@/lib/pos/branding";
 import { canManage, roleLabel } from "@/lib/pos/roles";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
@@ -29,6 +30,7 @@ const NAV = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { db, currentUser, signOut } = usePos();
+  const brand = useBranding();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [online, setOnline] = useState(true);
 
@@ -110,6 +112,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col pb-20 md:pb-0">
         <header className="flex items-center justify-between border-b bg-card px-4 py-3 md:hidden">
+          <div className="flex min-w-0 items-center gap-2">
+          <BrandIcon className="size-8 shrink-0 rounded-lg object-cover" />
           <div className="min-w-0">
             <p className="truncate font-bold leading-tight">{db.settings.name}</p>
             <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -119,6 +123,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               />
               {online ? "Online" : "Offline"} · {currentUser?.name}
             </p>
+          </div>
           </div>
           <div className="flex items-center">
           <EditProfileButton />
