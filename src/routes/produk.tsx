@@ -515,6 +515,46 @@ function ModifiersPanel() {
                   className="h-11"
                 />
               </div>
+              {modifiers.filter((x) => x.id !== editing.id).length > 0 && (
+                <div className="space-y-2">
+                  <Label>Salin isi dari modifier lain</Label>
+                  <Select
+                    value=""
+                    onValueChange={(id) => {
+                      const src = modifiers.find((x) => x.id === id);
+                      if (!src) return;
+                      const have = new Set(
+                        editing.options.map((o) => o.name.trim().toLowerCase()),
+                      );
+                      const add = src.options
+                        .filter((o) => !have.has(o.name.trim().toLowerCase()))
+                        .map((o) => ({ ...o, id: uid("opt") }));
+                      if (!add.length) {
+                        toast.info("Semua pilihan sudah ada.");
+                        return;
+                      }
+                      setEditing({ ...editing, options: [...editing.options, ...add] });
+                      toast.success(`${add.length} pilihan disalin dari "${src.name}".`);
+                    }}
+                  >
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="Pilih modifier sumber" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {modifiers
+                        .filter((x) => x.id !== editing.id)
+                        .map((x) => (
+                          <SelectItem key={x.id} value={x.id}>
+                            {x.name} ({x.options.length} pilihan)
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Pilihan ditambahkan ke daftar isi di bawah, tanpa menghapus yang sudah ada.
+                  </p>
+                </div>
+              )}
               <div className="flex items-center justify-between rounded-lg border p-3">
                 <p className="text-sm font-medium">Wajib dipilih</p>
                 <Switch
