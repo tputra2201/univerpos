@@ -66,6 +66,7 @@ interface DeviceRow {
   id: string;
   device_name: string;
   last_seen_at: string;
+  device_model?: string;
 }
 
 /** Kode perangkat singkat dari ID, mis. DEV-3F9A2C. */
@@ -131,7 +132,7 @@ function StoreDevices({ store, onChange }: { store: StoreRow; onChange: () => vo
           <span className="text-muted-foreground">Sedang online: </span>
           {rows
             .filter(isOn)
-            .map((d) => `${d.device_name} (${deviceCode(d.id)})`)
+            .map((d) => `${d.device_name}${d.device_model ? ` – ${d.device_model}` : ""} (${deviceCode(d.id)})`)
             .join(", ")}
         </p>
       )}
@@ -139,7 +140,10 @@ function StoreDevices({ store, onChange }: { store: StoreRow; onChange: () => vo
         <div key={d.id} className="flex flex-wrap items-center gap-2 text-xs">
           <span className={`size-2 shrink-0 rounded-full ${isOn(d) ? "bg-primary" : "bg-muted-foreground/40"}`} />
           <span className="rounded bg-background px-1.5 py-0.5 font-mono">{deviceCode(d.id)}</span>
-          <span className="min-w-0 flex-1 truncate font-medium">{d.device_name}</span>
+          <span className="min-w-0 flex-1 truncate font-medium">
+            {d.device_name}
+            {d.device_model && <span className="font-normal text-muted-foreground"> · {d.device_model}</span>}
+          </span>
           <span className="text-muted-foreground">
             {isOn(d) ? "online" : "terakhir aktif"} {new Date(d.last_seen_at).toLocaleString("id-ID")}
           </span>

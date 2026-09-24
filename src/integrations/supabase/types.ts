@@ -83,6 +83,7 @@ export type Database = {
       store_devices: {
         Row: {
           created_at: string
+          device_model: string
           device_name: string
           device_token: string
           id: string
@@ -92,6 +93,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          device_model?: string
           device_name?: string
           device_token: string
           id?: string
@@ -101,6 +103,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          device_model?: string
           device_name?: string
           device_token?: string
           id?: string
@@ -296,7 +299,7 @@ export type Database = {
       }
       developer_exists: { Args: never; Returns: boolean }
       device_heartbeat: {
-        Args: { _code: string; _token: string }
+        Args: { _code: string; _model?: string; _token: string }
         Returns: undefined
       }
       has_role: {
@@ -329,6 +332,7 @@ export type Database = {
         Args: { _code: string; _key: string }
         Returns: {
           created_at: string
+          device_model: string
           device_name: string
           id: string
           is_active: boolean

@@ -19,6 +19,30 @@ import { daysLeft, formatExpiry } from "@/lib/pos/expiry";
 
 const DEVICE_TOKEN_KEY = "wo-pos-device-token";
 
+/** Tebak tipe perangkat, mis. "Redmi Note 8 Pro" (Android Chrome) atau "iPhone". */
+async function detectDeviceModel(): Promise<string> {
+  if (typeof navigator === "undefined") return "";
+  const uad = (navigator as unknown as {
+    userAgentData?: { platform?: string; getHighEntropyValues?: (h: string[]) => Promise<{ model?: string; platform?: string }> };
+  }).userAgentData;
+  try {
+    const v = await uad?.getHighEntropyValues?.(["model", "platform"]);
+    if (v?.model) return v.model;
+  } catch {
+    /* abaikan */
+  }
+  const ua = navigator.userAgent;
+  const android = ua.match(/Android [\d.]+; ([^;)]+?)(?: Build|\))/);
+  if (android?.[1] && android[1] !== "K") return android[1].trim();
+  if (/iPad/.test(ua)) return "iPad";
+  if (/iPhone/.test(ua)) return "iPhone";
+  if (/Windows/.test(ua)) return "Windows PC";
+  if (/Macintosh/.test(ua)) return "Mac";
+  if (/Android/.test(ua)) return "Android";
+  if (/Linux/.test(ua)) return "Linux PC";
+  return uad?.platform ?? "";
+}
+
 export function PosGate({ children }: { children: ReactNode }) {
   const { ready, db, currentUser, update } = usePos();
   const [blocked, setBlocked] = useState(false);
@@ -59,14 +83,19 @@ export function PosGate({ children }: { children: ReactNode }) {
   const token = db.settings.deviceToken;
   useEffect(() => {
     if (!ready || !activated || !code || !token) return;
+    let model = "";
     const beat = () => {
       if (typeof navigator !== "undefined" && !navigator.onLine) return;
       void (supabase.rpc as unknown as (n: string, a: object) => Promise<unknown>)("device_heartbeat", {
         _code: code,
         _token: token,
+        _model: model,
       });
     };
-    beat();
+    void detectDeviceModel().then((m) => {
+      model = m;
+      beat();
+    });
     const t = setInterval(beat, 120_000);
     window.addEventListener("online", beat);
     return () => {
