@@ -61,8 +61,21 @@ export function PosGate({ children }: { children: ReactNode }) {
         </Card>
       </Frame>
     );
-  if (!currentUser) return <LoginScreen />;
   const left = daysLeft(db.settings.expiresAt);
+  if (left !== null && left < 0)
+    return (
+      <Frame>
+        <Card>
+          <CardHeader>
+            <CardTitle>Masa Berlaku Store Habis</CardTitle>
+            <CardDescription>
+              Masa berlaku store {db.settings.storeCode} berakhir pada {formatExpiry(db.settings.expiresAt)}. Hubungi penyedia aplikasi untuk perpanjangan, lalu buka ulang aplikasi dalam keadaan online.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </Frame>
+    );
+  if (!currentUser) return <LoginScreen />;
   return (
     <>
       {left !== null && left <= 10 && (
