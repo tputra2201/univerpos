@@ -23,6 +23,8 @@ export interface StoreSettings {
   deviceToken?: string;
   /** Nama perangkat ini, mis. Kasir Depan. */
   deviceName?: string;
+  /** Masa berlaku store (YYYY-MM-DD) dari panel kontrol. */
+  expiresAt?: string | null;
 }
 
 export interface PrinterSettings {

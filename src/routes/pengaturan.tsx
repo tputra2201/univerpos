@@ -1,3 +1,4 @@
+import { daysLeft, formatExpiry } from "@/lib/pos/expiry";
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { Bluetooth, Download, Plus, Trash2, Upload, Printer } from "lucide-react";
@@ -204,6 +205,19 @@ function PengaturanPage() {
               </Field>
               <Field label="Kode store (aktivasi)">
                 <Input value={db.settings.storeCode} readOnly className="h-11 font-mono" />
+              </Field>
+              <Field label="Masa berlaku sampai">
+                <Input
+                  value={(() => {
+                    const l = daysLeft(db.settings.expiresAt);
+                    const f = formatExpiry(db.settings.expiresAt);
+                    if (l === null) return f;
+                    return l < 0 ? `${f} (kedaluwarsa)` : `${f} (${l} hari lagi)`;
+                  })()}
+                  readOnly
+                  disabled
+                  className={"h-11 " + ((daysLeft(db.settings.expiresAt) ?? 99) <= 10 ? "text-destructive" : "")}
+                />
               </Field>
             </CardContent>
           </Card>
