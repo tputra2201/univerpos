@@ -17,6 +17,12 @@ export interface StoreSettings {
   orderSeq: number;
   /** Mode toko dari panel kontrol: online dicek berkala, offline hanya saat aktivasi. */
   storeMode?: "online" | "offline";
+  /** Kunci aktivasi store (dipakai untuk mengelola perangkat). */
+  activationKey?: string;
+  /** Token unik perangkat ini. */
+  deviceToken?: string;
+  /** Nama perangkat ini, mis. Kasir Depan. */
+  deviceName?: string;
 }
 
 export interface PrinterSettings {

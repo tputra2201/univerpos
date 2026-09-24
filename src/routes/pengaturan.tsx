@@ -13,6 +13,7 @@ import { getServiceTypes, seedForBusiness } from "@/lib/pos/seed";
 import type { BusinessType, PosDatabase, Sale, ServiceKind, ServiceType, UserRole } from "@/lib/pos/types";
 import { roleLabel } from "@/lib/pos/roles";
 import { UpdateCard } from "@/components/pos/update-card";
+import { DevicesCard } from "@/components/pos/devices-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -152,9 +153,14 @@ function PengaturanPage() {
           <TabsTrigger value="pembayaran">Pembayaran</TabsTrigger>
           <TabsTrigger value="printer">Printer</TabsTrigger>
           <TabsTrigger value="operasional">Meja & Staf</TabsTrigger>
+          <TabsTrigger value="perangkat">Perangkat</TabsTrigger>
           <TabsTrigger value="online">Online Order</TabsTrigger>
           <TabsTrigger value="data">Data</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="perangkat" className="space-y-4">
+          <DevicesCard />
+        </TabsContent>
 
         <TabsContent value="store" className="space-y-4">
           <Card>
