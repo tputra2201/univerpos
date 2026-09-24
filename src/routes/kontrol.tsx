@@ -545,6 +545,20 @@ function StoresPanel() {
                   )}
                 </p>
                 <p className="font-mono text-sm text-primary">{s.code}</p>
+                <p className="text-xs">
+                  Kunci aktivasi: <span className="font-mono font-semibold tracking-widest">{s.activation_key}</span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="ml-1 h-6 px-2 text-xs"
+                    onClick={() => {
+                      void navigator.clipboard.writeText(`${s.code} / ${s.activation_key}`);
+                      toast.success("Kode dan kunci disalin.");
+                    }}
+                  >
+                    Salin
+                  </Button>
+                </p>
                 <p className="text-xs text-muted-foreground">
                   <span className={s.max_devices > 0 && s.device_count >= s.max_devices ? "font-semibold text-destructive" : ""}>
                     {s.device_count} / {s.max_devices > 0 ? s.max_devices : "∞"} perangkat
