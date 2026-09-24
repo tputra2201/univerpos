@@ -403,7 +403,7 @@ function LoginScreen() {
   function forgot() {
     if (!user) return;
     const input = contact.trim();
-    if (!input) return toast.error("Masukkan email atau nomor WhatsApp terdaftar.");
+    if (!input) { toast.error("Masukkan email atau nomor WhatsApp terdaftar."); return; }
     if (!user.email && !user.whatsapp) {
       toast.error("Pengguna ini belum punya email/WhatsApp terdaftar. Minta manager mengirim ulang PIN.");
       return;

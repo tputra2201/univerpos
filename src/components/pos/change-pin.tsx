@@ -21,10 +21,10 @@ export function ChangePinForm({
   const [pin2, setPin2] = useState("");
 
   function submit() {
-    if (oldPin !== undefined && old !== oldPin) return toast.error("PIN lama salah.");
-    if (!/^\d{4,6}$/.test(pin)) return toast.error("PIN baru harus 4–6 angka.");
-    if (pin !== pin2) return toast.error("Konfirmasi PIN belum sama.");
-    if (oldPin !== undefined && pin === oldPin) return toast.error("PIN baru tidak boleh sama dengan PIN lama.");
+    if (oldPin !== undefined && old !== oldPin) { toast.error("PIN lama salah."); return; }
+    if (!/^\d{4,6}$/.test(pin)) { toast.error("PIN baru harus 4–6 angka."); return; }
+    if (pin !== pin2) { toast.error("Konfirmasi PIN belum sama."); return; }
+    if (oldPin !== undefined && pin === oldPin) { toast.error("PIN baru tidak boleh sama dengan PIN lama."); return; }
     onSave(pin);
     toast.success("PIN berhasil diganti.");
   }
