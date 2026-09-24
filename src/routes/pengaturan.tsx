@@ -13,6 +13,7 @@ import { getServiceTypes, seedForBusiness } from "@/lib/pos/seed";
 import type { BusinessType, PosDatabase, Sale, ServiceKind, ServiceType, UserRole } from "@/lib/pos/types";
 import { roleLabel } from "@/lib/pos/roles";
 import { UpdateCard } from "@/components/pos/update-card";
+import { DevicesCard } from "@/components/pos/devices-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
