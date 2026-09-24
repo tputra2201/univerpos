@@ -40,7 +40,7 @@ export function BrandingPanel() {
       });
   }, []);
 
-  async function save() {
+  async function save(): Promise<unknown> {
     if (!name.trim()) return toast.error("Isi nama aplikasi.");
     setBusy(true);
     const { error } = await db.from("app_settings").upsert({ id: 1, app_name: name.trim(), app_icon: icon, updated_at: new Date().toISOString() });
@@ -48,6 +48,7 @@ export function BrandingPanel() {
     if (error) return toast.error(error.message);
     setBranding({ name: name.trim(), icon });
     toast.success("Nama & ikon aplikasi disimpan.");
+    return undefined;
   }
 
   return (

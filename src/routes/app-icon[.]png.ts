@@ -7,8 +7,8 @@ export const Route = createFileRoute("/app-icon.png")({
       GET: async () => {
         const b = await fetchBranding();
         const m = b.icon.match(/^data:([^;]+);base64,(.+)$/);
-        if (!m) return Response.redirect("/icon-512.png", 302);
-        return new Response(Buffer.from(m[2], "base64"), { headers: { "content-type": m[1], "cache-control": "public, max-age=300" } });
+        if (!m) return new Response(null, { status: 302, headers: { location: "/icon-512.png" } });
+        return new Response(new Uint8Array(Buffer.from(m[2] ?? "", "base64")), { headers: { "content-type": m[1] ?? "image/png", "cache-control": "public, max-age=300" } });
       },
     },
   },
