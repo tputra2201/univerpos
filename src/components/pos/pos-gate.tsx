@@ -84,7 +84,6 @@ export function PosGate({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!ready || !activated || !code || !token) return;
     let model = "";
-    void detectDeviceModel().then((m) => (model = m));
     const beat = () => {
       if (typeof navigator !== "undefined" && !navigator.onLine) return;
       void (supabase.rpc as unknown as (n: string, a: object) => Promise<unknown>)("device_heartbeat", {
