@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
-import { Plus, Pencil, Trash2, Download, Upload, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Download, Upload, Search, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { PosGate } from "@/components/pos/pos-gate";
 import { AppShell, PageHeader } from "@/components/pos/app-shell";
@@ -395,6 +395,27 @@ function ModifiersPanel() {
     toast.success("Modifier disimpan.");
   }
 
+  function duplicate(m: Modifier) {
+    const names = new Set(modifiers.map((x) => x.name));
+    let name = `${m.name} (Salin)`;
+    let n = 2;
+    while (names.has(name)) name = `${m.name} (Salin ${n++})`;
+    update((c) => ({
+      ...c,
+      modifiers: [
+        ...(c.modifiers ?? []),
+        {
+          ...m,
+          id: uid("mod"),
+          name,
+          options: m.options.map((o) => ({ ...o, id: uid("opt") })),
+        },
+      ],
+    }));
+    toast.success(`"${name}" dibuat.`);
+  }
+
+
   function remove(m: Modifier) {
     const used = db.products.filter((p) => p.modifierIds?.includes(m.id)).length;
     if (used && !window.confirm(`Modifier dipakai ${used} produk. Hapus dan lepas dari produk?`))
@@ -456,6 +477,14 @@ function ModifiersPanel() {
                   <Button size="icon" variant="ghost" aria-label="Ubah" onClick={() => setEditing(m)}>
                     <Pencil className="size-4" />
                   </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    aria-label="Duplikat"
+                    onClick={() => duplicate(m)}
+                  >
+                    <Copy className="size-4" />
+                  </Button>
                   <Button size="icon" variant="ghost" aria-label="Hapus" onClick={() => remove(m)}>
                     <Trash2 className="size-4" />
                   </Button>
@@ -486,6 +515,46 @@ function ModifiersPanel() {
                   className="h-11"
                 />
               </div>
+              {modifiers.filter((x) => x.id !== editing.id).length > 0 && (
+                <div className="space-y-2">
+                  <Label>Salin isi dari modifier lain</Label>
+                  <Select
+                    value=""
+                    onValueChange={(id) => {
+                      const src = modifiers.find((x) => x.id === id);
+                      if (!src) return;
+                      const have = new Set(
+                        editing.options.map((o) => o.name.trim().toLowerCase()),
+                      );
+                      const add = src.options
+                        .filter((o) => !have.has(o.name.trim().toLowerCase()))
+                        .map((o) => ({ ...o, id: uid("opt") }));
+                      if (!add.length) {
+                        toast.info("Semua pilihan sudah ada.");
+                        return;
+                      }
+                      setEditing({ ...editing, options: [...editing.options, ...add] });
+                      toast.success(`${add.length} pilihan disalin dari "${src.name}".`);
+                    }}
+                  >
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="Pilih modifier sumber" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {modifiers
+                        .filter((x) => x.id !== editing.id)
+                        .map((x) => (
+                          <SelectItem key={x.id} value={x.id}>
+                            {x.name} ({x.options.length} pilihan)
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Pilihan ditambahkan ke daftar isi di bawah, tanpa menghapus yang sudah ada.
+                  </p>
+                </div>
+              )}
               <div className="flex items-center justify-between rounded-lg border p-3">
                 <p className="text-sm font-medium">Wajib dipilih</p>
                 <Switch
