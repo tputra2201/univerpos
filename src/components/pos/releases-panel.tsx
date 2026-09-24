@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { BrandingPanel } from "@/components/pos/branding-panel";
 
 interface Release { id: string; version: string; notes: string; created_at: string }
 interface Req {
@@ -63,6 +64,7 @@ export function ReleasesPanel() {
 
   return (
     <div className="space-y-4">
+      <BrandingPanel />
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Permintaan Update dari Store</CardTitle>

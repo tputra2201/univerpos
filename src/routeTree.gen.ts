@@ -10,8 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppIconDotpngRouteImport } from './routes/app-icon[.]png'
 import { Route as KontrolRouteImport } from './routes/kontrol'
 import { Route as LaporanRouteImport } from './routes/laporan'
+import { Route as ManifestDotwebmanifestRouteImport } from './routes/manifest[.]webmanifest'
 import { Route as PengaturanRouteImport } from './routes/pengaturan'
 import { Route as ProdukRouteImport } from './routes/produk'
 import { Route as TransaksiRouteImport } from './routes/transaksi'
@@ -22,6 +24,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppIconDotpngRoute = AppIconDotpngRouteImport.update({
+  id: '/app-icon.png',
+  path: '/app-icon.png',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const KontrolRoute = KontrolRouteImport.update({
   id: '/kontrol',
   path: '/kontrol',
@@ -30,6 +37,11 @@ const KontrolRoute = KontrolRouteImport.update({
 const LaporanRoute = LaporanRouteImport.update({
   id: '/laporan',
   path: '/laporan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ManifestDotwebmanifestRoute = ManifestDotwebmanifestRouteImport.update({
+  id: '/manifest.webmanifest',
+  path: '/manifest.webmanifest',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PengaturanRoute = PengaturanRouteImport.update({
@@ -56,8 +68,10 @@ const LovableEmailTransactionalPreviewRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/app-icon.png': typeof AppIconDotpngRoute
   '/kontrol': typeof KontrolRoute
   '/laporan': typeof LaporanRoute
+  '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
   '/pengaturan': typeof PengaturanRoute
   '/produk': typeof ProdukRoute
   '/transaksi': typeof TransaksiRoute
@@ -65,8 +79,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/app-icon.png': typeof AppIconDotpngRoute
   '/kontrol': typeof KontrolRoute
   '/laporan': typeof LaporanRoute
+  '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
   '/pengaturan': typeof PengaturanRoute
   '/produk': typeof ProdukRoute
   '/transaksi': typeof TransaksiRoute
@@ -75,8 +91,10 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/app-icon.png': typeof AppIconDotpngRoute
   '/kontrol': typeof KontrolRoute
   '/laporan': typeof LaporanRoute
+  '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
   '/pengaturan': typeof PengaturanRoute
   '/produk': typeof ProdukRoute
   '/transaksi': typeof TransaksiRoute
@@ -86,8 +104,10 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/app-icon.png'
     | '/kontrol'
     | '/laporan'
+    | '/manifest.webmanifest'
     | '/pengaturan'
     | '/produk'
     | '/transaksi'
@@ -95,8 +115,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/app-icon.png'
     | '/kontrol'
     | '/laporan'
+    | '/manifest.webmanifest'
     | '/pengaturan'
     | '/produk'
     | '/transaksi'
@@ -104,8 +126,10 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/app-icon.png'
     | '/kontrol'
     | '/laporan'
+    | '/manifest.webmanifest'
     | '/pengaturan'
     | '/produk'
     | '/transaksi'
@@ -114,8 +138,10 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppIconDotpngRoute: typeof AppIconDotpngRoute
   KontrolRoute: typeof KontrolRoute
   LaporanRoute: typeof LaporanRoute
+  ManifestDotwebmanifestRoute: typeof ManifestDotwebmanifestRoute
   PengaturanRoute: typeof PengaturanRoute
   ProdukRoute: typeof ProdukRoute
   TransaksiRoute: typeof TransaksiRoute
@@ -131,6 +157,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app-icon.png': {
+      id: '/app-icon.png'
+      path: '/app-icon.png'
+      fullPath: '/app-icon.png'
+      preLoaderRoute: typeof AppIconDotpngRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/kontrol': {
       id: '/kontrol'
       path: '/kontrol'
@@ -143,6 +176,13 @@ declare module '@tanstack/react-router' {
       path: '/laporan'
       fullPath: '/laporan'
       preLoaderRoute: typeof LaporanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/manifest.webmanifest': {
+      id: '/manifest.webmanifest'
+      path: '/manifest.webmanifest'
+      fullPath: '/manifest.webmanifest'
+      preLoaderRoute: typeof ManifestDotwebmanifestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pengaturan': {
@@ -178,8 +218,10 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppIconDotpngRoute: AppIconDotpngRoute,
   KontrolRoute: KontrolRoute,
   LaporanRoute: LaporanRoute,
+  ManifestDotwebmanifestRoute: ManifestDotwebmanifestRoute,
   PengaturanRoute: PengaturanRoute,
   ProdukRoute: ProdukRoute,
   TransaksiRoute: TransaksiRoute,

@@ -50,6 +50,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col justify-between bg-sidebar p-4 text-sidebar-foreground md:flex">
         <div>
           <div className="mb-6 px-2">
+            <div className="mb-3 flex items-center gap-2">
+              <BrandIcon className="size-8 rounded-lg object-cover" />
+              <span className="truncate text-sm font-bold">{brand.name}</span>
+            </div>
             <p className="text-lg font-extrabold leading-tight">{db.settings.name}</p>
             <p className="text-xs uppercase tracking-wide text-sidebar-foreground/60">
               {db.settings.businessType === "kuliner"
