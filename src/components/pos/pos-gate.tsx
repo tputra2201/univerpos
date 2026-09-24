@@ -237,6 +237,7 @@ function ActivationFlow() {
           name: picked?.name ?? "",
           businessTypeName: picked?.business_type_name ?? "",
           expiresAt: picked?.expires_at ?? null,
+          activatedAt: seeded.settings.activatedAt || new Date().toISOString(),
           activationKey: key.trim(),
           deviceToken,
           deviceName: deviceName.trim() || "Kasir 1",

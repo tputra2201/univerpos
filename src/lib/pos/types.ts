@@ -28,6 +28,11 @@ export interface StoreSettings {
   /** Kontak developer (disimpan agar tetap tampil saat offline). */
   devEmail?: string;
   devPhone?: string;
+  /** Waktu aktivasi pertama (ISO). */
+  activatedAt?: string;
+  /** Jam operasional, format HH:MM. */
+  openTime?: string;
+  closeTime?: string;
 }
 
 export interface PrinterSettings {
