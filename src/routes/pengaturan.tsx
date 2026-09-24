@@ -152,6 +152,7 @@ function PengaturanPage() {
           <TabsTrigger value="pembayaran">Pembayaran</TabsTrigger>
           <TabsTrigger value="printer">Printer</TabsTrigger>
           <TabsTrigger value="operasional">Meja & Staf</TabsTrigger>
+          <TabsTrigger value="perangkat">Perangkat</TabsTrigger>
           <TabsTrigger value="online">Online Order</TabsTrigger>
           <TabsTrigger value="data">Data</TabsTrigger>
         </TabsList>
