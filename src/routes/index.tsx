@@ -601,10 +601,14 @@ function KasirPage() {
       </div>
 
       <Sheet open={cartOpen} onOpenChange={setCartOpen}>
-        <SheetContent side="bottom" className="h-[92vh] p-0">
-          <SheetHeader className="sr-only">
-            <SheetTitle>Keranjang</SheetTitle>
+        <SheetContent
+          side="bottom"
+          className="flex h-[88dvh] max-h-[88dvh] flex-col gap-0 overflow-hidden p-0 pt-12 [&>button]:z-10 [&>button]:rounded-full [&>button]:bg-muted [&>button]:p-1.5 [&>button]:opacity-100"
+        >
+          <SheetHeader className="absolute left-4 top-3.5 p-0">
+            <SheetTitle className="text-base">Keranjang</SheetTitle>
           </SheetHeader>
+          <div className="min-h-0 flex-1 overflow-hidden">
           <CartPanel
             cart={cart}
             setCart={setCart}
@@ -617,6 +621,7 @@ function KasirPage() {
             onKitchen={sendToKitchen}
             onHold={holdOrder}
           />
+          </div>
         </SheetContent>
       </Sheet>
 
