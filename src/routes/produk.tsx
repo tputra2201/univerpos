@@ -129,7 +129,7 @@ function ProdukPage() {
         ...current,
         categories: parsed.categories?.length ? parsed.categories : current.categories,
         products: parsed.products?.length ? parsed.products : current.products,
-        modifiers: parsed.modifiers?.length ? parsed.modifiers : current.modifiers,
+        modifiers: parsed.modifiers?.length ? parsed.modifiers : (current.modifiers ?? []),
       }));
       toast.success("Daftar produk berhasil diimpor.");
     } catch {
@@ -378,9 +378,9 @@ function ModifiersPanel() {
   const [editing, setEditing] = useState<Modifier | null>(null);
 
   function save(m: Modifier) {
-    if (!m.name.trim()) return toast.error("Nama modifier wajib diisi.");
+    if (!m.name.trim()) { toast.error("Nama modifier wajib diisi."); return; }
     const options = m.options.filter((o) => o.name.trim());
-    if (!options.length) return toast.error("Isi modifier minimal satu pilihan.");
+    if (!options.length) { toast.error("Isi modifier minimal satu pilihan."); return; }
     const clean = { ...m, name: m.name.trim(), options };
     update((c) => {
       const list = c.modifiers ?? [];
