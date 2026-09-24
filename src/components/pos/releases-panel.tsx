@@ -72,7 +72,7 @@ export function ReleasesPanel() {
           {reqs.length === 0 && <p className="text-sm text-muted-foreground">Belum ada permintaan.</p>}
           {reqs.map((q) => (
             <div key={q.id} className="flex flex-wrap items-center gap-2 rounded-md border p-3 text-sm">
-              <div className="flex-1">
+              <div className="min-w-0 flex-1 break-words">
                 <div className="font-medium">{q.stores?.name ?? "-"} <span className="font-mono text-muted-foreground">{q.stores?.code}</span></div>
                 <div className="text-muted-foreground">
                   <span className="font-mono">{q.current_version || "?"} → {q.target_version}</span> • oleh {q.requested_by || "-"} • {new Date(q.created_at).toLocaleString("id-ID")}
@@ -107,8 +107,8 @@ export function ReleasesPanel() {
           <Button className="justify-self-start" onClick={() => void add()}>Terbitkan</Button>
           <div className="space-y-2 pt-2">
             {releases.map((r) => (
-              <div key={r.id} className="flex items-start gap-2 rounded-md border p-3 text-sm">
-                <div className="flex-1">
+              <div key={r.id} className="flex flex-wrap items-start gap-2 rounded-md border p-3 text-sm">
+                <div className="min-w-0 flex-1 break-words">
                   <div className="font-mono font-semibold">{r.version} {r.version === latest && <Badge className="ml-1">Terbaru</Badge>}</div>
                   {r.notes && <p className="whitespace-pre-line text-muted-foreground">{r.notes}</p>}
                 </div>
@@ -123,7 +123,7 @@ export function ReleasesPanel() {
         <CardHeader><CardTitle className="text-base">Versi per Store</CardTitle></CardHeader>
         <CardContent className="space-y-1 text-sm">
           {stores.map((s) => (
-            <div key={s.id} className="flex justify-between border-b py-1 last:border-0">
+            <div key={s.id} className="flex flex-wrap justify-between gap-2 border-b py-1 last:border-0">
               <span>{s.name} <span className="font-mono text-muted-foreground">{s.code}</span></span>
               <span className="font-mono">
                 {s.app_version || "belum tercatat"}
