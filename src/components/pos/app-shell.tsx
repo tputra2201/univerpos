@@ -14,6 +14,9 @@ import { usePos } from "@/lib/pos/store";
 import { canManage, roleLabel } from "@/lib/pos/roles";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
+import { KeyRound } from "lucide-react";
+import { ChangePinForm } from "@/components/pos/change-pin";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const NAV = [
   { to: "/", label: "Kasir", icon: ShoppingCart, ownerOnly: false },
@@ -95,6 +98,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           >
             <LogOut className="size-4" /> Keluar
           </Button>
+          <ChangePinButton full />
         </div>
       </aside>
 
@@ -104,9 +108,12 @@ export function AppShell({ children }: { children: ReactNode }) {
             <p className="font-bold leading-tight">{db.settings.name}</p>
             <p className="text-xs text-muted-foreground">{currentUser?.name}</p>
           </div>
+          <div className="flex items-center">
+          <ChangePinButton />
           <Button variant="ghost" size="icon" onClick={signOut} aria-label="Keluar">
             <LogOut className="size-4" />
           </Button>
+          </div>
         </header>
         <main className="min-w-0 flex-1">{children}</main>
       </div>
@@ -150,5 +157,41 @@ export function PageHeader({
       </div>
       {action}
     </div>
+  );
+}
+
+function ChangePinButton({ full }: { full?: boolean }) {
+  const { currentUser, update, signIn } = usePos();
+  const [open, setOpen] = useState(false);
+  if (!currentUser) return null;
+  return (
+    <>
+      {full ? (
+        <Button variant="ghost" size="sm" className="mt-1 w-full justify-start gap-2" onClick={() => setOpen(true)}>
+          <KeyRound className="size-4" /> Ganti PIN
+        </Button>
+      ) : (
+        <Button variant="ghost" size="icon" aria-label="Ganti PIN" onClick={() => setOpen(true)}>
+          <KeyRound className="size-4" />
+        </Button>
+      )}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ganti PIN</DialogTitle>
+          </DialogHeader>
+          <ChangePinForm
+            oldPin={currentUser.pin}
+            onCancel={() => setOpen(false)}
+            onSave={(pin) => {
+              const next = { ...currentUser, pin, mustChangePin: false };
+              update((cur) => ({ ...cur, users: cur.users.map((u) => (u.id === next.id ? next : u)) }));
+              signIn(next);
+              setOpen(false);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

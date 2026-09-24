@@ -13,6 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
+import { ChangePinForm } from "@/components/pos/change-pin";
+import { normalizeEmail, normalizeWa, pinMessage, randomPin, sendPin } from "@/lib/pos/pin";
 import { daysLeft, formatExpiry } from "@/lib/pos/expiry";
 
 const DEVICE_TOKEN_KEY = "wo-pos-device-token";
@@ -543,6 +545,9 @@ function LoginScreen() {
               Masuk
             </Button>
           </div>
+          <button type="button" className="mx-auto block text-sm font-medium text-primary underline" onClick={() => setMode("forgot")}>
+            Lupa PIN?
+          </button>
         </CardContent>
       </Card>
     </Frame>
