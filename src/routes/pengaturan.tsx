@@ -157,6 +157,10 @@ function PengaturanPage() {
           <TabsTrigger value="data">Data</TabsTrigger>
         </TabsList>
 
+        <TabsContent value="perangkat" className="space-y-4">
+          <DevicesCard />
+        </TabsContent>
+
         <TabsContent value="store" className="space-y-4">
           <Card>
             <CardHeader>
