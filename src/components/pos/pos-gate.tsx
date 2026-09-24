@@ -264,7 +264,7 @@ function ActivationFlow() {
                 Simpan & Lengkapi Data Store
               </Button>
               <p className="text-center text-xs text-muted-foreground">
-                Alamat, telepon, pajak, dan jenis layanan diatur di halaman Pengaturan setelah ini. ({db.version})
+                Alamat, telepon, pajak, dan jenis layanan diatur di halaman Pengaturan setelah ini.
               </p>
             </>
           )}
