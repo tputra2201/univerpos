@@ -106,9 +106,15 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col pb-20 md:pb-0">
         <header className="flex items-center justify-between border-b bg-card px-4 py-3 md:hidden">
-          <div>
-            <p className="font-bold leading-tight">{db.settings.name}</p>
-            <p className="text-xs text-muted-foreground">{currentUser?.name}</p>
+          <div className="min-w-0">
+            <p className="truncate font-bold leading-tight">{db.settings.name}</p>
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span
+                className={`inline-block size-2 rounded-full ${online ? "bg-primary" : "bg-destructive"}`}
+                aria-hidden
+              />
+              {online ? "Online" : "Offline"} · {currentUser?.name}
+            </p>
           </div>
           <div className="flex items-center">
           <EditProfileButton />
