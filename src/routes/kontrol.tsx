@@ -93,21 +93,40 @@ function StoreDevices({ store, onChange }: { store: StoreRow; onChange: () => vo
     onChange();
   }
 
+  useEffect(() => {
+    void load();
+    const t = setInterval(() => void load(), 60_000);
+    return () => clearInterval(t);
+  }, [load]);
+
   if (rows === null) {
-    return (
-      <Button size="sm" variant="ghost" className="w-full" onClick={load}>
-        Lihat perangkat terdaftar
-      </Button>
-    );
+    return <p className="w-full text-xs text-muted-foreground">Memuat perangkat…</p>;
   }
+
+  const isOn = (d: DeviceRow) => Date.now() - new Date(d.last_seen_at).getTime() < 5 * 60_000;
+  const onCount = rows.filter(isOn).length;
 
   return (
     <div className="w-full space-y-1 rounded-lg bg-muted/40 p-2">
+      <div className="flex flex-wrap items-center gap-2 pb-1 text-xs">
+        <span
+          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold ${
+            onCount > 0 ? "bg-primary/15 text-primary" : "bg-destructive/15 text-destructive"
+          }`}
+        >
+          <span className={`size-2 rounded-full ${onCount > 0 ? "bg-primary" : "bg-destructive"}`} />
+          {onCount > 0 ? "Online" : "Offline"}
+        </span>
+        <span className="text-muted-foreground">
+          {onCount} dari {rows.length} perangkat aktif sekarang
+        </span>
+      </div>
       {rows.map((d) => (
-        <div key={d.id} className="flex items-center gap-2 text-xs">
+        <div key={d.id} className="flex flex-wrap items-center gap-2 text-xs">
+          <span className={`size-2 shrink-0 rounded-full ${isOn(d) ? "bg-primary" : "bg-muted-foreground/40"}`} />
           <span className="min-w-0 flex-1 truncate font-medium">{d.device_name}</span>
           <span className="text-muted-foreground">
-            aktif {new Date(d.last_seen_at).toLocaleString("id-ID")}
+            {isOn(d) ? "online" : "terakhir aktif"} {new Date(d.last_seen_at).toLocaleString("id-ID")}
           </span>
           <Button size="sm" variant="ghost" onClick={() => release(d)}>
             Lepas

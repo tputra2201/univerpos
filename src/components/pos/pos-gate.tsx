@@ -55,6 +55,26 @@ export function PosGate({ children }: { children: ReactNode }) {
     );
   }, [ready, activated, online, code, update]);
 
+  // Detak perangkat: laporkan "masih aktif" tiap 2 menit saat online.
+  const token = db.settings.deviceToken;
+  useEffect(() => {
+    if (!ready || !activated || !code || !token) return;
+    const beat = () => {
+      if (typeof navigator !== "undefined" && !navigator.onLine) return;
+      void (supabase.rpc as unknown as (n: string, a: object) => Promise<unknown>)("device_heartbeat", {
+        _code: code,
+        _token: token,
+      });
+    };
+    beat();
+    const t = setInterval(beat, 120_000);
+    window.addEventListener("online", beat);
+    return () => {
+      clearInterval(t);
+      window.removeEventListener("online", beat);
+    };
+  }, [ready, activated, code, token]);
+
   if (!ready) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
