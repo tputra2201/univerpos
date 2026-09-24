@@ -13,22 +13,31 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
+import { daysLeft, formatExpiry } from "@/lib/pos/expiry";
+
 const DEVICE_TOKEN_KEY = "wo-pos-device-token";
 
 export function PosGate({ children }: { children: ReactNode }) {
-  const { ready, db, currentUser } = usePos();
+  const { ready, db, currentUser, update } = usePos();
   const [blocked, setBlocked] = useState(false);
   const code = db.settings.storeCode;
-  const online = db.settings.activated && db.settings.storeMode === "online";
+  const activated = db.settings.activated;
+  const online = activated && db.settings.storeMode === "online";
 
   useEffect(() => {
-    if (!ready || !online || !code || typeof navigator === "undefined" || !navigator.onLine) return;
+    if (!ready || !activated || !code || typeof navigator === "undefined" || !navigator.onLine) return;
     supabase.rpc("check_store", { _code: code }).then(({ data, error }) => {
       if (error) return; // gangguan jaringan: tetap izinkan kerja offline
       const row = Array.isArray(data) ? data[0] : null;
-      setBlocked(!row || !row.active);
+      if (online) setBlocked(!row || !row.active);
+      if (row) {
+        const exp = (row as { expires_at?: string | null }).expires_at ?? null;
+        update((cur) =>
+          (cur.settings.expiresAt ?? null) === exp ? cur : { ...cur, settings: { ...cur.settings, expiresAt: exp } },
+        );
+      }
     });
-  }, [ready, online, code]);
+  }, [ready, activated, online, code, update]);
 
   if (!ready) {
     return (
@@ -53,7 +62,27 @@ export function PosGate({ children }: { children: ReactNode }) {
       </Frame>
     );
   if (!currentUser) return <LoginScreen />;
-  return <>{children}</>;
+  const left = daysLeft(db.settings.expiresAt);
+  return (
+    <>
+      {left !== null && left <= 10 && (
+        <div
+          role="alert"
+          className={
+            "px-4 py-2 text-center text-sm font-medium " +
+            (left < 0 ? "bg-destructive text-destructive-foreground" : "bg-accent text-accent-foreground")
+          }
+        >
+          {left < 0
+            ? `Masa berlaku store telah berakhir pada ${formatExpiry(db.settings.expiresAt)}. Hubungi penyedia aplikasi untuk perpanjangan.`
+            : left === 0
+              ? "Masa berlaku store berakhir HARI INI. Segera hubungi penyedia aplikasi untuk perpanjangan."
+              : `Masa berlaku store berakhir dalam ${left} hari (${formatExpiry(db.settings.expiresAt)}). Segera lakukan perpanjangan.`}
+        </div>
+      )}
+      {children}
+    </>
+  );
 }
 
 function Frame({ children }: { children: ReactNode }) {
@@ -78,6 +107,7 @@ function ActivationFlow() {
     mode: string;
     business_type_name: string;
     base_kind: string;
+    expires_at?: string | null;
   } | null>(null);
   const [type, setType] = useState<BusinessType>("kuliner");
   const [ownerName, setOwnerName] = useState("");
@@ -148,6 +178,7 @@ function ActivationFlow() {
           storeMode: picked?.mode === "online" ? "online" : "offline",
           name: picked?.name ?? "",
           businessTypeName: picked?.business_type_name ?? "",
+          expiresAt: picked?.expires_at ?? null,
           activationKey: key.trim(),
           deviceToken,
           deviceName: deviceName.trim() || "Kasir 1",
