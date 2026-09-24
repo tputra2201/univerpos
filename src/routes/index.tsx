@@ -1034,10 +1034,10 @@ function CartPanel({
                       className={`truncate text-sm font-semibold ${line.voided ? "line-through" : ""}`}
                     >
                       {line.name}
-                      {line.variantName && (
-                        <span className="text-muted-foreground"> · {line.variantName}</span>
-                      )}
                     </p>
+                    {line.variantName && (
+                      <p className="break-words text-xs text-muted-foreground">{line.variantName}</p>
+                    )}
                     {line.voided ? (
                       <p className="text-xs font-medium text-destructive">
                         VOID{line.voidReason ? ` · ${line.voidReason}` : ""}
