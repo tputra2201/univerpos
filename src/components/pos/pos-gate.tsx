@@ -1,7 +1,7 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { Switch } from "@/components/ui/switch";
-import { Loader2, KeyRound, Store, Coffee, ShoppingBasket, Scissors, LockKeyhole } from "lucide-react";
+import { Loader2, KeyRound, Store, LockKeyhole } from "lucide-react";
 import { toast } from "sonner";
 import { usePos } from "@/lib/pos/store";
 import { getServiceTypes, seedForBusiness } from "@/lib/pos/seed";
