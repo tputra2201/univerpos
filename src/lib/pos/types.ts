@@ -53,6 +53,10 @@ export interface PosUser {
   name: string;
   role: UserRole;
   pin: string;
+  email?: string;
+  whatsapp?: string;
+  /** Wajib membuat PIN baru saat masuk berikutnya (PIN default/sementara). */
+  mustChangePin?: boolean;
 }
 
 export interface Category {
