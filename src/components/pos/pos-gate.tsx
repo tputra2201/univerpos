@@ -116,7 +116,7 @@ export function PosGate({ children }: { children: ReactNode }) {
   );
 }
 
-function DevContact({ email, phone }: { email?: string; phone?: string }) {
+function DevContact({ email, phone }: { email?: string | undefined; phone?: string | undefined }) {
   if (!email && !phone)
     return <p className="text-sm text-muted-foreground">Kontak developer belum tersedia.</p>;
   const wa = phone ? phone.replace(/\D/g, "").replace(/^0/, "62") : "";
