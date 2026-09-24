@@ -52,6 +52,7 @@ interface StoreRow {
   active: boolean;
   notes: string;
   device_count: number;
+  max_devices: number;
   last_activated_at: string | null;
   last_activated_by: string;
   business_type_id: string | null;
@@ -350,7 +351,7 @@ function BusinessTypesPanel() {
 function StoresPanel() {
   const [stores, setStores] = useState<StoreRow[]>([]);
   const [types, setTypes] = useState<BizType[]>([]);
-  const [form, setForm] = useState({ name: "", code: "", mode: "offline", notes: "", business_type_id: "" });
+  const [form, setForm] = useState({ name: "", code: "", mode: "offline", notes: "", business_type_id: "", max_devices: "1" });
 
   const load = useCallback(async () => {
     const [{ data, error }, { data: bt }] = await Promise.all([
@@ -376,10 +377,11 @@ function StoresPanel() {
       mode: form.mode,
       notes: form.notes.trim(),
       business_type_id: form.business_type_id,
+      max_devices: Math.max(0, Math.floor(Number(form.max_devices) || 0)),
     });
     if (error) return toast.error(error.message.includes("duplicate") ? "Kode store sudah dipakai." : error.message);
     toast.success(`Store terdaftar dengan kode ${code}`);
-    setForm({ name: "", code: "", mode: "offline", notes: "", business_type_id: "" });
+    setForm({ name: "", code: "", mode: "offline", notes: "", business_type_id: "", max_devices: "1" });
     void load();
     return undefined;
   }
@@ -449,6 +451,16 @@ function StoresPanel() {
             </Select>
           </div>
           <div className="space-y-1">
+            <Label htmlFor="st-max">Maximum Perangkat (0 = tanpa batas)</Label>
+            <Input
+              id="st-max"
+              type="number"
+              min={0}
+              value={form.max_devices}
+              onChange={(e) => setForm({ ...form, max_devices: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1">
             <Label htmlFor="st-notes">Catatan</Label>
             <Input id="st-notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
           </div>
@@ -476,12 +488,28 @@ function StoresPanel() {
                 </p>
                 <p className="font-mono text-sm text-primary">{s.code}</p>
                 <p className="text-xs text-muted-foreground">
-                  {s.device_count} perangkat
+                  <span className={s.max_devices > 0 && s.device_count >= s.max_devices ? "font-semibold text-destructive" : ""}>
+                    {s.device_count} / {s.max_devices > 0 ? s.max_devices : "∞"} perangkat
+                  </span>
                   {s.last_activated_at &&
                     ` • terakhir ${new Date(s.last_activated_at).toLocaleString("id-ID")} oleh ${s.last_activated_by || "-"}`}
                   {s.notes && ` • ${s.notes}`}
                 </p>
               </div>
+              <label className="flex items-center gap-1 text-xs text-muted-foreground">
+                Maks
+                <Input
+                  type="number"
+                  min={0}
+                  className="h-9 w-16"
+                  aria-label={`Maksimum perangkat ${s.name}`}
+                  defaultValue={s.max_devices}
+                  onBlur={(e) => {
+                    const v = Math.max(0, Math.floor(Number(e.target.value) || 0));
+                    if (v !== s.max_devices) void patch(s.id, { max_devices: v });
+                  }}
+                />
+              </label>
               <Select value={s.mode} onValueChange={(v) => patch(s.id, { mode: v })}>
                 <SelectTrigger className="w-28">
                   <SelectValue />
