@@ -29,16 +29,20 @@ export function EditUserForm({
   const [role, setRole] = useState<UserRole>(user.role);
   const [pin, setPin] = useState("");
 
-  function submit() {
-    if (!name.trim()) return toast.error("Nama wajib diisi.");
+  function submit(): void {
+    if (!name.trim()) { toast.error("Nama wajib diisi."); return; }
     const w = wa.trim() ? normalizeWa(wa) : "";
     const e = email.trim() ? normalizeEmail(email) : "";
-    if (!w && !e) return toast.error("Isi minimal No. WhatsApp atau Email.");
-    if (e && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) return toast.error("Format email tidak valid.");
-    if (w && w.length < 9) return toast.error("Nomor WhatsApp tidak valid.");
-    if (self && pin !== user.pin) return toast.error("PIN saat ini salah.");
-    onSave({ ...user, name: name.trim(), whatsapp: w || undefined, email: e || undefined, role: self ? user.role : role });
-    toast.success("Data pengguna disimpan.");
+    if (!w && !e) { toast.error("Isi minimal No. WhatsApp atau Email."); return; }
+    if (e && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) { toast.error("Format email tidak valid."); return; }
+    if (w && w.length < 9) { toast.error("Nomor WhatsApp tidak valid."); return; }
+    if (self && pin !== user.pin) { toast.error("PIN saat ini salah."); return; }
+    const next: PosUser = { ...user, name: name.trim(), role: self ? user.role : role };
+    delete next.whatsapp; delete next.email;
+    if (w) next.whatsapp = w;
+    if (e) next.email = e;
+    onSave(next);
+    toast.success("Data pengguna disimpan."); return; }
   }
 
   return (
