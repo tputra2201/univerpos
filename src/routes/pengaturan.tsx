@@ -1,4 +1,4 @@
-import { pinMessage, randomPin, sendPin } from "@/lib/pos/pin";
+import { deliverPin, pinMessage, randomPin } from "@/lib/pos/pin";
 import { daysLeft, formatExpiry } from "@/lib/pos/expiry";
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
@@ -376,7 +376,7 @@ function PengaturanPage() {
                         ...current,
                         users: current.users.map((x) => (x.id === u.id ? { ...x, pin: temp, mustChangePin: true } : x)),
                       }));
-                      sendPin({ email: u.email, whatsapp: u.whatsapp, subject: `PIN ${db.settings.name}`, message: pinMessage(db.settings.name, u.name, temp, true) });
+                      void deliverPin({ email: u.email, whatsapp: u.whatsapp, subject: `PIN ${db.settings.name}`, message: pinMessage(db.settings.name, u.name, temp, true), storeCode: db.settings.storeCode, activationKey: db.settings.activationKey, storeName: db.settings.name, userName: u.name, pin: temp, temporary: true }).then((r) => (r.ok ? toast.success("PIN dikirim.") : toast.error(`PIN tidak terkirim: ${r.error}`)));
                     }}
                   >
                     Kirim Ulang PIN
@@ -473,8 +473,8 @@ function PengaturanPage() {
                         },
                       ],
                     }));
-                    sendPin({ email: em, whatsapp: wa, subject: `PIN ${db.settings.name}`, message: pinMessage(db.settings.name, newUser.name.trim(), temp, false) });
-                    toast.success("Pengguna ditambahkan. PIN default dikirim.");
+                    void deliverPin({ email: em, whatsapp: wa, subject: `PIN ${db.settings.name}`, message: pinMessage(db.settings.name, newUser.name.trim(), temp, false), storeCode: db.settings.storeCode, activationKey: db.settings.activationKey, storeName: db.settings.name, userName: newUser.name.trim(), pin: temp, temporary: false }).then((r) => (r.ok ? toast.success("PIN dikirim.") : toast.error(`PIN tidak terkirim: ${r.error}`)));
+                    toast.success("Pengguna ditambahkan.");
                     setNewUser({ name: "", email: "", whatsapp: "", role: "cashier" });
                   }}
                 >

@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { ChangePinForm } from "@/components/pos/change-pin";
-import { normalizeEmail, normalizeWa, pinMessage, randomPin, sendPin } from "@/lib/pos/pin";
+import { normalizeEmail, normalizeWa, pinMessage, randomPin, deliverPin } from "@/lib/pos/pin";
 import { daysLeft, formatExpiry } from "@/lib/pos/expiry";
 
 const DEVICE_TOKEN_KEY = "wo-pos-device-token";
@@ -421,13 +421,18 @@ function LoginScreen() {
       ...cur,
       users: cur.users.map((u) => (u.id === user.id ? { ...u, pin: temp, mustChangePin: true } : u)),
     }));
-    sendPin({
+    void deliverPin({
       email: isEmail ? user.email : undefined,
       whatsapp: isEmail ? undefined : user.whatsapp,
       subject: `PIN sementara ${db.settings.name}`,
       message: pinMessage(db.settings.name, user.name, temp, true),
-    });
-    toast.success("PIN sementara dikirim. Masuk dengan PIN tersebut lalu buat PIN baru.", { duration: 8000 });
+      storeCode: db.settings.storeCode, activationKey: db.settings.activationKey, storeName: db.settings.name,
+      userName: user.name, pin: temp, temporary: true,
+    }).then((r) =>
+      r.ok
+        ? toast.success(isEmail ? "PIN sementara sudah dikirim ke email Anda." : "PIN sementara dikirim. Masuk dengan PIN tersebut lalu buat PIN baru.", { duration: 8000 })
+        : toast.error(`PIN tidak terkirim: ${r.error}`),
+    );
     setContact("");
     setMode("pin");
   }

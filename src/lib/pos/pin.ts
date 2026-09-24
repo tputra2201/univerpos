@@ -1,3 +1,4 @@
+import { sendPinEmail } from "@/lib/pin-email.functions";
 export function randomPin(): string {
   const a = new Uint32Array(1);
   crypto.getRandomValues(a);
@@ -33,7 +34,6 @@ export async function deliverPin(opts: {
   if (opts.whatsapp || !opts.email) { sendPin(opts); return { ok: true }; }
   if (!opts.storeCode || !opts.activationKey) return { ok: false, error: "Store belum diaktifkan dengan kunci aktivasi." };
   try {
-    const { sendPinEmail } = await import("@/lib/pin-email.functions");
     return await sendPinEmail({ data: { storeCode: opts.storeCode, activationKey: opts.activationKey, email: opts.email, userName: opts.userName, storeName: opts.storeName, pin: opts.pin, temporary: opts.temporary } });
   } catch {
     return { ok: false, error: "Tidak ada koneksi internet." };
