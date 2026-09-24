@@ -186,6 +186,15 @@ function PengaturanPage() {
                   className="h-11"
                 />
               </Field>
+              <Field label="Email Store">
+                <Input
+                  type="email"
+                  value={db.settings.email ?? ""}
+                  onChange={(e) => setSettings({ email: e.target.value })}
+                  placeholder="store@contoh.com"
+                  className="h-11"
+                />
+              </Field>
               <Field label="Alamat" className="md:col-span-2">
                 <Input
                   value={db.settings.address}
