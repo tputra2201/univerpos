@@ -13,31 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-const BUSINESS_OPTIONS: {
-  value: BusinessType;
-  title: string;
-  desc: string;
-  icon: typeof Coffee;
-}[] = [
-  {
-    value: "kuliner",
-    title: "Kuliner / Kafe",
-    desc: "Meja, pesanan dapur, label minuman, varian menu",
-    icon: Coffee,
-  },
-  {
-    value: "retail",
-    title: "Retail / Store",
-    desc: "Barcode, stok barang, satuan jual",
-    icon: ShoppingBasket,
-  },
-  {
-    value: "jasa",
-    title: "Jasa / Salon & Servis",
-    desc: "Daftar layanan, staf pelaksana, nama pelanggan",
-    icon: Scissors,
-  },
-];
+const DEVICE_TOKEN_KEY = "wo-pos-device-token";
 
 export function PosGate({ children }: { children: ReactNode }) {
   const { ready, db, currentUser } = usePos();
