@@ -206,6 +206,37 @@ function PengaturanPage() {
               <Field label="Kode store (aktivasi)">
                 <Input value={db.settings.storeCode} readOnly className="h-11 font-mono" />
               </Field>
+              <Field label="Tanggal mulai aktivasi">
+                <Input
+                  value={
+                    db.settings.activatedAt
+                      ? new Date(db.settings.activatedAt).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" })
+                      : "Belum tercatat"
+                  }
+                  readOnly
+                  disabled
+                  className="h-11"
+                />
+              </Field>
+              <Field label="Jam operasional">
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="time"
+                    aria-label="Jam buka"
+                    value={db.settings.openTime ?? ""}
+                    onChange={(e) => setSettings({ openTime: e.target.value })}
+                    className="h-11 min-w-0 flex-1"
+                  />
+                  <span className="text-muted-foreground">–</span>
+                  <Input
+                    type="time"
+                    aria-label="Jam tutup"
+                    value={db.settings.closeTime ?? ""}
+                    onChange={(e) => setSettings({ closeTime: e.target.value })}
+                    className="h-11 min-w-0 flex-1"
+                  />
+                </div>
+              </Field>
               <Field label="Masa berlaku sampai">
                 <Input
                   value={(() => {
