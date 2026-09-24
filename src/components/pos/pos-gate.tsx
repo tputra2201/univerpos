@@ -89,7 +89,6 @@ export function PosGate({ children }: { children: ReactNode }) {
     }
     let model = "";
     const beat = async () => {
-      if (typeof navigator !== "undefined" && !navigator.onLine) return;
       const result = await (supabase.rpc as unknown as (
         n: string,
         a: object,
