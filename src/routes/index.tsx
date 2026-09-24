@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { OptionPicker, productHasOptions } from "@/components/pos/option-picker";
 import { useEffect, useMemo, useState } from "react";
 import {
   Plus,
@@ -557,10 +558,8 @@ function KasirPage() {
                         Stok {product.stock}
                       </span>
                     )}
-                    {product.variants.length > 0 && (
-                      <span className="text-xs text-muted-foreground">
-                        {product.variants.length} varian
-                      </span>
+                    {productHasOptions(product, db.modifiers ?? []) && (
+                      <span className="text-xs text-muted-foreground">Ada pilihan</span>
                     )}
                   </span>
                 </button>
