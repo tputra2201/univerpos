@@ -24,3 +24,18 @@ export function sendPin(opts: { email?: string | undefined; whatsapp?: string | 
     window.location.href = `mailto:${opts.email}?subject=${encodeURIComponent(opts.subject)}&body=${encodeURIComponent(opts.message)}`;
   }
 }
+
+/** Kirim PIN: email dikirim otomatis di latar belakang, WhatsApp lewat tautan. */
+export async function deliverPin(opts: {
+  email?: string | undefined; whatsapp?: string | undefined; subject: string; message: string;
+  storeCode?: string | undefined; activationKey?: string | undefined; storeName: string; userName: string; pin: string; temporary: boolean;
+}): Promise<{ ok: boolean; error?: string }> {
+  if (opts.whatsapp || !opts.email) { sendPin(opts); return { ok: true }; }
+  if (!opts.storeCode || !opts.activationKey) return { ok: false, error: "Store belum diaktifkan dengan kunci aktivasi." };
+  try {
+    const { sendPinEmail } = await import("@/lib/pin-email.functions");
+    return await sendPinEmail({ data: { storeCode: opts.storeCode, activationKey: opts.activationKey, email: opts.email, userName: opts.userName, storeName: opts.storeName, pin: opts.pin, temporary: opts.temporary } });
+  } catch {
+    return { ok: false, error: "Tidak ada koneksi internet." };
+  }
+}

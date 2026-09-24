@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react'
+import { template as pinCode } from './pin-code'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -18,6 +19,7 @@ export interface TemplateEntry {
  *   // then add to TEMPLATES: 'welcome': welcomeTemplate
  */
 export const TEMPLATES: Record<string, TemplateEntry> = {
+  'pin-code': pinCode,
   // Add templates here as they are created, e.g.:
   // 'welcome': welcomeTemplate,
 }

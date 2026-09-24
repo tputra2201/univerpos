@@ -7,6 +7,7 @@ const schema = z.object({
   activationKey: z.string().min(1).max(40),
   email: z.string().trim().email().max(255),
   userName: z.string().max(80),
+  storeName: z.string().max(120),
   pin: z.string().regex(/^\d{4,6}$/),
   temporary: z.boolean(),
 });
@@ -29,14 +30,12 @@ export const sendPinEmail = createServerFn({ method: "POST" })
     });
     const { error } = await sb.rpc("store_devices_list", { _code: data.storeCode, _key: data.activationKey });
     if (error) return { ok: false as const, error: "Store tidak valid" };
-    const { data: st } = await sb.rpc("check_store", { _code: data.storeCode });
     const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
     try {
       const r = await sendTemplateEmail("pin-code", data.email, {
-        templateData: { storeName: data.storeCode, userName: data.userName, pin: data.pin, temporary: data.temporary },
+        templateData: { storeName: data.storeName, userName: data.userName, pin: data.pin, temporary: data.temporary },
         idempotencyKey: `pin-${data.storeCode}-${data.email}-${data.pin}`,
       });
-      void st;
       if (!r.sent) return { ok: false as const, error: "Email ini tidak bisa menerima pesan (diblokir)." };
       return { ok: true as const };
     } catch (e) {
