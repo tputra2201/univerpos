@@ -25,6 +25,9 @@ export interface StoreSettings {
   deviceName?: string;
   /** Masa berlaku store (YYYY-MM-DD) dari panel kontrol. */
   expiresAt?: string | null;
+  /** Kontak developer (disimpan agar tetap tampil saat offline). */
+  devEmail?: string;
+  devPhone?: string;
 }
 
 export interface PrinterSettings {

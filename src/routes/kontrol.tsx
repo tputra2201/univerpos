@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ReleasesPanel } from "@/components/pos/releases-panel";
+import { ContactPanel } from "@/components/pos/contact-panel";
 
 export const Route = createFileRoute("/kontrol")({
   head: () => ({
@@ -186,6 +187,7 @@ function KontrolPage() {
               <TabsTrigger value="tipe">Tipe Usaha</TabsTrigger>
               <TabsTrigger value="akun">Installer & Developer</TabsTrigger>
               <TabsTrigger value="rilis">Rilis & Update</TabsTrigger>
+              <TabsTrigger value="kontak">Kontak</TabsTrigger>
             </TabsList>
             <TabsContent value="store">
               <StoresPanel />
@@ -198,6 +200,9 @@ function KontrolPage() {
             </TabsContent>
             <TabsContent value="rilis">
               <ReleasesPanel />
+            </TabsContent>
+            <TabsContent value="kontak">
+              <ContactPanel />
             </TabsContent>
           </Tabs>
         )}
