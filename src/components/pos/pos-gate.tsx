@@ -1,3 +1,4 @@
+import { BrandIcon, useBranding } from "@/lib/pos/branding";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
@@ -429,6 +430,7 @@ function ActivationFlow() {
 }
 
 function LoginScreen() {
+  const brand = useBranding();
   const { db, signIn, update } = usePos();
   const [selected, setSelected] = useState(db.users[0]?.id ?? "");
   const [pin, setPin] = useState("");
@@ -548,11 +550,10 @@ function LoginScreen() {
     <Frame>
       <Card>
         <CardHeader className="text-center">
-          <div className="mx-auto mb-2 flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <LockKeyhole className="size-5" />
-          </div>
+          <BrandIcon className="mx-auto mb-1 size-16 rounded-2xl object-cover" />
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{brand.name}</p>
           <CardTitle className="text-2xl">{db.settings.name}</CardTitle>
-          <CardDescription>Pilih pengguna dan masukkan PIN untuk membuka kasir.</CardDescription>
+          <CardDescription className="flex items-center justify-center gap-1.5"><LockKeyhole className="size-3.5" /> Pilih pengguna dan masukkan PIN untuk membuka kasir.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
           <div className="flex flex-wrap justify-center gap-2">

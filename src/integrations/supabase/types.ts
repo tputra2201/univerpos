@@ -37,18 +37,24 @@ export type Database = {
       }
       app_settings: {
         Row: {
+          app_icon: string
+          app_name: string
           contact_email: string
           contact_phone: string
           id: number
           updated_at: string
         }
         Insert: {
+          app_icon?: string
+          app_name?: string
           contact_email?: string
           contact_phone?: string
           id?: number
           updated_at?: string
         }
         Update: {
+          app_icon?: string
+          app_name?: string
           contact_email?: string
           contact_phone?: string
           id?: number
@@ -280,6 +286,13 @@ export type Database = {
           code: string
           mode: string
           name: string
+        }[]
+      }
+      app_branding: {
+        Args: never
+        Returns: {
+          app_icon: string
+          app_name: string
         }[]
       }
       check_store: {

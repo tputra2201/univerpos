@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { PosProvider } from "@/lib/pos/store";
 import { Toaster } from "@/components/ui/sonner";
+import { useApplyBranding } from "@/lib/pos/branding";
 
 function NotFoundComponent() {
   return (
@@ -137,6 +138,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useApplyBranding();
   useEffect(() => {
     void import("@/lib/pos/register-sw").then((m) => m.registerServiceWorker());
   }, []);

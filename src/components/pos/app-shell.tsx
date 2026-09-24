@@ -11,6 +11,7 @@ import {
   WifiOff,
 } from "lucide-react";
 import { usePos } from "@/lib/pos/store";
+import { BrandIcon, useBranding } from "@/lib/pos/branding";
 import { canManage, roleLabel } from "@/lib/pos/roles";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
@@ -29,6 +30,7 @@ const NAV = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { db, currentUser, signOut } = usePos();
+  const brand = useBranding();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [online, setOnline] = useState(true);
 
@@ -50,6 +52,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col justify-between bg-sidebar p-4 text-sidebar-foreground md:flex">
         <div>
           <div className="mb-6 px-2">
+            <div className="mb-3 flex items-center gap-2">
+              <BrandIcon className="size-8 rounded-lg object-cover" />
+              <span className="truncate text-sm font-bold">{brand.name}</span>
+            </div>
             <p className="text-lg font-extrabold leading-tight">{db.settings.name}</p>
             <p className="text-xs uppercase tracking-wide text-sidebar-foreground/60">
               {db.settings.businessType === "kuliner"
@@ -106,6 +112,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col pb-20 md:pb-0">
         <header className="flex items-center justify-between border-b bg-card px-4 py-3 md:hidden">
+          <div className="flex min-w-0 items-center gap-2">
+          <BrandIcon className="size-8 shrink-0 rounded-lg object-cover" />
           <div className="min-w-0">
             <p className="truncate font-bold leading-tight">{db.settings.name}</p>
             <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -115,6 +123,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               />
               {online ? "Online" : "Offline"} · {currentUser?.name}
             </p>
+          </div>
           </div>
           <div className="flex items-center">
           <EditProfileButton />
