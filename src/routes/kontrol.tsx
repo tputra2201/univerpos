@@ -68,6 +68,11 @@ interface DeviceRow {
   last_seen_at: string;
 }
 
+/** Kode perangkat singkat dari ID, mis. DEV-3F9A2C. */
+function deviceCode(id: string) {
+  return `DEV-${id.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
+}
+
 function StoreDevices({ store, onChange }: { store: StoreRow; onChange: () => void }) {
   const [rows, setRows] = useState<DeviceRow[] | null>(null);
 
@@ -121,9 +126,19 @@ function StoreDevices({ store, onChange }: { store: StoreRow; onChange: () => vo
           {onCount} dari {rows.length} perangkat aktif sekarang
         </span>
       </div>
+      {onCount > 0 && (
+        <p className="break-words pb-1 text-xs">
+          <span className="text-muted-foreground">Sedang online: </span>
+          {rows
+            .filter(isOn)
+            .map((d) => `${d.device_name} (${deviceCode(d.id)})`)
+            .join(", ")}
+        </p>
+      )}
       {rows.map((d) => (
         <div key={d.id} className="flex flex-wrap items-center gap-2 text-xs">
           <span className={`size-2 shrink-0 rounded-full ${isOn(d) ? "bg-primary" : "bg-muted-foreground/40"}`} />
+          <span className="rounded bg-background px-1.5 py-0.5 font-mono">{deviceCode(d.id)}</span>
           <span className="min-w-0 flex-1 truncate font-medium">{d.device_name}</span>
           <span className="text-muted-foreground">
             {isOn(d) ? "online" : "terakhir aktif"} {new Date(d.last_seen_at).toLocaleString("id-ID")}
