@@ -72,6 +72,20 @@ export interface Variant {
   priceDelta: number;
 }
 
+export interface ModifierOption {
+  id: string;
+  name: string;
+  price: number;
+}
+
+export interface Modifier {
+  id: string;
+  name: string;
+  required: boolean;
+  multiple: boolean;
+  options: ModifierOption[];
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -82,6 +96,9 @@ export interface Product {
   stock: number | null;
   active: boolean;
   variants: Variant[];
+  sizes?: Variant[];
+  toppings?: Variant[];
+  modifierIds?: string[];
 }
 
 export interface PaymentMethod {
@@ -213,6 +230,7 @@ export interface PosDatabase {
   users: PosUser[];
   categories: Category[];
   products: Product[];
+  modifiers?: Modifier[];
   paymentMethods: PaymentMethod[];
   tables: TableRef[];
   staff: Staff[];
