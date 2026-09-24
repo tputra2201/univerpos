@@ -37,6 +37,20 @@ export function PosGate({ children }: { children: ReactNode }) {
         );
       }
     });
+    (supabase.rpc as unknown as (n: string) => Promise<{ data: unknown; error: unknown }>)("developer_contact").then(
+      ({ data, error }) => {
+        if (error) return;
+        const row = (Array.isArray(data) ? data[0] : null) as { contact_email?: string; contact_phone?: string } | null;
+        if (!row) return;
+        const email = row.contact_email ?? "";
+        const phone = row.contact_phone ?? "";
+        update((cur) =>
+          cur.settings.devEmail === email && cur.settings.devPhone === phone
+            ? cur
+            : { ...cur, settings: { ...cur.settings, devEmail: email, devPhone: phone } },
+        );
+      },
+    );
   }, [ready, activated, online, code, update]);
 
   if (!ready) {
@@ -47,6 +61,8 @@ export function PosGate({ children }: { children: ReactNode }) {
     );
   }
 
+  const contact = <DevContact email={db.settings.devEmail} phone={db.settings.devPhone} />;
+
   if (!db.settings.activated) return <ActivationFlow />;
   if (blocked)
     return (
@@ -55,9 +71,10 @@ export function PosGate({ children }: { children: ReactNode }) {
           <CardHeader>
             <CardTitle>Store Dinonaktifkan</CardTitle>
             <CardDescription>
-              Kode store {db.settings.storeCode} tidak aktif lagi. Hubungi penyedia aplikasi untuk mengaktifkan kembali.
+              Kode store {db.settings.storeCode} tidak aktif lagi. Hubungi developer untuk mengaktifkan kembali.
             </CardDescription>
           </CardHeader>
+          <CardContent>{contact}</CardContent>
         </Card>
       </Frame>
     );
@@ -69,9 +86,10 @@ export function PosGate({ children }: { children: ReactNode }) {
           <CardHeader>
             <CardTitle>Masa Berlaku Store Habis</CardTitle>
             <CardDescription>
-              Masa berlaku store {db.settings.storeCode} berakhir pada {formatExpiry(db.settings.expiresAt)}. Hubungi penyedia aplikasi untuk perpanjangan, lalu buka ulang aplikasi dalam keadaan online.
+              Masa berlaku store {db.settings.storeCode} berakhir pada {formatExpiry(db.settings.expiresAt)}. Hubungi developer untuk perpanjangan, lalu buka ulang aplikasi dalam keadaan online.
             </CardDescription>
           </CardHeader>
+          <CardContent>{contact}</CardContent>
         </Card>
       </Frame>
     );
@@ -95,6 +113,33 @@ export function PosGate({ children }: { children: ReactNode }) {
       )}
       {children}
     </>
+  );
+}
+
+function DevContact({ email, phone }: { email?: string | undefined; phone?: string | undefined }) {
+  if (!email && !phone)
+    return <p className="text-sm text-muted-foreground">Kontak developer belum tersedia.</p>;
+  const wa = phone ? phone.replace(/\D/g, "").replace(/^0/, "62") : "";
+  return (
+    <div className="space-y-2 rounded-xl border bg-muted/40 p-4 text-sm">
+      <p className="font-semibold">Kontak Developer</p>
+      {email && (
+        <p>
+          Email:{" "}
+          <a className="font-medium text-primary underline" href={`mailto:${email}`}>
+            {email}
+          </a>
+        </p>
+      )}
+      {phone && (
+        <p>
+          Telepon/WA:{" "}
+          <a className="font-medium text-primary underline" href={`https://wa.me/${wa}`} target="_blank" rel="noreferrer">
+            {phone}
+          </a>
+        </p>
+      )}
+    </div>
   );
 }
 
