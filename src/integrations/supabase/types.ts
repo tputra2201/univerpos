@@ -295,6 +295,10 @@ export type Database = {
         }[]
       }
       developer_exists: { Args: never; Returns: boolean }
+      device_heartbeat: {
+        Args: { _code: string; _token: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
