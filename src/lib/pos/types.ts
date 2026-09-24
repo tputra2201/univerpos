@@ -9,6 +9,8 @@ export interface StoreSettings {
   name: string;
   address: string;
   phone: string;
+  /** Email resmi store. */
+  email?: string;
   taxEnabled: boolean;
   taxPercent: number;
   serviceEnabled: boolean;
