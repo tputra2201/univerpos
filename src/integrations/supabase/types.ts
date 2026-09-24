@@ -70,6 +70,7 @@ export type Database = {
           id: string
           last_activated_at: string | null
           last_activated_by: string
+          max_devices: number
           mode: string
           name: string
           notes: string
@@ -84,6 +85,7 @@ export type Database = {
           id?: string
           last_activated_at?: string | null
           last_activated_by?: string
+          max_devices?: number
           mode?: string
           name: string
           notes?: string
@@ -98,6 +100,7 @@ export type Database = {
           id?: string
           last_activated_at?: string | null
           last_activated_by?: string
+          max_devices?: number
           mode?: string
           name?: string
           notes?: string
