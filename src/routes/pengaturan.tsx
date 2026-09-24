@@ -1,3 +1,4 @@
+import { pinMessage, randomPin, sendPin } from "@/lib/pos/pin";
 import { daysLeft, formatExpiry } from "@/lib/pos/expiry";
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
@@ -60,7 +61,7 @@ function PengaturanPage() {
   const [printLines, setPrintLines] = useState<string[] | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const [newUser, setNewUser] = useState({ name: "", pin: "", role: "cashier" as UserRole });
+  const [newUser, setNewUser] = useState({ name: "", email: "", whatsapp: "", role: "cashier" as UserRole });
   const [newMethod, setNewMethod] = useState("");
   const [newChannel, setNewChannel] = useState("");
   const [newTable, setNewTable] = useState("");
@@ -351,21 +352,26 @@ function PengaturanPage() {
                     <p className="font-semibold">{u.name}</p>
                     <Badge variant="secondary">{roleLabel(u.role)}</Badge>
                   </div>
-                  <Input
-                    value={u.pin}
-                    inputMode="numeric"
-                    onChange={(e) =>
+                  <div className="hidden min-w-0 text-xs text-muted-foreground sm:block">
+                    <p className="truncate">{u.whatsapp || "-"}</p>
+                    <p className="truncate">{u.email || "-"}</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={!u.email && !u.whatsapp}
+                    onClick={() => {
+                      if (!window.confirm(`Buat PIN default baru untuk ${u.name} dan kirim ke ${u.whatsapp ? "WhatsApp" : "email"}-nya?`)) return;
+                      const temp = randomPin();
                       update((current) => ({
                         ...current,
-                        users: current.users.map((x) =>
-                          x.id === u.id
-                            ? { ...x, pin: e.target.value.replace(/\D/g, "").slice(0, 6) }
-                            : x,
-                        ),
-                      }))
-                    }
-                    className="tabular h-10 w-24 font-mono"
-                  />
+                        users: current.users.map((x) => (x.id === u.id ? { ...x, pin: temp, mustChangePin: true } : x)),
+                      }));
+                      sendPin({ email: u.email, whatsapp: u.whatsapp, subject: `PIN ${db.settings.name}`, message: pinMessage(db.settings.name, u.name, temp, true) });
+                    }}
+                  >
+                    Kirim Ulang PIN
+                  </Button>
                   {db.users.length > 1 && (
                     <Button
                       size="icon"
@@ -392,14 +398,21 @@ function PengaturanPage() {
                     className="h-10 w-40"
                   />
                 </Field>
-                <Field label="PIN">
+                <Field label="No. WhatsApp">
                   <Input
-                    value={newUser.pin}
-                    inputMode="numeric"
-                    onChange={(e) =>
-                      setNewUser({ ...newUser, pin: e.target.value.replace(/\D/g, "").slice(0, 6) })
-                    }
-                    className="tabular h-10 w-24 font-mono"
+                    value={newUser.whatsapp}
+                    inputMode="tel"
+                    placeholder="08xxxx"
+                    onChange={(e) => setNewUser({ ...newUser, whatsapp: e.target.value })}
+                    className="h-10 w-40"
+                  />
+                </Field>
+                <Field label="Email">
+                  <Input
+                    value={newUser.email}
+                    type="email"
+                    onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                    className="h-10 w-48"
                   />
                 </Field>
                 <Field label="Peran">
@@ -421,10 +434,21 @@ function PengaturanPage() {
                 <Button
                   className="gap-2"
                   onClick={() => {
-                    if (!newUser.name.trim() || !/^\d{4,6}$/.test(newUser.pin)) {
-                      toast.error("Isi nama dan PIN 4–6 angka.");
+                    if (!newUser.name.trim()) {
+                      toast.error("Nama wajib diisi.");
                       return;
                     }
+                    const wa = newUser.whatsapp.trim();
+                    const em = newUser.email.trim();
+                    if (!wa && !em) {
+                      toast.error("Isi nomor WhatsApp atau email untuk mengirim PIN default.");
+                      return;
+                    }
+                    if (em && !/^\S+@\S+\.\S+$/.test(em)) {
+                      toast.error("Format email tidak valid.");
+                      return;
+                    }
+                    const temp = randomPin();
                     update((current) => ({
                       ...current,
                       users: [
@@ -432,12 +456,17 @@ function PengaturanPage() {
                         {
                           id: uid("usr"),
                           name: newUser.name.trim(),
-                          pin: newUser.pin,
+                          pin: temp,
                           role: newUser.role,
+                          mustChangePin: true,
+                          ...(wa ? { whatsapp: wa } : {}),
+                          ...(em ? { email: em } : {}),
                         },
                       ],
                     }));
-                    setNewUser({ name: "", pin: "", role: "cashier" });
+                    sendPin({ email: em, whatsapp: wa, subject: `PIN ${db.settings.name}`, message: pinMessage(db.settings.name, newUser.name.trim(), temp, false) });
+                    toast.success("Pengguna ditambahkan. PIN default dikirim.");
+                    setNewUser({ name: "", email: "", whatsapp: "", role: "cashier" });
                   }}
                 >
                   <Plus className="size-4" /> Tambah
