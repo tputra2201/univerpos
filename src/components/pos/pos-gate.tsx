@@ -65,7 +65,7 @@ function Frame({ children }: { children: ReactNode }) {
 }
 
 function ActivationFlow() {
-  const { db, update, signIn } = usePos();
+  const { update, signIn } = usePos();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [storeCode, setStoreCode] = useState("");
