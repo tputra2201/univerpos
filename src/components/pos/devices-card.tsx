@@ -85,7 +85,7 @@ export function DevicesCard() {
         {key && busy && rows === null && <Loader2 className="size-4 animate-spin text-primary" />}
         {rows?.map((d) => (
           <div key={d.id} className="flex flex-wrap items-center gap-2 rounded-lg border p-3">
-            <div className="flex-1">
+            <div className="min-w-0 flex-1 break-words">
               <p className="font-semibold">{d.device_name}</p>
               <p className="text-xs text-muted-foreground">
                 aktif terakhir {new Date(d.last_seen_at).toLocaleString("id-ID")}

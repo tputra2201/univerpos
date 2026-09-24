@@ -105,7 +105,7 @@ function StoreDevices({ store, onChange }: { store: StoreRow; onChange: () => vo
     <div className="w-full space-y-1 rounded-lg bg-muted/40 p-2">
       {rows.map((d) => (
         <div key={d.id} className="flex items-center gap-2 text-xs">
-          <span className="flex-1 font-medium">{d.device_name}</span>
+          <span className="min-w-0 flex-1 truncate font-medium">{d.device_name}</span>
           <span className="text-muted-foreground">
             aktif {new Date(d.last_seen_at).toLocaleString("id-ID")}
           </span>
@@ -159,7 +159,7 @@ function KontrolPage() {
   }
 
   return (
-    <div className="min-h-screen bg-sidebar px-4 py-8">
+    <div className="min-h-screen overflow-x-hidden bg-sidebar px-3 py-6 sm:px-4 sm:py-8">
       <div className="mx-auto max-w-5xl space-y-4">
         <div className="flex items-center justify-between text-sidebar-foreground">
           <div className="flex items-center gap-2">
@@ -392,7 +392,7 @@ function BusinessTypesPanel() {
               </div>
             ) : (
               <div key={b.id} className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
-                <div className="flex-1">
+                <div className="min-w-0 flex-1 break-words">
                   <p className="font-semibold">{b.name}</p>
                   <p className="text-xs text-muted-foreground">
                     {KIND_LABEL[b.base_kind] ?? b.base_kind}
@@ -764,7 +764,7 @@ function AccountsPanel({ selfId }: { selfId: string }) {
                 </div>
               ) : (
                 <>
-                  <div className="flex-1">
+                  <div className="min-w-0 flex-1 break-words">
                     <p className="font-semibold">{r.display_name || r.email}</p>
                     <p className="text-xs text-muted-foreground">{r.email}</p>
                   </div>
