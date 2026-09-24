@@ -477,6 +477,14 @@ function ModifiersPanel() {
                   <Button size="icon" variant="ghost" aria-label="Ubah" onClick={() => setEditing(m)}>
                     <Pencil className="size-4" />
                   </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    aria-label="Duplikat"
+                    onClick={() => duplicate(m)}
+                  >
+                    <Copy className="size-4" />
+                  </Button>
                   <Button size="icon" variant="ghost" aria-label="Hapus" onClick={() => remove(m)}>
                     <Trash2 className="size-4" />
                   </Button>
