@@ -27,7 +27,7 @@ const PinEmail = ({ storeName = 'Store', userName = 'Pengguna', pin = '------', 
 
 export const template = {
   component: PinEmail,
-  subject: (d: Record<string, any>) => `PIN ${d.temporary === false ? 'default' : 'sementara'} ${d.storeName ?? 'kasir'}`,
+  subject: (d: Record<string, any>) => `PIN ${d['temporary'] === false ? 'default' : 'sementara'} ${d['storeName'] ?? 'kasir'}`,
   displayName: 'PIN kasir',
   previewData: { storeName: 'Kopi Senja', userName: 'Budi', pin: '482913', temporary: true },
 } satisfies TemplateEntry
