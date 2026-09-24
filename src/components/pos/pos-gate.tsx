@@ -90,83 +90,63 @@ function Frame({ children }: { children: ReactNode }) {
 
 function ActivationFlow() {
   const { db, update, signIn } = usePos();
+  const navigate = useNavigate();
   const [step, setStep] = useState(0);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [storeCode, setStoreCode] = useState("");
+  const [key, setKey] = useState("");
+  const [deviceName, setDeviceName] = useState("");
   const [busy, setBusy] = useState(false);
-  const [installerOk, setInstallerOk] = useState(false);
-  const [stores, setStores] = useState<
-    { id: string; code: string; name: string; mode: string; business_types: { name: string; base_kind: string } | null }[]
-  >([]);
-  const [storeId, setStoreId] = useState("");
-  const [picked, setPicked] = useState<{ code: string; name: string; mode: string } | null>(null);
-  const [services, setServices] = useState(() => getServiceTypes(db));
+  const [picked, setPicked] = useState<{
+    code: string;
+    name: string;
+    mode: string;
+    business_type_name: string;
+    base_kind: string;
+  } | null>(null);
   const [type, setType] = useState<BusinessType>("kuliner");
-  const [storeName, setStoreName] = useState("");
   const [ownerName, setOwnerName] = useState("");
   const [pin, setPin] = useState("");
   const [pin2, setPin2] = useState("");
 
-  async function installerLogin() {
-    setBusy(true);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error || !data.user) {
-      setBusy(false);
-      toast.error("Email atau sandi installer salah.");
-      return;
-    }
-    const [{ data: isInst }, { data: isDev }] = await Promise.all([
-      supabase.rpc("has_role", { _user_id: data.user.id, _role: "installer" }),
-      supabase.rpc("has_role", { _user_id: data.user.id, _role: "developer" }),
-    ]);
-    if (!isInst && !isDev) {
-      await supabase.auth.signOut();
-      setBusy(false);
-      toast.error("Akun ini bukan installer atau developer.");
-      return;
-    }
-    const { data: rows } = await supabase
-      .from("stores")
-      .select("id, code, name, mode, business_types(name, base_kind)")
-      .eq("active", true)
-      .order("name");
-    setStores((rows as unknown as typeof stores) ?? []);
-    setInstallerOk(true);
-    setBusy(false);
-  }
+  const deviceToken = useMemo(() => {
+    if (typeof localStorage === "undefined") return uid("dev");
+    const existing = localStorage.getItem(DEVICE_TOKEN_KEY);
+    if (existing) return existing;
+    const fresh = uid("dev");
+    localStorage.setItem(DEVICE_TOKEN_KEY, fresh);
+    return fresh;
+  }, []);
 
-  async function activateStore() {
-    if (!storeId) {
-      toast.error("Pilih store yang akan diaktifkan.");
+  async function activate() {
+    if (!storeCode.trim() || !key.trim()) {
+      toast.error("Kode store dan kunci aktivasi wajib diisi.");
       return;
     }
     setBusy(true);
-    const { data, error } = await supabase.rpc("activate_store", { _store_id: storeId });
-    const row = Array.isArray(data) ? data[0] : null;
+    const { data, error } = await supabase.rpc("activate_device", {
+      _code: storeCode.trim(),
+      _key: key.trim(),
+      _token: deviceToken,
+      _device_name: deviceName.trim() || "Kasir 1",
+    });
     setBusy(false);
-    if (error?.message?.includes("MAX_DEVICES")) {
-      const msg = error.message.replace(/^.*MAX_DEVICES:\s*/, "");
-      window.alert(`Peringatan: Batas perangkat terlampaui\n\n${msg}`);
-      toast.error(msg, { duration: 10000 });
+    if (error) {
+      const msg = error.message.replace(/^.*?(INVALID|INACTIVE|MAX_DEVICES):\s*/, "");
+      if (error.message.includes("MAX_DEVICES")) window.alert(`Peringatan: Batas perangkat terlampaui\n\n${msg}`);
+      toast.error(msg || "Aktivasi gagal. Periksa koneksi internet.", { duration: 8000 });
       return;
     }
-    if (error || !row) {
-      toast.error("Store tidak bisa diaktifkan. Pastikan store masih aktif.");
+    const row = Array.isArray(data) ? data[0] : null;
+    if (!row) {
+      toast.error("Aktivasi gagal. Coba lagi.");
       return;
     }
-    await supabase.auth.signOut();
     setPicked(row);
-    setStoreName(row.name);
-    const kind = stores.find((x) => x.id === storeId)?.business_types?.base_kind;
-    setType(kind === "retail" || kind === "jasa" ? kind : "kuliner");
-    setStep(2);
+    setType(row.base_kind === "retail" || row.base_kind === "jasa" ? row.base_kind : "kuliner");
+    setStep(1);
   }
 
   function finish() {
-    if (!storeName.trim()) {
-      toast.error("Nama store wajib diisi.");
-      return;
-    }
     if (!ownerName.trim()) {
       toast.error("Nama pemilik wajib diisi.");
       return;
@@ -190,15 +170,19 @@ function ActivationFlow() {
           activated: true,
           storeCode: picked?.code ?? "",
           storeMode: picked?.mode === "online" ? "online" : "offline",
-          name: storeName.trim(),
-          businessTypeName: stores.find((x) => x.id === storeId)?.business_types?.name ?? "",
+          name: picked?.name ?? "",
+          businessTypeName: picked?.business_type_name ?? "",
+          activationKey: key.trim(),
+          deviceToken,
+          deviceName: deviceName.trim() || "Kasir 1",
         },
-        serviceTypes: services,
+        serviceTypes: getServiceTypes(seeded),
         users: [owner],
       };
     });
     signIn(owner);
-    toast.success("Store aktif. Selamat berjualan!");
+    toast.success("Store aktif. Lengkapi data store dulu, ya.");
+    void navigate({ to: "/pengaturan" });
   }
 
   return (
@@ -208,144 +192,65 @@ function ActivationFlow() {
           <div className="mb-2 flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
             {step === 0 ? <KeyRound className="size-5" /> : <Store className="size-5" />}
           </div>
-          <CardTitle className="text-2xl">
-            {step === 0 ? "Aktivasi oleh Installer" : step === 1 ? "Tipe Usaha" : step === 2 ? "Jenis Layanan" : "Data Store & Pemilik"}
-          </CardTitle>
+          <CardTitle className="text-2xl">{step === 0 ? "Aktivasi Store" : "Pemilik & PIN"}</CardTitle>
           <CardDescription>
             {step === 0
-              ? "Aktivasi hanya bisa dilakukan installer atau developer. Masuk, lalu pilih store yang sudah didaftarkan."
-              : step === 1
-                ? "Pilih tipe usaha. Fitur kasir akan menyesuaikan dan bisa diubah kapan saja."
-                : step === 2
-                  ? "Aktifkan layanan yang dipakai store. Bisa ditambah dan diubah nanti di Pengaturan."
-                  : "Nama store tampil di struk. PIN pemilik dipakai untuk masuk ke aplikasi."}
+              ? "Masukkan Kode Store dan Kunci Aktivasi yang Anda terima dari penyedia aplikasi. Butuh koneksi internet."
+              : `Store ${picked?.name ?? ""} siap dipakai. Buat akun pemilik untuk membuka kasir.`}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
-          {step === 0 && !installerOk && (
+          {step === 0 && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="inst-email">Email Installer</Label>
-                <Input id="inst-email" type="email" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} className="h-11" />
+                <Label htmlFor="st-code">Kode Store</Label>
+                <Input
+                  id="st-code"
+                  autoFocus
+                  value={storeCode}
+                  onChange={(e) => setStoreCode(e.target.value.toUpperCase())}
+                  className="h-11 font-mono"
+                  placeholder="WO-XXXX-0000"
+                />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="inst-pass">Sandi</Label>
+                <Label htmlFor="st-key">Kunci Aktivasi</Label>
                 <Input
-                  id="inst-pass"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  id="st-key"
+                  inputMode="numeric"
+                  value={key}
+                  onChange={(e) => setKey(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  className="h-11 font-mono tracking-widest"
+                  placeholder="000000"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="st-dev">Nama Perangkat Ini</Label>
+                <Input
+                  id="st-dev"
+                  value={deviceName}
+                  onChange={(e) => setDeviceName(e.target.value)}
                   className="h-11"
-                  onKeyDown={(e) => e.key === "Enter" && installerLogin()}
+                  placeholder="Kasir Depan"
+                  onKeyDown={(e) => e.key === "Enter" && activate()}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Aktivasi pertama butuh koneksi internet. Pemilik store tidak perlu mengisi bagian ini.
+                  Perangkat tambahan cukup memakai kode dan kunci yang sama, selama kuota perangkat masih ada.
                 </p>
               </div>
-              <Button className="h-12 w-full text-base" disabled={busy} onClick={installerLogin}>
-                {busy ? <Loader2 className="size-4 animate-spin" /> : "Masuk"}
-              </Button>
-            </>
-          )}
-
-          {step === 0 && installerOk && (
-            <>
-              <div className="grid max-h-72 gap-2 overflow-auto">
-                {stores.map((st) => (
-                  <button
-                    key={st.id}
-                    type="button"
-                    onClick={() => setStoreId(st.id)}
-                    className={`rounded-xl border p-3 text-left ${
-                      storeId === st.id ? "border-primary bg-primary/5 ring-2 ring-primary/30" : "border-border hover:bg-muted"
-                    }`}
-                  >
-                    <span className="block font-semibold">{st.name}</span>
-                    <span className="block font-mono text-xs text-muted-foreground">
-                      {st.code} • {st.mode === "online" ? "Online" : "Offline"}
-                      {st.business_types && ` • ${st.business_types.name}`}
-                    </span>
-                  </button>
-                ))}
-                {stores.length === 0 && (
-                  <p className="text-sm text-muted-foreground">Belum ada store aktif. Daftarkan dulu di /kontrol.</p>
-                )}
-              </div>
-              <Button className="h-12 w-full text-base" disabled={busy} onClick={activateStore}>
-                Aktifkan Store Ini
-              </Button>
-            </>
-          )}
-
-          {step === 2 && (
-            <>
-              <div className="grid gap-2">
-                {services.map((svc) => (
-                  <label key={svc.id} className="flex items-center justify-between rounded-xl border p-3">
-                    <span>
-                      <span className="block font-semibold">{svc.name}</span>
-                      <span className="font-mono text-xs text-muted-foreground">{svc.code}</span>
-                    </span>
-                    <Switch
-                      checked={svc.active}
-                      onCheckedChange={(v) =>
-                        setServices((prev) => prev.map((x) => (x.id === svc.id ? { ...x, active: v } : x)))
-                      }
-                    />
-                  </label>
-                ))}
-              </div>
-              <Button className="h-12 w-full text-base" onClick={() => setStep(3)}>
-                Lanjut
+              <Button className="h-12 w-full text-base" disabled={busy} onClick={activate}>
+                {busy ? <Loader2 className="size-4 animate-spin" /> : "Aktifkan Sekarang"}
               </Button>
             </>
           )}
 
           {step === 1 && (
             <>
-              <div className="grid gap-3">
-                {BUSINESS_OPTIONS.map((opt) => {
-                  const Icon = opt.icon;
-                  const active = type === opt.value;
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setType(opt.value)}
-                      className={`flex items-start gap-3 rounded-xl border p-4 text-left transition-colors ${
-                        active
-                          ? "border-primary bg-primary/5 ring-2 ring-primary/30"
-                          : "border-border hover:bg-muted"
-                      }`}
-                    >
-                      <span className="mt-0.5 flex size-9 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
-                        <Icon className="size-4" />
-                      </span>
-                      <span>
-                        <span className="block font-semibold">{opt.title}</span>
-                        <span className="block text-sm text-muted-foreground">{opt.desc}</span>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-              <Button className="h-12 w-full text-base" onClick={() => setStep(2)}>
-                Lanjut
-              </Button>
-            </>
-          )}
-
-          {step === 3 && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="store">Nama Store (terdaftar di kontrol)</Label>
-                <Input
-                  id="store"
-                  value={storeName}
-                  readOnly
-                  disabled
-                  className="h-11"
-                />
+              <div className="rounded-xl border bg-muted/40 p-3 text-sm">
+                <p className="font-semibold">{picked?.name}</p>
+                <p className="font-mono text-xs text-muted-foreground">
+                  {picked?.code} • {picked?.business_type_name || "-"}
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="owner">Nama Pemilik</Label>
@@ -380,8 +285,11 @@ function ActivationFlow() {
                 </div>
               </div>
               <Button className="h-12 w-full text-base" onClick={finish}>
-                Mulai Pakai Kasir
+                Simpan & Lengkapi Data Store
               </Button>
+              <p className="text-center text-xs text-muted-foreground">
+                Alamat, telepon, pajak, dan jenis layanan diatur di halaman Pengaturan setelah ini. ({db.version})
+              </p>
             </>
           )}
         </CardContent>
