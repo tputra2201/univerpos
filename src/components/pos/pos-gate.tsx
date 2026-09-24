@@ -144,6 +144,12 @@ function ActivationFlow() {
     const { data, error } = await supabase.rpc("activate_store", { _store_id: storeId });
     const row = Array.isArray(data) ? data[0] : null;
     setBusy(false);
+    if (error?.message?.includes("MAX_DEVICES")) {
+      const msg = error.message.replace(/^.*MAX_DEVICES:\s*/, "");
+      window.alert(`Peringatan: Batas perangkat terlampaui\n\n${msg}`);
+      toast.error(msg, { duration: 10000 });
+      return;
+    }
     if (error || !row) {
       toast.error("Store tidak bisa diaktifkan. Pastikan store masih aktif.");
       return;
