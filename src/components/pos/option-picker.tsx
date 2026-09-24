@@ -17,6 +17,8 @@ interface Group {
   title: string;
   required: boolean;
   multiple: boolean;
+  min: number;
+  max: number;
   options: { id: string; name: string; price: number }[];
 }
 
@@ -49,15 +51,23 @@ export function OptionPicker({
       price: v.priceDelta,
     });
     if (product.variants.length)
-      g.push({ key: "var", title: "Varian", required: true, multiple: false, options: product.variants.map(mapV) });
+      g.push({ key: "var", title: "Varian", required: true, multiple: false, min: 1, max: 1, options: product.variants.map(mapV) });
     if (product.sizes?.length)
-      g.push({ key: "size", title: "Ukuran", required: true, multiple: false, options: product.sizes.map(mapV) });
+      g.push({ key: "size", title: "Ukuran", required: true, multiple: false, min: 1, max: 1, options: product.sizes.map(mapV) });
     if (product.toppings?.length)
-      g.push({ key: "top", title: "Topping", required: false, multiple: true, options: product.toppings.map(mapV) });
+      g.push({ key: "top", title: "Topping", required: false, multiple: true, min: 0, max: 0, options: product.toppings.map(mapV) });
     for (const id of product.modifierIds ?? []) {
       const m = modifiers.find((x) => x.id === id);
       if (m && m.options.length)
-        g.push({ key: m.id, title: m.name, required: m.required, multiple: m.multiple, options: m.options });
+        g.push({
+          key: m.id,
+          title: m.name,
+          required: m.required,
+          multiple: m.multiple,
+          min: m.multiple ? Math.max(m.required ? 1 : 0, m.minSelect ?? 0) : m.required ? 1 : 0,
+          max: m.multiple ? (m.maxSelect ?? 0) : 1,
+          options: m.options,
+        });
     }
     return g;
   }, [product, modifiers]);
@@ -74,7 +84,11 @@ export function OptionPicker({
   function toggle(g: Group, id: string) {
     setSel((prev) => {
       const cur = prev[g.key] ?? [];
-      if (g.multiple) return { ...prev, [g.key]: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id] };
+      if (g.multiple) return { ...prev, [g.key]: cur.includes(id)
+            ? cur.filter((x) => x !== id)
+            : g.max > 0 && cur.length >= g.max
+              ? cur
+              : [...cur, id] };
       if (cur[0] === id && !g.required) return { ...prev, [g.key]: [] };
       return { ...prev, [g.key]: [id] };
     });
@@ -82,7 +96,7 @@ export function OptionPicker({
 
   const chosen = groups.flatMap((g) => g.options.filter((o) => (sel[g.key] ?? []).includes(o.id)));
   const extra = chosen.reduce((s, o) => s + o.price, 0);
-  const missing = groups.some((g) => g.required && !(sel[g.key] ?? []).length);
+  const missing = groups.some((g) => (sel[g.key] ?? []).length < g.min);
   const label = chosen.map((o) => o.name).join(", ");
 
   return (
@@ -98,7 +112,12 @@ export function OptionPicker({
               <p className="text-sm font-semibold">
                 {g.title}{" "}
                 <span className="text-xs font-normal text-muted-foreground">
-                  {g.required ? "Wajib" : "Opsional"} · {g.multiple ? "boleh beberapa" : "pilih satu"}
+                  {g.required || g.min > 0 ? "Wajib" : "Opsional"} ·{" "}
+                  {g.multiple
+                    ? g.min > 0 || g.max > 0
+                      ? `pilih ${g.min > 0 ? `min ${g.min}` : ""}${g.min > 0 && g.max > 0 ? ", " : ""}${g.max > 0 ? `maks ${g.max}` : ""}`
+                      : "boleh beberapa"
+                    : "pilih satu"}
                 </span>
               </p>
               <div className="grid grid-cols-2 gap-2">
