@@ -395,6 +395,27 @@ function ModifiersPanel() {
     toast.success("Modifier disimpan.");
   }
 
+  function duplicate(m: Modifier) {
+    const names = new Set(modifiers.map((x) => x.name));
+    let name = `${m.name} (Salin)`;
+    let n = 2;
+    while (names.has(name)) name = `${m.name} (Salin ${n++})`;
+    update((c) => ({
+      ...c,
+      modifiers: [
+        ...(c.modifiers ?? []),
+        {
+          ...m,
+          id: uid("mod"),
+          name,
+          options: m.options.map((o) => ({ ...o, id: uid("opt") })),
+        },
+      ],
+    }));
+    toast.success(`"${name}" dibuat.`);
+  }
+
+
   function remove(m: Modifier) {
     const used = db.products.filter((p) => p.modifierIds?.includes(m.id)).length;
     if (used && !window.confirm(`Modifier dipakai ${used} produk. Hapus dan lepas dari produk?`))
