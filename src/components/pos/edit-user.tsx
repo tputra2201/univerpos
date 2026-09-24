@@ -42,7 +42,7 @@ export function EditUserForm({
     if (w) next.whatsapp = w;
     if (e) next.email = e;
     onSave(next);
-    toast.success("Data pengguna disimpan."); return; }
+    toast.success("Data pengguna disimpan.");
   }
 
   return (

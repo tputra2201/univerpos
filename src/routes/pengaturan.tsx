@@ -1046,3 +1046,26 @@ export function ServiceTypesCard() {
     </Card>
   );
 }
+
+function EditUserButton({ user }: { user: import("@/lib/pos/types").PosUser }) {
+  const { update } = usePos();
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button size="sm" variant="outline" onClick={() => setOpen(true)}>Edit</Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit Pengguna</DialogTitle></DialogHeader>
+          <EditUserForm
+            user={user}
+            onCancel={() => setOpen(false)}
+            onSave={(next) => {
+              update((cur) => ({ ...cur, users: cur.users.map((x) => (x.id === next.id ? next : x)) }));
+              setOpen(false);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
