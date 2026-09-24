@@ -34,7 +34,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -513,8 +512,7 @@ function KasirPage() {
               {db.heldOrders.length > 0 && <Badge variant="default">{db.heldOrders.length}</Badge>}
             </Button>
           </div>
-          <ScrollArea className="w-full">
-            <div className="flex gap-2 pb-1">
+          <div className="flex w-full min-w-0 flex-wrap gap-2 pb-1">
               <CategoryChip
                 active={categoryId === "all"}
                 label="Semua"
@@ -528,8 +526,7 @@ function KasirPage() {
                   onClick={() => setCategoryId(c.id)}
                 />
               ))}
-            </div>
-          </ScrollArea>
+          </div>
         </div>
 
         <div className="flex-1 overflow-auto p-3 md:p-4">
