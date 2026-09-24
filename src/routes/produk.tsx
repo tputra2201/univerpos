@@ -445,6 +445,11 @@ function ModifiersPanel() {
                   <div className="mt-1 flex flex-wrap gap-1">
                     <Badge variant="secondary">{m.required ? "Wajib" : "Opsional"}</Badge>
                     <Badge variant="secondary">{m.multiple ? "Boleh beberapa" : "Pilih satu"}</Badge>
+                    {m.multiple && (m.minSelect || m.maxSelect) ? (
+                      <Badge variant="secondary">
+                        Min {m.minSelect || 0} · Maks {m.maxSelect || "∞"}
+                      </Badge>
+                    ) : null}
                   </div>
                 </div>
                 <div className="flex gap-1">
@@ -495,6 +500,37 @@ function ModifiersPanel() {
                   onCheckedChange={(v) => setEditing({ ...editing, multiple: v })}
                 />
               </div>
+              {editing.multiple && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Minimum dipilih</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      inputMode="numeric"
+                      value={editing.minSelect ?? 0}
+                      onChange={(e) =>
+                        setEditing({ ...editing, minSelect: Math.max(0, Number(e.target.value) || 0) })
+                      }
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Maksimum dipilih</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      inputMode="numeric"
+                      value={editing.maxSelect ?? 0}
+                      onChange={(e) =>
+                        setEditing({ ...editing, maxSelect: Math.max(0, Number(e.target.value) || 0) })
+                      }
+                      className="h-11"
+                    />
+                  </div>
+                  <p className="col-span-2 text-xs text-muted-foreground">Maksimum 0 = tanpa batas.</p>
+                </div>
+              )}
               <ListEditor
                 title="Isi"
                 placeholder="mis. Less Ice"

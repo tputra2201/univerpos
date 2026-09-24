@@ -83,6 +83,10 @@ export interface Modifier {
   name: string;
   required: boolean;
   multiple: boolean;
+  /** Jumlah minimum pilihan (untuk multiple). */
+  minSelect?: number;
+  /** Jumlah maksimum pilihan (0/kosong = tanpa batas). */
+  maxSelect?: number;
   options: ModifierOption[];
 }
 
