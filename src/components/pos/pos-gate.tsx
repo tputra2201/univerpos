@@ -80,29 +80,42 @@ export function PosGate({ children }: { children: ReactNode }) {
   }, [ready, activated, online, code, update]);
 
   // Detak perangkat: laporkan "masih aktif" tiap 2 menit saat online.
-  const token = db.settings.deviceToken;
   useEffect(() => {
-    if (!ready || !activated || !code || !token) return;
+    if (!ready || !activated || !code || typeof window === "undefined") return;
+    const token = db.settings.deviceToken || window.localStorage.getItem(DEVICE_TOKEN_KEY) || "";
+    if (!token) return;
+    if (!db.settings.deviceToken) {
+      update((cur) => ({ ...cur, settings: { ...cur.settings, deviceToken: token } }));
+    }
     let model = "";
-    const beat = () => {
-      if (typeof navigator !== "undefined" && !navigator.onLine) return;
-      void (supabase.rpc as unknown as (n: string, a: object) => Promise<unknown>)("device_heartbeat", {
+    const beat = async () => {
+      const result = await (supabase.rpc as unknown as (
+        n: string,
+        a: object,
+      ) => Promise<{ error?: { message?: string } | null }>)("device_heartbeat", {
         _code: code,
         _token: token,
         _model: model,
       });
+      if (result.error) console.warn("Status perangkat gagal diperbarui", result.error.message);
     };
     void detectDeviceModel().then((m) => {
       model = m;
-      beat();
+      void beat();
     });
-    const t = setInterval(beat, 120_000);
-    window.addEventListener("online", beat);
+    const onOnline = () => void beat();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void beat();
+    };
+    const t = setInterval(() => void beat(), 120_000);
+    window.addEventListener("online", onOnline);
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       clearInterval(t);
-      window.removeEventListener("online", beat);
+      window.removeEventListener("online", onOnline);
+      document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [ready, activated, code, token]);
+  }, [ready, activated, code, db.settings.deviceToken, update]);
 
   if (!ready) {
     return (
