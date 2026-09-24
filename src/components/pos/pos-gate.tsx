@@ -365,9 +365,11 @@ function ActivationFlow() {
 }
 
 function LoginScreen() {
-  const { db, signIn } = usePos();
+  const { db, signIn, update } = usePos();
   const [selected, setSelected] = useState(db.users[0]?.id ?? "");
   const [pin, setPin] = useState("");
+  const [mode, setMode] = useState<"pin" | "change" | "forgot">("pin");
+  const [contact, setContact] = useState("");
 
   const user = db.users.find((u) => u.id === selected);
 
@@ -382,8 +384,96 @@ function LoginScreen() {
       setPin("");
       return;
     }
+    if (user.mustChangePin) {
+      setMode("change");
+      return;
+    }
     signIn(user);
   }
+
+  function saveNewPin(newPin: string) {
+    if (!user) return;
+    const next = { ...user, pin: newPin, mustChangePin: false };
+    update((cur) => ({ ...cur, users: cur.users.map((u) => (u.id === user.id ? next : u)) }));
+    signIn(next);
+  }
+
+  function forgot() {
+    if (!user) return;
+    const input = contact.trim();
+    if (!input) return toast.error("Masukkan email atau nomor WhatsApp terdaftar.");
+    if (!user.email && !user.whatsapp) {
+      toast.error("Pengguna ini belum punya email/WhatsApp terdaftar. Minta manager mengirim ulang PIN.");
+      return;
+    }
+    const isEmail = input.includes("@");
+    const match = isEmail
+      ? !!user.email && normalizeEmail(user.email) === normalizeEmail(input)
+      : !!user.whatsapp && normalizeWa(user.whatsapp) === normalizeWa(input);
+    if (!match) {
+      toast.error(`${isEmail ? "Email" : "Nomor WhatsApp"} tidak sesuai dengan data ${user.name}.`, { duration: 6000 });
+      return;
+    }
+    const temp = randomPin();
+    update((cur) => ({
+      ...cur,
+      users: cur.users.map((u) => (u.id === user.id ? { ...u, pin: temp, mustChangePin: true } : u)),
+    }));
+    sendPin({
+      email: isEmail ? user.email : undefined,
+      whatsapp: isEmail ? undefined : user.whatsapp,
+      subject: `PIN sementara ${db.settings.name}`,
+      message: pinMessage(db.settings.name, user.name, temp, true),
+    });
+    toast.success("PIN sementara dikirim. Masuk dengan PIN tersebut lalu buat PIN baru.", { duration: 8000 });
+    setContact("");
+    setMode("pin");
+  }
+
+  if (mode === "change" && user)
+    return (
+      <Frame>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">Buat PIN Baru</CardTitle>
+            <CardDescription>
+              Halo {user.name}, Anda masuk dengan PIN default/sementara. Buat PIN baru yang hanya Anda ketahui.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ChangePinForm onSave={saveNewPin} onCancel={() => { setMode("pin"); setPin(""); }} />
+          </CardContent>
+        </Card>
+      </Frame>
+    );
+
+  if (mode === "forgot" && user)
+    return (
+      <Frame>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">Lupa PIN</CardTitle>
+            <CardDescription>
+              Masukkan email atau nomor WhatsApp yang terdaftar untuk {user.name}. PIN sementara akan dikirim ke sana.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="fg">Email / Nomor WhatsApp</Label>
+              <Input id="fg" autoFocus value={contact} onChange={(e) => setContact(e.target.value)} className="h-11" placeholder="nama@email.com atau 08xxxx" onKeyDown={(e) => e.key === "Enter" && forgot()} />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" className="h-11 flex-1" onClick={() => setMode("pin")}>
+                Kembali
+              </Button>
+              <Button className="h-11 flex-1" onClick={forgot}>
+                Kirim PIN Sementara
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </Frame>
+    );
 
   return (
     <Frame>
