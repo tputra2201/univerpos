@@ -69,7 +69,7 @@ interface DeviceRow {
 }
 
 /** Kode perangkat singkat dari ID, mis. DEV-3F9A2C. */
-export function deviceCode(id: string) {
+function deviceCode(id: string) {
   return `DEV-${id.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
 }
 
