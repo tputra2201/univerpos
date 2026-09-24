@@ -598,6 +598,7 @@ function StoresPanel() {
               <Button size="icon" variant="ghost" aria-label={`Hapus ${s.name}`} onClick={() => remove(s)}>
                 <Trash2 className="size-4" />
               </Button>
+              <StoreDevices store={s} onChange={load} />
             </div>
           ))}
           {stores.length === 0 && <p className="text-sm text-muted-foreground">Belum ada store.</p>}
