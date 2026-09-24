@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { OptionPicker, productHasOptions } from "@/components/pos/option-picker";
 import { useEffect, useMemo, useState } from "react";
 import {
   Plus,
@@ -181,7 +182,7 @@ function KasirPage() {
   }
 
   function onProductClick(product: Product) {
-    if (product.variants.length > 0) {
+    if (productHasOptions(product, db.modifiers ?? [])) {
       setVariantProduct(product);
       return;
     }
@@ -557,10 +558,8 @@ function KasirPage() {
                         Stok {product.stock}
                       </span>
                     )}
-                    {product.variants.length > 0 && (
-                      <span className="text-xs text-muted-foreground">
-                        {product.variants.length} varian
-                      </span>
+                    {productHasOptions(product, db.modifiers ?? []) && (
+                      <span className="text-xs text-muted-foreground">Ada pilihan</span>
                     )}
                   </span>
                 </button>
@@ -625,31 +624,16 @@ function KasirPage() {
         </SheetContent>
       </Sheet>
 
-      {/* Pilih varian */}
-      <Dialog open={!!variantProduct} onOpenChange={(v) => !v && setVariantProduct(null)}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{variantProduct?.name}</DialogTitle>
-            <DialogDescription>Pilih varian yang dipesan.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-2">
-            {variantProduct?.variants.map((v) => (
-              <Button
-                key={v.id}
-                variant="secondary"
-                className="h-12 justify-between"
-                onClick={() => {
-                  addProduct(variantProduct, v.name, v.priceDelta);
-                  setVariantProduct(null);
-                }}
-              >
-                <span>{v.name}</span>
-                <span className="tabular">{rupiah(variantProduct.price + v.priceDelta)}</span>
-              </Button>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Pilih varian / ukuran / topping / modifier */}
+      <OptionPicker
+        product={variantProduct}
+        modifiers={db.modifiers ?? []}
+        onClose={() => setVariantProduct(null)}
+        onAdd={(label, extra) => {
+          if (variantProduct) addProduct(variantProduct, label, extra);
+          setVariantProduct(null);
+        }}
+      />
 
       <LineEditor
         line={editLine}
