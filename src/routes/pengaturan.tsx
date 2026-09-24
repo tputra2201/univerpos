@@ -381,6 +381,8 @@ function PengaturanPage() {
                   >
                     Kirim Ulang PIN
                   </Button>
+                  <EditUserButton user={u} />
+                  
                   {db.users.length > 1 && (
                     <Button
                       size="icon"
