@@ -56,6 +56,64 @@ interface StoreRow {
   last_activated_at: string | null;
   last_activated_by: string;
   business_type_id: string | null;
+  activation_key: string;
+}
+
+interface DeviceRow {
+  id: string;
+  device_name: string;
+  last_seen_at: string;
+}
+
+function StoreDevices({ store, onChange }: { store: StoreRow; onChange: () => void }) {
+  const [rows, setRows] = useState<DeviceRow[] | null>(null);
+
+  const load = useCallback(async () => {
+    const { data, error } = await supabase.rpc("store_devices_list", {
+      _code: store.code,
+      _key: store.activation_key,
+    });
+    if (error) return void toast.error(error.message);
+    setRows((data as DeviceRow[]) ?? []);
+  }, [store.code, store.activation_key]);
+
+  async function release(d: DeviceRow) {
+    if (!confirm(`Lepas perangkat "${d.device_name}" dari ${store.name}?`)) return;
+    const { error } = await supabase.rpc("release_device", {
+      _code: store.code,
+      _key: store.activation_key,
+      _device_id: d.id,
+    });
+    if (error) return void toast.error(error.message);
+    toast.success("Perangkat dilepas. Kuota kembali tersedia.");
+    void load();
+    onChange();
+  }
+
+  if (rows === null) {
+    return (
+      <Button size="sm" variant="ghost" className="w-full" onClick={load}>
+        Lihat perangkat terdaftar
+      </Button>
+    );
+  }
+
+  return (
+    <div className="w-full space-y-1 rounded-lg bg-muted/40 p-2">
+      {rows.map((d) => (
+        <div key={d.id} className="flex items-center gap-2 text-xs">
+          <span className="flex-1 font-medium">{d.device_name}</span>
+          <span className="text-muted-foreground">
+            aktif {new Date(d.last_seen_at).toLocaleString("id-ID")}
+          </span>
+          <Button size="sm" variant="ghost" onClick={() => release(d)}>
+            Lepas
+          </Button>
+        </div>
+      ))}
+      {rows.length === 0 && <p className="text-xs text-muted-foreground">Belum ada perangkat terhubung.</p>}
+    </div>
+  );
 }
 
 function randomCode(name: string) {
