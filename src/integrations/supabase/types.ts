@@ -35,6 +35,27 @@ export type Database = {
         }
         Relationships: []
       }
+      app_settings: {
+        Row: {
+          contact_email: string
+          contact_phone: string
+          id: number
+          updated_at: string
+        }
+        Insert: {
+          contact_email?: string
+          contact_phone?: string
+          id?: number
+          updated_at?: string
+        }
+        Update: {
+          contact_email?: string
+          contact_phone?: string
+          id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       business_types: {
         Row: {
           base_kind: string
@@ -264,6 +285,13 @@ export type Database = {
           active: boolean
           expires_at: string
           mode: string
+        }[]
+      }
+      developer_contact: {
+        Args: never
+        Returns: {
+          contact_email: string
+          contact_phone: string
         }[]
       }
       developer_exists: { Args: never; Returns: boolean }
