@@ -106,6 +106,7 @@ export type Database = {
           code: string
           created_at: string
           device_count: number
+          expires_at: string | null
           id: string
           last_activated_at: string | null
           last_activated_by: string
@@ -122,6 +123,7 @@ export type Database = {
           code: string
           created_at?: string
           device_count?: number
+          expires_at?: string | null
           id?: string
           last_activated_at?: string | null
           last_activated_by?: string
@@ -138,6 +140,7 @@ export type Database = {
           code?: string
           created_at?: string
           device_count?: number
+          expires_at?: string | null
           id?: string
           last_activated_at?: string | null
           last_activated_by?: string
@@ -241,6 +244,7 @@ export type Database = {
           business_type_name: string
           code: string
           device_count: number
+          expires_at: string
           max_devices: number
           mode: string
           name: string
@@ -258,6 +262,7 @@ export type Database = {
         Args: { _code: string }
         Returns: {
           active: boolean
+          expires_at: string
           mode: string
         }[]
       }
