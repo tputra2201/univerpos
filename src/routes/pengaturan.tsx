@@ -132,7 +132,10 @@ function PengaturanPage() {
       shifts: [],
       businessDays: [],
       financeEntries: [],
+      memberPoints: [],
+      members: (cur.members ?? []).map((m) => ({ ...m, points: 0, totalSpend: 0, visits: 0 })),
       settings: { ...cur.settings, orderSeq: 1 },
+
     }));
     toast.success("Seluruh transaksi telah dihapus.");
   }

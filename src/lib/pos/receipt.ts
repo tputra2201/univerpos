@@ -154,6 +154,8 @@ export function buildReceipt(
   if (sale.orderType) out.push(twoCol("Layanan", sale.orderType, width));
   if (sale.tableName) out.push(twoCol("Meja", sale.tableName, width));
   if (sale.customerName) out.push(twoCol("Pelanggan", sale.customerName, width));
+  if (sale.memberCode) out.push(twoCol("Member", sale.memberCode, width));
+
   out.push(divider(width));
   itemLines(sale, width, true).forEach((l) => out.push(l));
   if (sale.note) wrap("Catatan: " + sale.note, width).forEach((l) => out.push(l));
@@ -171,7 +173,14 @@ export function buildReceipt(
     );
     out.push(twoCol("Kembalian", money(sale.change), width));
   }
+  if (kind === "receipt" && sale.memberId) {
+    out.push(divider(width));
+    if (sale.pointsUsed) out.push(twoCol("Poin ditukar", "-" + String(sale.pointsUsed), width));
+    out.push(twoCol("Poin didapat", "+" + String(sale.pointsEarned ?? 0), width));
+    out.push(twoCol("Saldo poin", String(sale.pointBalance ?? 0), width));
+  }
   if (sale.status !== "paid") {
+
     out.push(divider(width, "="));
     out.push(center(sale.status === "void" ? "DIBATALKAN" : "REFUND", width));
     if (sale.reason) wrap(sale.reason, width).forEach((l) => out.push(center(l, width)));
