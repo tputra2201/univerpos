@@ -16,6 +16,8 @@ import {
   ShoppingBag,
   Utensils,
   Bike,
+  Printer,
+  Tags,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PosGate } from "@/components/pos/pos-gate";
@@ -25,7 +27,7 @@ import { usePos } from "@/lib/pos/store";
 import { computeTotals, lineTotal } from "@/lib/pos/calc";
 import { rupiah, uid } from "@/lib/pos/format";
 import { buildReceipt } from "@/lib/pos/receipt";
-import { layoutFor, printerFor, printersFor, sendToPrinter, splitByStation } from "@/lib/pos/printers";
+import { layoutFor, printerFor, printersFor, productStation, sendToPrinter, splitByStation } from "@/lib/pos/printers";
 import type { PrinterRole } from "@/lib/pos/types";
 import { getServiceTypes } from "@/lib/pos/seed";
 import { categoryAllowed, servicePrice } from "@/lib/pos/pricing";
@@ -364,6 +366,30 @@ function KasirPage() {
     printStations(sale);
   }
 
+  /** Cetak label manual dari keranjang (satu menu atau semua), ke printer Kitchen/Bar sesuai menu. */
+  function printLabels(target: CartLine[]) {
+    if (!requireShift()) return;
+    const items = target.filter((l) => !l.voided);
+    if (items.length === 0) {
+      toast.error("Tidak ada item untuk dicetak.");
+      return;
+    }
+    const orderNo = ensureOrderNo();
+    const sale = draftSale("paid", { orderNo });
+    const groups: Record<"kitchen" | "bar", CartLine[]> = { kitchen: [], bar: [] };
+    for (const l of items) groups[productStation(db.products.find((p) => p.id === l.productId))].push(l);
+    for (const station of ["kitchen", "bar"] as const) {
+      if (groups[station].length === 0) continue;
+      const cfg = printerFor(db, station);
+      const out = buildReceipt("label", { ...sale, items: groups[station] }, settings, layoutFor(db, cfg));
+      sendToPrinter(cfg, out)
+        .then(() => toast.success(`Label dikirim ke ${cfg.name}.`))
+        .catch((error: unknown) =>
+          toast.error(`${cfg.name}: ${error instanceof Error ? error.message : "gagal mencetak."}`),
+        );
+    }
+  }
+
   /** Cetak tiket/label ke printer Kitchen dan Bar sesuai pengaturan tiap menu. */
   function printStations(sale: Sale) {
     const groups = splitByStation(db, sale.items);
@@ -677,6 +703,7 @@ function KasirPage() {
           onBill={printBill}
           onKitchen={sendToKitchen}
           onHold={holdOrder}
+          onPrintLabels={printLabels}
         />
       </aside>
 
@@ -714,6 +741,7 @@ function KasirPage() {
             onBill={printBill}
             onKitchen={sendToKitchen}
             onHold={holdOrder}
+            onPrintLabels={printLabels}
           />
           </div>
         </SheetContent>
@@ -1070,6 +1098,7 @@ function CartPanel({
   onBill,
   onKitchen,
   onHold,
+  onPrintLabels,
 }: {
   cart: CartState;
   setCart: React.Dispatch<React.SetStateAction<CartState>>;
@@ -1081,6 +1110,7 @@ function CartPanel({
   onBill: () => void;
   onKitchen: () => void;
   onHold: () => void;
+  onPrintLabels: (lines: CartLine[]) => void;
 }) {
   const { db } = usePos();
   const type = db.settings.businessType;
@@ -1140,6 +1170,17 @@ function CartPanel({
           </p>
         ) : (
           <ul className="space-y-1">
+            <li className="flex justify-end px-1">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 gap-1.5 text-xs"
+                disabled={cart.lines.every((l) => l.voided)}
+                onClick={() => onPrintLabels(cart.lines)}
+              >
+                <Tags className="size-3.5" /> Cetak semua label
+              </Button>
+            </li>
             {cart.lines.map((line) => (
               <li
                 key={line.lineId}
@@ -1181,6 +1222,17 @@ function CartPanel({
                     )}
                   </button>
                   <div className="flex items-center gap-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="size-8 text-muted-foreground"
+                      aria-label="Cetak label"
+                      title="Cetak label menu ini"
+                      disabled={line.voided}
+                      onClick={() => onPrintLabels([line])}
+                    >
+                      <Printer className="size-3.5" />
+                    </Button>
                     <Button
                       size="icon"
                       variant="secondary"
