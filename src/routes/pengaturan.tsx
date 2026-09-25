@@ -1,4 +1,6 @@
 import { FinanceSettings } from "@/components/pos/finance-settings";
+import { MemberSettings } from "@/components/pos/member-settings";
+
 import { PrintersSettings } from "@/components/pos/printers-settings";
 import { deliverPin, pinMessage, randomPin } from "@/lib/pos/pin";
 import { EditUserForm } from "@/components/pos/edit-user";

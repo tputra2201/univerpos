@@ -349,7 +349,10 @@ function MemberForm({
 }) {
   const [draft, setDraft] = useState<Member | null>(member);
   const key = member?.id ?? "none";
-  if (draft?.id !== member?.id) setDraft(member);
+  useEffect(() => {
+    setDraft(member);
+  }, [member]);
+
 
   return (
     <Dialog open={member !== null} onOpenChange={(v) => !v && onClose()}>
