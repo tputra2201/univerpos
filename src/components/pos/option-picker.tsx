@@ -39,7 +39,7 @@ export function OptionPicker({
   basePrice,
 }: {
   product: Product | null;
-  basePrice?: number;
+  basePrice?: number | undefined;
   modifiers: Modifier[];
   onClose: () => void;
   onAdd: (label: string, extra: number) => void;
