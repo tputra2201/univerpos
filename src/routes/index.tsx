@@ -668,6 +668,7 @@ function KasirPage() {
       <OptionPicker
         product={variantProduct}
         basePrice={variantProduct ? servicePrice(variantProduct, activeService) : undefined}
+        service={activeService}
         modifiers={db.modifiers ?? []}
         onClose={() => {
           setVariantProduct(null);

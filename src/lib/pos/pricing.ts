@@ -31,3 +31,11 @@ export function adjustLabel(service: ServiceType): string {
     ? `${sign}${abs}%`
     : `${sign}${abs.toLocaleString("id-ID")}`;
 }
+
+/** Harga opsi/modifier untuk layanan: ikut penyesuaian persen layanan (nominal tetap hanya untuk harga produk). */
+export function serviceOptionPrice(price: number, service?: ServiceType | undefined): number {
+  if (!service || !price || service.priceAdjustMode !== "percent") return price;
+  const value = service.priceAdjustValue ?? 0;
+  if (!value) return price;
+  return Math.max(0, price + Math.round((price * value) / 100));
+}

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Modifier, Product } from "@/lib/pos/types";
+import type { Modifier, Product, ServiceType } from "@/lib/pos/types";
+import { serviceOptionPrice } from "@/lib/pos/pricing";
 import { rupiah } from "@/lib/pos/format";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,9 +38,11 @@ export function OptionPicker({
   onClose,
   onAdd,
   basePrice,
+  service,
 }: {
   product: Product | null;
   basePrice?: number | undefined;
+  service?: ServiceType | undefined;
   modifiers: Modifier[];
   onClose: () => void;
   onAdd: (label: string, extra: number) => void;
@@ -50,7 +53,7 @@ export function OptionPicker({
     const mapV = (v: { id: string; name: string; priceDelta: number }) => ({
       id: v.id,
       name: v.name,
-      price: v.priceDelta,
+      price: serviceOptionPrice(v.priceDelta, service),
     });
     if (product.variants.length)
       g.push({ key: "var", title: "Varian", required: true, multiple: false, min: 1, max: 1, options: product.variants.map(mapV) });
@@ -68,11 +71,11 @@ export function OptionPicker({
           multiple: m.multiple,
           min: m.multiple ? Math.max(m.required ? 1 : 0, m.minSelect ?? 0) : m.required ? 1 : 0,
           max: m.multiple ? (m.maxSelect ?? 0) : 1,
-          options: m.options,
+          options: m.options.map((o) => ({ ...o, price: serviceOptionPrice(o.price, service) })),
         });
     }
     return g;
-  }, [product, modifiers]);
+  }, [product, modifiers, service]);
 
   const [sel, setSel] = useState<Record<string, string[]>>({});
   useEffect(() => {
