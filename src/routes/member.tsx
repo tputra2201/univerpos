@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pencil, Plus, Search, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { PosGate } from "@/components/pos/pos-gate";
