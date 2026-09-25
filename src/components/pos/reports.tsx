@@ -527,6 +527,11 @@ export function CloseOutReport({ range }: { range: ReportRange }) {
                   <TableHead>Kasir</TableHead>
                   <TableHead>Buka</TableHead>
                   <TableHead>Tutup</TableHead>
+                  <TableHead className="text-right">Transaksi</TableHead>
+                  <TableHead className="text-right">Pendapatan</TableHead>
+                  <TableHead className="text-right">Tunai</TableHead>
+                  <TableHead className="text-right">Non-tunai</TableHead>
+                  <TableHead className="text-right">Finance kas</TableHead>
                   <TableHead className="text-right">Kas awal</TableHead>
                   <TableHead className="text-right">Sistem</TableHead>
                   <TableHead className="text-right">Fisik</TableHead>
@@ -538,7 +543,8 @@ export function CloseOutReport({ range }: { range: ReportRange }) {
                 {shifts
                   .sort((a, b) => (a.openedAt < b.openedAt ? 1 : -1))
                   .map((s) => {
-                    const expected = s.expectedCash ?? summarize(s, salesOfShift(db, s), financeOfShift(db, s)).expected;
+                    const sm = summarize(s, salesOfShift(db, s), financeOfShift(db, s));
+                    const expected = s.expectedCash ?? sm.expected;
                     const diff = s.closedAt ? (s.closingCash ?? 0) - expected : 0;
                     return (
                       <TableRow key={s.id}>
@@ -547,6 +553,11 @@ export function CloseOutReport({ range }: { range: ReportRange }) {
                         <TableCell className="whitespace-nowrap">
                           {s.closedAt ? dateTime(s.closedAt) : "Berjalan"}
                         </TableCell>
+                        <TableCell className="tabular text-right">{sm.count}</TableCell>
+                        <TableCell className="tabular text-right">{rupiah(sm.omzet)}</TableCell>
+                        <TableCell className="tabular text-right">{rupiah(sm.cashSales)}</TableCell>
+                        <TableCell className="tabular text-right">{rupiah(sm.nonCashSales)}</TableCell>
+                        <TableCell className="tabular text-right">{rupiah(sm.financeCash)}</TableCell>
                         <TableCell className="tabular text-right">
                           {rupiah(s.openingCash)}
                         </TableCell>

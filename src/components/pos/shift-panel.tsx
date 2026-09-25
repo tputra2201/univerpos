@@ -420,7 +420,8 @@ export function ShiftPanel({
             <p className="text-muted-foreground">Belum ada shift tercatat.</p>
           )}
           {sortedShifts.slice(0, 20).map((s) => {
-            const expected = s.expectedCash ?? summarize(s, salesOfShift(db, s), financeOfShift(db, s)).expected;
+            const sm = summarize(s, salesOfShift(db, s), financeOfShift(db, s));
+            const expected = s.expectedCash ?? sm.expected;
             const diff = s.closedAt ? (s.closingCash ?? 0) - expected : 0;
             return (
               <div key={s.id} className="flex flex-wrap justify-between gap-2 border-b pb-2 last:border-0">
@@ -436,6 +437,8 @@ export function ShiftPanel({
                   </p>
                 </div>
                 <div className="tabular text-right text-xs">
+                  <p>{sm.count} transaksi · Pendapatan {rupiah(sm.omzet)}</p>
+                  <p>Tunai {rupiah(sm.cashSales)} · Non-tunai {rupiah(sm.nonCashSales)}</p>
                   <p>Awal {rupiah(s.openingCash)}</p>
                   <p>
                     Sistem {rupiah(expected)}
