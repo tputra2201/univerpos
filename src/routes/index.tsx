@@ -109,11 +109,11 @@ interface CartState {
   /** sudah dikirim ke dapur */
   sentToKitchen: boolean;
   /** member terpilih */
-  memberId?: string;
-  memberName?: string;
-  memberCode?: string;
+  memberId?: string | undefined;
+  memberName?: string | undefined;
+  memberCode?: string | undefined;
   /** poin yang akan ditukar jadi potongan */
-  redeemPoints?: number;
+  redeemPoints?: number | undefined;
 }
 
 const EMPTY_CART: CartState = {
@@ -648,8 +648,8 @@ function KasirPage() {
                 }
               : m,
           )
-        : current.members,
-      memberPoints: ledger.length ? [...memberPointsOf(current), ...ledger] : current.memberPoints,
+        : membersOf(current),
+      memberPoints: ledger.length ? [...memberPointsOf(current), ...ledger] : memberPointsOf(current),
       products: current.products.map((p) => {
         const sold = sale.items
           .filter((i) => i.productId === p.id)

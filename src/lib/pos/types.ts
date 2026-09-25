@@ -250,19 +250,19 @@ export interface Sale {
   /** Catatan pesanan (tingkat transaksi). */
   note?: string;
   /** Member yang dipakai pada transaksi ini. */
-  memberId?: string;
-  memberName?: string;
-  memberCode?: string;
+  memberId?: string | undefined;
+  memberName?: string | undefined;
+  memberCode?: string | undefined;
   /** Poin yang didapat dari transaksi ini. */
-  pointsEarned?: number;
+  pointsEarned?: number | undefined;
   /** Poin yang ditukarkan menjadi potongan. */
-  pointsUsed?: number;
+  pointsUsed?: number | undefined;
   /** Nilai rupiah potongan dari penukaran poin. */
-  pointDiscount?: number;
+  pointDiscount?: number | undefined;
   /** Nilai rupiah diskon khusus member. */
-  memberDiscount?: number;
+  memberDiscount?: number | undefined;
   /** Saldo poin member setelah transaksi ini. */
-  pointBalance?: number;
+  pointBalance?: number | undefined;
   status: SaleStatus;
   reason: string;
 }
@@ -408,8 +408,8 @@ export interface PosDatabase {
   kitchenOrders?: KitchenOrder[];
   shifts: Shift[];
   businessDays?: BusinessDay[];
-  members?: Member[];
-  memberPoints?: MemberPoint[];
+  members?: Member[] | undefined;
+  memberPoints?: MemberPoint[] | undefined;
   financeCategories?: FinanceCategory[];
 
   financeEntries?: FinanceEntry[];
