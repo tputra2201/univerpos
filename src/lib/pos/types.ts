@@ -52,6 +52,28 @@ export interface PrinterSettings {
   deviceName: string;
   /** ID izin Web Bluetooth untuk menyambungkan kembali printer yang sama. */
   deviceId?: string;
+  /** Daftar printer per jenis dokumen (khusus perangkat ini). */
+  printers?: PrinterConfig[];
+}
+
+export type PrinterRole = "receipt" | "bill" | "kitchen" | "bar" | "report";
+
+export interface PrinterConfig {
+  id: string;
+  name: string;
+  role: PrinterRole;
+  paperWidth: 32 | 48;
+  mode: "dialog" | "bluetooth";
+  deviceId?: string;
+  deviceName?: string;
+  copies: number;
+  active: boolean;
+  /** Receipt: cetak otomatis setelah bayar. Kitchen/Bar: cetak otomatis saat kirim ke dapur. */
+  autoPrint: boolean;
+  /** Kitchen/Bar: cetak tiket pesanan (ringkasan). */
+  printTicket?: boolean;
+  /** Kitchen/Bar: cetak label per item (mis. label cup). */
+  printLabels?: boolean;
 }
 
 export type UserRole = "owner" | "manager" | "supervisor" | "cashier";
@@ -114,6 +136,10 @@ export interface Product {
   modifierIds?: string[];
   /** Harga khusus per jenis layanan. Kosong = ikut harga standar. */
   servicePrices?: Record<string, number>;
+  /** Dicetak ke printer dapur/bar saat pesanan dikirim. Kosong = ya. */
+  printLabel?: boolean;
+  /** Tujuan cetak: printer Kitchen atau Bar. Kosong = kitchen. */
+  labelStation?: "kitchen" | "bar";
 }
 
 
