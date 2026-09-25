@@ -38,6 +38,8 @@ export interface StoreSettings {
 }
 
 export interface PrinterSettings {
+  /** Cara cetak utama pada perangkat ini. */
+  printMode?: "dialog" | "bluetooth";
   paperWidth: 32 | 48;
   header1: string;
   header2: string;
@@ -46,6 +48,8 @@ export interface PrinterSettings {
   marginBottom: number;
   autoPrintOnPay: boolean;
   deviceName: string;
+  /** ID izin Web Bluetooth untuk menyambungkan kembali printer yang sama. */
+  deviceId?: string;
 }
 
 export type UserRole = "owner" | "manager" | "supervisor" | "cashier";

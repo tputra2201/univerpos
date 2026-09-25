@@ -24,7 +24,7 @@ import { usePos } from "@/lib/pos/store";
 import { computeTotals, lineTotal } from "@/lib/pos/calc";
 import { rupiah, uid } from "@/lib/pos/format";
 import { buildReceipt } from "@/lib/pos/receipt";
-import { printViaDialog } from "@/lib/pos/print";
+import { printViaBluetooth, printViaDialog } from "@/lib/pos/print";
 import { getServiceTypes } from "@/lib/pos/seed";
 import { categoryAllowed, servicePrice } from "@/lib/pos/pricing";
 
@@ -474,8 +474,19 @@ function KasirPage() {
     setCartOpen(false);
     const lines = buildReceipt("receipt", sale, settings, db.printer);
     if (db.printer.autoPrintOnPay) {
-      printViaDialog(lines, db.printer.paperWidth);
-      toast.success(`Pembayaran ${rupiah(sale.total)} tersimpan. Struk dicetak.`);
+      if (db.printer.printMode === "bluetooth") {
+        void printViaBluetooth(lines, {
+          deviceId: db.printer.deviceId,
+          deviceName: db.printer.deviceName,
+        })
+          .then(() => toast.success(`Pembayaran ${rupiah(sale.total)} tersimpan. Struk dicetak.`))
+          .catch((error: unknown) =>
+            toast.error(error instanceof Error ? error.message : "Struk gagal dicetak."),
+          );
+      } else {
+        printViaDialog(lines, db.printer.paperWidth);
+        toast.success(`Pembayaran ${rupiah(sale.total)} tersimpan. Struk dicetak.`);
+      }
     } else {
       showPrint("Struk Penjualan", lines);
       toast.success(`Pembayaran ${rupiah(sale.total)} tersimpan.`);

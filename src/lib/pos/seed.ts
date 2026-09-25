@@ -50,6 +50,7 @@ export function emptyDatabase(): PosDatabase {
       orderSeq: 1,
     },
     printer: {
+      printMode: "dialog",
       paperWidth: 32,
       header1: "",
       header2: "",
@@ -58,6 +59,7 @@ export function emptyDatabase(): PosDatabase {
       marginBottom: 3,
       autoPrintOnPay: false,
       deviceName: "",
+      deviceId: "",
     },
     users: [],
     categories: [],

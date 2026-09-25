@@ -8,6 +8,7 @@ const SPP_SERVICE = "00001101-0000-1000-8000-00805f9b34fb";
 
 type BluetoothLike = {
   requestDevice: (options: unknown) => Promise<any>;
+  getDevices?: () => Promise<any[]>;
   getAvailability?: () => Promise<boolean>;
 };
 
@@ -44,7 +45,7 @@ export function escposBytes(lines: string[], autoCut = true): Uint8Array {
 
 let cachedDevice: any = null;
 
-export async function pickBluetoothPrinter(): Promise<string> {
+export async function pickBluetoothPrinter(): Promise<{ id: string; name: string }> {
   const bluetooth = bt();
   if (!bluetooth) throw new Error("Perangkat/browser ini tidak mendukung Bluetooth langsung.");
   const device = await bluetooth.requestDevice({
@@ -52,7 +53,18 @@ export async function pickBluetoothPrinter(): Promise<string> {
     optionalServices: [SPP_SERVICE, 0x18f0, "000018f0-0000-1000-8000-00805f9b34fb"],
   });
   cachedDevice = device;
-  return device.name ?? "Printer Bluetooth";
+  return { id: device.id ?? "", name: device.name ?? "Printer Bluetooth" };
+}
+
+async function restoreBluetoothPrinter(deviceId?: string, deviceName?: string): Promise<any | null> {
+  const bluetooth = bt();
+  if (!bluetooth?.getDevices) return null;
+  const devices = await bluetooth.getDevices();
+  const found = devices.find((device) =>
+    deviceId ? device.id === deviceId : Boolean(deviceName && device.name === deviceName),
+  );
+  if (found) cachedDevice = found;
+  return found ?? null;
 }
 
 async function writableCharacteristic(device: any) {
@@ -67,9 +79,13 @@ async function writableCharacteristic(device: any) {
   throw new Error("Printer tidak menyediakan jalur tulis data.");
 }
 
-export async function printViaBluetooth(lines: string[]): Promise<void> {
+export async function printViaBluetooth(
+  lines: string[],
+  preferred?: { deviceId?: string; deviceName?: string },
+): Promise<void> {
   const bluetooth = bt();
   if (!bluetooth) throw new Error("Perangkat/browser ini tidak mendukung Bluetooth langsung.");
+  if (!cachedDevice) await restoreBluetoothPrinter(preferred?.deviceId, preferred?.deviceName);
   if (!cachedDevice) await pickBluetoothPrinter();
   const characteristic = await writableCharacteristic(cachedDevice);
   const data = escposBytes(lines);
