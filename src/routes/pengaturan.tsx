@@ -1151,3 +1151,35 @@ function EditUserButton({ user }: { user: import("@/lib/pos/types").PosUser }) {
     </>
   );
 }
+
+function AdjustInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  const [draft, setDraft] = useState(value ? String(value) : "");
+  useEffect(() => {
+    const parsed = Number(draft.replace(",", ".")) || 0;
+    if (parsed !== value) setDraft(value ? String(value) : "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+  return (
+    <Input
+      aria-label={label}
+      inputMode="decimal"
+      placeholder="0"
+      value={draft}
+      onChange={(e) => {
+        let raw = e.target.value.replace(",", ".").replace(/[^0-9.-]/g, "");
+        raw = raw.replace(/(?!^)-/g, "").replace(/(\..*)\./g, "$1");
+        setDraft(raw);
+        onChange(Number(raw) || 0);
+      }}
+      className="tabular h-9 w-28"
+    />
+  );
+}
