@@ -36,8 +36,10 @@ export function OptionPicker({
   modifiers,
   onClose,
   onAdd,
+  basePrice,
 }: {
   product: Product | null;
+  basePrice?: number;
   modifiers: Modifier[];
   onClose: () => void;
   onAdd: (label: string, extra: number) => void;
@@ -145,7 +147,7 @@ export function OptionPicker({
         <DialogFooter>
           <Button className="h-12 w-full justify-between" disabled={missing} onClick={() => onAdd(label, extra)}>
             <span>Tambah</span>
-            <span className="tabular">{rupiah(product.price + extra)}</span>
+            <span className="tabular">{rupiah((basePrice ?? product.price) + extra)}</span>
           </Button>
         </DialogFooter>
       </DialogContent>

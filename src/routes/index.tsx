@@ -666,6 +666,7 @@ function KasirPage() {
       {/* Pilih varian / ukuran / topping / modifier */}
       <OptionPicker
         product={variantProduct}
+        basePrice={variantProduct ? servicePrice(variantProduct, activeService) : undefined}
         modifiers={db.modifiers ?? []}
         onClose={() => {
           setVariantProduct(null);
