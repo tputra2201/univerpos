@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { usePos } from "@/lib/pos/store";
 import { BrandIcon, useBranding } from "@/lib/pos/branding";
+import { useSyncStatus } from "@/lib/pos/sync";
 import { canManage, roleLabel } from "@/lib/pos/roles";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
@@ -33,6 +34,18 @@ export function AppShell({ children }: { children: ReactNode }) {
   const brand = useBranding();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [online, setOnline] = useState(true);
+  const sync = useSyncStatus();
+  const central = db.settings.storeMode === "online";
+  const syncLabel =
+    sync.state === "syncing"
+      ? "Menyinkronkan…"
+      : sync.state === "error"
+        ? "Sinkron gagal"
+        : sync.pending > 0
+          ? `${sync.pending} perubahan menunggu internet`
+          : sync.lastSync
+            ? "Tersinkron"
+            : "Menunggu sinkron";
 
   useEffect(() => {
     const sync = () => setOnline(navigator.onLine);
