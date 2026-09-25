@@ -589,12 +589,54 @@ function KasirPage() {
       paid,
       change: Math.max(0, paid - totals.total),
     };
+    const used = sale.pointsUsed ?? 0;
+    const earned = sale.pointsEarned ?? 0;
+    const now = new Date().toISOString();
+    const ledger: MemberPoint[] = [];
+    if (sale.memberId && used > 0)
+      ledger.push({
+        id: uid("mpt"),
+        memberId: sale.memberId,
+        createdAt: now,
+        type: "redeem",
+        points: -used,
+        note: `Potongan ${rupiah(sale.pointDiscount ?? 0)}`,
+        saleId: sale.id,
+        saleCode: sale.code,
+        userName: sale.userName,
+      });
+    if (sale.memberId && earned > 0)
+      ledger.push({
+        id: uid("mpt"),
+        memberId: sale.memberId,
+        createdAt: now,
+        type: "earn",
+        points: earned,
+        note: `Belanja ${rupiah(sale.total)}`,
+        saleId: sale.id,
+        saleCode: sale.code,
+        userName: sale.userName,
+      });
+
     update((current) => ({
       ...current,
       sales: [sale, ...current.sales],
       heldOrders: cart.heldId
         ? current.heldOrders.filter((h) => h.id !== cart.heldId)
         : current.heldOrders,
+      members: sale.memberId
+        ? membersOf(current).map((m) =>
+            m.id === sale.memberId
+              ? {
+                  ...m,
+                  points: Math.max(0, m.points - used) + earned,
+                  totalSpend: m.totalSpend + sale.total,
+                  visits: m.visits + 1,
+                }
+              : m,
+          )
+        : current.members,
+      memberPoints: ledger.length ? [...memberPointsOf(current), ...ledger] : current.memberPoints,
       products: current.products.map((p) => {
         const sold = sale.items
           .filter((i) => i.productId === p.id)
@@ -602,6 +644,7 @@ function KasirPage() {
         return sold > 0 && p.stock != null ? { ...p, stock: p.stock - sold } : p;
       }),
     }));
+
     setCart(EMPTY_CART);
     setPayOpen(false);
     setCartOpen(false);
