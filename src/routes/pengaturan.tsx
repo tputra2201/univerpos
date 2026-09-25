@@ -974,6 +974,11 @@ function PengaturanPage() {
           <FinanceSettings />
         </TabsContent>
 
+        <TabsContent value="member" className="space-y-4">
+          <MemberSettings />
+        </TabsContent>
+
+
         <TabsContent value="data" className="space-y-4">
           <Card>
             <CardHeader>
