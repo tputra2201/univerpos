@@ -64,7 +64,10 @@ export interface PosUser {
 export interface Category {
   id: string;
   name: string;
+  /** Layanan yang boleh menampilkan kategori ini. Kosong/undefined = semua layanan. */
+  serviceIds?: string[];
 }
+
 
 export interface Variant {
   id: string;
