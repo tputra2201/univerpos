@@ -356,7 +356,41 @@ export interface FinanceEntry {
   shiftId?: string;
 }
 
+/** Pelanggan terdaftar (member) untuk program loyalitas. */
+export interface Member {
+  id: string;
+  /** Kode member, mis. MBR-000001. */
+  code: string;
+  name: string;
+  /** Nomor WhatsApp / telepon, dipakai untuk pencarian. */
+  phone: string;
+  email?: string;
+  note?: string;
+  /** Saldo poin saat ini. */
+  points: number;
+  /** Total akumulasi belanja. */
+  totalSpend: number;
+  /** Jumlah transaksi. */
+  visits: number;
+  joinedAt: string;
+  active: boolean;
+}
+
+/** Riwayat poin member. */
+export interface MemberPoint {
+  id: string;
+  memberId: string;
+  createdAt: string;
+  type: "earn" | "redeem" | "adjust";
+  points: number;
+  note: string;
+  saleId?: string;
+  saleCode?: string;
+  userName: string;
+}
+
 export interface PosDatabase {
+
   version: number;
   settings: StoreSettings;
   printer: PrinterSettings;
