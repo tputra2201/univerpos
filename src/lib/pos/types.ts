@@ -37,7 +37,22 @@ export interface StoreSettings {
   closeTime?: string;
   /** Hak akses per level (selain pemilik). Kosong = setelan standar. */
   rolePermissions?: Partial<Record<"manager" | "supervisor" | "cashier", string[]>>;
+  /** Program membership / loyalitas pelanggan. */
+  loyalty?: LoyaltySettings;
 }
+
+export interface LoyaltySettings {
+  enabled: boolean;
+  /** Setiap kelipatan rupiah ini menghasilkan 1 poin. */
+  earnPerAmount: number;
+  /** Nilai 1 poin dalam rupiah saat ditukar. */
+  pointValue: number;
+  /** Poin minimum agar bisa ditukar. */
+  minRedeem: number;
+  /** Diskon otomatis untuk member (persen dari subtotal). */
+  memberDiscountPercent: number;
+}
+
 
 export interface PrinterSettings {
   /** Cara cetak utama pada perangkat ini. */
@@ -234,9 +249,24 @@ export interface Sale {
   orderNo?: string;
   /** Catatan pesanan (tingkat transaksi). */
   note?: string;
+  /** Member yang dipakai pada transaksi ini. */
+  memberId?: string;
+  memberName?: string;
+  memberCode?: string;
+  /** Poin yang didapat dari transaksi ini. */
+  pointsEarned?: number;
+  /** Poin yang ditukarkan menjadi potongan. */
+  pointsUsed?: number;
+  /** Nilai rupiah potongan dari penukaran poin. */
+  pointDiscount?: number;
+  /** Nilai rupiah diskon khusus member. */
+  memberDiscount?: number;
+  /** Saldo poin member setelah transaksi ini. */
+  pointBalance?: number;
   status: SaleStatus;
   reason: string;
 }
+
 
 export interface HeldOrder {
   serviceId?: string | undefined;
