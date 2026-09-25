@@ -157,7 +157,6 @@ function PengaturanPage() {
           devPhone: s.devPhone,
           activatedAt: s.activatedAt,
         } as PosDatabase["settings"]),
-        },
       };
     });
     toast.success("Sistem telah direset.");
