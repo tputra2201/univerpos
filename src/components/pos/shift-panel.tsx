@@ -53,7 +53,7 @@ function Field({
 }: {
   label: string;
   value: string;
-  tone?: "primary" | "good" | "bad";
+  tone?: "primary" | "good" | "bad" | undefined;
 }) {
   return (
     <div className="min-w-0 rounded-lg border bg-muted/40 px-3 py-2">
