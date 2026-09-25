@@ -662,6 +662,7 @@ function StoresPanel() {
                 <Trash2 className="size-4" />
               </Button>
               <StoreDevices store={s} onChange={load} />
+              {s.mode === "online" && <SyncStats storeId={s.id} />}
             </div>
           ))}
           {stores.length === 0 && <p className="text-sm text-muted-foreground">Belum ada store.</p>}
@@ -859,5 +860,28 @@ function AccountsPanel({ selfId }: { selfId: string }) {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function SyncStats({ storeId }: { storeId: string }) {
+  const [info, setInfo] = useState<{ products: number; sales: number; last: string | null } | null>(null);
+  useEffect(() => {
+    void (async () => {
+      const q = (c: string) =>
+        supabase.from("store_records").select("id", { count: "exact", head: true }).eq("store_id", storeId).eq("collection", c).eq("deleted", false);
+      const [p, t, l] = await Promise.all([
+        q("products"),
+        q("sales"),
+        supabase.from("store_records").select("updated_at").eq("store_id", storeId).order("updated_at", { ascending: false }).limit(1),
+      ]);
+      setInfo({ products: p.count ?? 0, sales: t.count ?? 0, last: l.data?.[0]?.updated_at ?? null });
+    })();
+  }, [storeId]);
+  if (!info) return null;
+  return (
+    <p className="text-xs text-muted-foreground">
+      Data pusat: {info.products} produk · {info.sales} transaksi · sinkron terakhir{" "}
+      {info.last ? new Date(info.last).toLocaleString("id-ID") : "belum ada"}
+    </p>
   );
 }

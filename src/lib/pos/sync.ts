@@ -244,7 +244,7 @@ export function useCentralSync() {
           localStorage.setItem(SYNC_BASE_KEY, JSON.stringify(base));
           localStorage.setItem(SYNC_CURSOR_KEY, String(rows[rows.length - 1]!.seq));
         }
-        setStatus({ state: "idle", pending: 0, lastSync: new Date().toISOString(), message: undefined });
+        setStatus({ state: "idle", pending: 0, lastSync: new Date().toISOString(), message: "" });
       } catch (e) {
         setStatus({
           state: "error",
