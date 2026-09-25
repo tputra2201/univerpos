@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { activeShiftOf } from "@/lib/pos/shift";
 import { OptionPicker, productHasOptions } from "@/components/pos/option-picker";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -178,7 +179,16 @@ function KasirPage() {
     });
   }, [db.products, db.categories, visibleCategories, query, categoryId]);
 
+  const shiftOpen = !!activeShiftOf(db);
+
+  function requireShift(): boolean {
+    if (shiftOpen) return true;
+    toast.error("Shift kasir belum dibuka. Buka shift dulu di menu Shift.");
+    return false;
+  }
+
   function addProduct(product: Product, variantName = "", priceDelta = 0) {
+    if (!requireShift()) return;
     if (!cart.orderType) {
       toast.error("Pilih jenis layanan dulu.");
       setPickerOpen(true);
@@ -212,6 +222,12 @@ function KasirPage() {
   }
 
   function onProductClick(product: Product) {
+    if (!requireShift()) return;
+    if (!cart.orderType) {
+      toast.error("Pilih jenis layanan dulu.");
+      setPickerOpen(true);
+      return;
+    }
     if (productHasOptions(product, db.modifiers ?? [])) {
       setVariantProduct(product);
       return;
@@ -504,6 +520,7 @@ function KasirPage() {
 
 
   function newOrder() {
+    if (!requireShift()) return;
     if (cart.lines.length > 0) holdOrder();
     else setCart(EMPTY_CART);
     setPickerOpen(true);
@@ -514,6 +531,16 @@ function KasirPage() {
       {/* Daftar produk */}
       <section className="flex min-w-0 flex-1 flex-col">
         <div className="space-y-3 border-b bg-card px-4 py-3">
+          {!shiftOpen && (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm">
+              <span className="font-semibold text-destructive">
+                Shift kasir belum dibuka — transaksi tidak bisa dimulai.
+              </span>
+              <Button asChild size="sm" className="h-8">
+                <Link to="/shift">Buka Shift</Link>
+              </Button>
+            </div>
+          )}
           <div className="flex items-center justify-between gap-2 rounded-lg bg-primary/10 px-3 py-2">
             <span className="text-sm font-semibold text-primary">
               {cart.orderNo && <span className="tabular mr-2 font-mono">{cart.orderNo}</span>}
@@ -549,7 +576,7 @@ function KasirPage() {
               <span className="hidden sm:inline">Diproses</span>
               {processingCount > 0 && <Badge variant="default">{processingCount}</Badge>}
             </Button>
-            <Button variant="secondary" className="h-11 gap-2" onClick={() => setHeldOpen(true)}>
+            <Button variant="secondary" className="h-11 gap-2" onClick={() => requireShift() && setHeldOpen(true)}>
               <Play className="size-4" />
               <span className="hidden sm:inline">Tertahan</span>
               {db.heldOrders.length > 0 && <Badge variant="default">{db.heldOrders.length}</Badge>}
@@ -584,7 +611,8 @@ function KasirPage() {
                   key={product.id}
                   type="button"
                   onClick={() => onProductClick(product)}
-                  className="flex min-h-24 flex-col justify-between rounded-xl border bg-card p-3 text-left shadow-sm transition-all hover:border-primary hover:shadow-md active:scale-[0.98]"
+                  aria-disabled={!shiftOpen || !cart.orderType}
+                  className="flex min-h-24 aria-disabled:opacity-50 flex-col justify-between rounded-xl border bg-card p-3 text-left shadow-sm transition-all hover:border-primary hover:shadow-md active:scale-[0.98]"
                 >
                   <span className="line-clamp-2 text-sm font-semibold">{product.name}</span>
                   <span className="mt-2 block">
@@ -618,7 +646,7 @@ function KasirPage() {
           onEditLine={setEditLine}
           onChangeQty={changeQty}
           onRemoveLine={removeLine}
-          onPay={() => setPayOpen(true)}
+          onPay={() => requireShift() && setPayOpen(true)}
           onBill={printBill}
           onKitchen={sendToKitchen}
           onHold={holdOrder}
@@ -655,7 +683,7 @@ function KasirPage() {
             onEditLine={setEditLine}
             onChangeQty={changeQty}
             onRemoveLine={removeLine}
-            onPay={() => setPayOpen(true)}
+            onPay={() => requireShift() && setPayOpen(true)}
             onBill={printBill}
             onKitchen={sendToKitchen}
             onHold={holdOrder}
