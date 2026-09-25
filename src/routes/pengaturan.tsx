@@ -15,6 +15,7 @@ import { buildReceipt } from "@/lib/pos/receipt";
 import { bluetoothSupported, pickBluetoothPrinter } from "@/lib/pos/print";
 import { getServiceTypes, seedForBusiness } from "@/lib/pos/seed";
 import type { BusinessType, PosDatabase, Sale, ServiceKind, ServiceType, UserRole } from "@/lib/pos/types";
+import { emptyDatabase } from "@/lib/pos/seed";
 import { roleLabel } from "@/lib/pos/roles";
 import { UpdateCard } from "@/components/pos/update-card";
 import { DevicesCard } from "@/components/pos/devices-card";
@@ -110,6 +111,55 @@ function PengaturanPage() {
     } catch {
       toast.error("Berkas cadangan tidak valid.");
     }
+  }
+
+  function confirmReset(label: string): boolean {
+    const typed = window.prompt(`${label}\n\nKetik RESET untuk melanjutkan.`);
+    return typed?.trim().toUpperCase() === "RESET";
+  }
+
+  function resetTransactions() {
+    if (!confirmReset("Hapus SELURUH transaksi, pesanan tertahan, shift dan hari usaha?")) return;
+    update((cur) => ({
+      ...cur,
+      sales: [],
+      heldOrders: [],
+      kitchenOrders: [],
+      shifts: [],
+      businessDays: [],
+      settings: { ...cur.settings, orderSeq: 1 },
+    }));
+    toast.success("Seluruh transaksi telah dihapus.");
+  }
+
+  function resetSystem() {
+    if (!confirmReset("Hapus SELURUH transaksi DAN pengaturan store (produk, kategori, dll)?")) return;
+    update((cur) => {
+      const fresh = emptyDatabase();
+      const s = cur.settings;
+      return {
+        ...fresh,
+        users: cur.users,
+        printer: cur.printer,
+        settings: ({
+          ...fresh.settings,
+          activated: s.activated,
+          storeCode: s.storeCode,
+          businessType: s.businessType,
+          businessTypeName: s.businessTypeName,
+          name: s.name,
+          storeMode: s.storeMode,
+          activationKey: s.activationKey,
+          deviceToken: s.deviceToken,
+          deviceName: s.deviceName,
+          expiresAt: s.expiresAt,
+          devEmail: s.devEmail,
+          devPhone: s.devPhone,
+          activatedAt: s.activatedAt,
+        } as PosDatabase["settings"]),
+      };
+    });
+    toast.success("Sistem telah direset.");
   }
 
   function testPrint() {
@@ -953,6 +1003,32 @@ function PengaturanPage() {
               <p>Shift: {db.shifts.length}</p>
             </CardContent>
           </Card>
+
+          {currentUser?.role === "owner" || currentUser?.role === "manager" ? (
+            <Card className="border-destructive/40">
+              <CardHeader>
+                <CardTitle className="text-base text-destructive">Reset Data</CardTitle>
+                <CardDescription>
+                  Tindakan ini tidak dapat dibatalkan. Unduh cadangan terlebih dahulu.
+                  {db.settings.storeMode === "online" && " Store mode online: perubahan juga berlaku di semua perangkat."}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-muted-foreground">
+                    <b className="text-foreground">Reset transaksi</b> — hapus seluruh transaksi, pesanan tertahan, dapur, shift & hari usaha. Produk dan pengaturan tetap.
+                  </p>
+                  <Button variant="destructive" onClick={resetTransactions}>Reset transaksi</Button>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-muted-foreground">
+                    <b className="text-foreground">Reset system</b> — hapus seluruh transaksi dan pengaturan (produk, kategori, modifier, pajak, layanan, meja, pembayaran, hak akses). Aktivasi store dan akun pengguna tetap.
+                  </p>
+                  <Button variant="destructive" onClick={resetSystem}>Reset system</Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
         </TabsContent>
       </Tabs>
 
