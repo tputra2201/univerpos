@@ -12,7 +12,8 @@ import {
   type ReportRange,
 } from "@/lib/pos/report-range";
 import { salesOfShift, summarize, financeOfShift } from "@/lib/pos/shift";
-import type { Sale } from "@/lib/pos/types";
+import type { FinanceKind, Sale } from "@/lib/pos/types";
+import { FINANCE_KINDS, kindLabel } from "@/lib/pos/finance";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -208,8 +209,27 @@ export function CompanyReport({ range }: { range: ReportRange }) {
     }),
   );
 
+  const fin = (db.financeEntries ?? []).filter((f) => inRange(f.createdAt, range));
+  const fsum = (k: FinanceKind) => fin.filter((f) => f.kind === k).reduce((a, f) => a + f.amount, 0);
+  const otherIncome = fsum("income");
+  const expense = fsum("expense");
+
   return (
     <div className="grid gap-4 lg:grid-cols-2">
+      <Section title="Pendapatan Bersih">
+        <Row label="Penjualan kotor" value={rupiah(subtotal)} />
+        <Row label="Diskon" value={"-" + rupiah(discount)} />
+        <Row label="Pajak & biaya layanan" value={rupiah(tax + service)} />
+        <Row label="Omzet penjualan" value={rupiah(net)} />
+        <Row label="Other Income" value={"+" + rupiah(otherIncome)} />
+        <Row label="Expense (biaya operasional)" value={"-" + rupiah(expense)} />
+        <Row label="Laba operasional bersih" value={rupiah(net + otherIncome - expense)} bold />
+        <div className="pt-2 text-xs font-semibold uppercase text-muted-foreground">
+          Mutasi kas non-operasional
+        </div>
+        <Row label="Paid-In" value={rupiah(fsum("paidin"))} />
+        <Row label="Paid-Out" value={rupiah(fsum("paidout"))} />
+      </Section>
       <Section title="Ringkasan Penjualan">
         <Row label="Jumlah transaksi" value={String(paid.length)} />
         <Row label="Subtotal produk" value={rupiah(subtotal)} />
@@ -643,5 +663,81 @@ export function VoidReport({ range }: { range: ReportRange }) {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+/** Laporan Finance: ringkasan 4 jenis + detail per jenis. */
+export function FinanceReport({ range, kind }: { range: ReportRange; kind?: FinanceKind }) {
+  const { db } = usePos();
+  const all = (db.financeEntries ?? []).filter((f) => inRange(f.createdAt, range));
+  const rows = kind ? all.filter((f) => f.kind === kind) : all;
+  const total = (k: FinanceKind) => all.filter((f) => f.kind === k).reduce((a, f) => a + f.amount, 0);
+  const net = total("income") - total("expense") + total("paidin") - total("paidout");
+  const byCat = new Map<string, { qty: number; amount: number }>();
+  rows.forEach((f) => bump(byCat, `${kindLabel(f.kind)} · ${f.categoryName}`, f.amount));
+  return (
+    <div className="space-y-4">
+      {!kind && (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          {FINANCE_KINDS.map((k) => (
+            <div key={k.kind} className="rounded-xl border bg-card p-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">{k.label}</p>
+              <p className="tabular mt-1 text-xl font-extrabold">{rupiah(total(k.kind))}</p>
+            </div>
+          ))}
+          <div className="rounded-xl border bg-card p-4">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Net Cash Flow</p>
+            <p className="tabular mt-1 text-xl font-extrabold text-primary">{rupiah(net)}</p>
+          </div>
+        </div>
+      )}
+      <Section title="Per Kategori">
+        {byCat.size === 0 && <p className="text-muted-foreground">Belum ada catatan.</p>}
+        {[...byCat.entries()].sort(byAmount).map(([name, v]) => (
+          <Row key={name} label={`${name} (${v.qty}x)`} value={rupiah(v.amount)} />
+        ))}
+      </Section>
+      <Card>
+        <CardContent className="overflow-x-auto p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tanggal/Jam</TableHead>
+                <TableHead>Nomor</TableHead>
+                <TableHead>Jenis</TableHead>
+                <TableHead>Kategori</TableHead>
+                <TableHead>Item</TableHead>
+                <TableHead>Kasir</TableHead>
+                <TableHead>Metode</TableHead>
+                <TableHead>Keterangan</TableHead>
+                <TableHead className="text-right">Nominal</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={9} className="text-center text-muted-foreground">
+                    Belum ada catatan pada periode ini.
+                  </TableCell>
+                </TableRow>
+              )}
+              {rows.map((f) => (
+                <TableRow key={f.id}>
+                  <TableCell className="whitespace-nowrap">{dateTime(f.createdAt)}</TableCell>
+                  <TableCell className="whitespace-nowrap">{f.code}</TableCell>
+                  <TableCell>{kindLabel(f.kind)}</TableCell>
+                  <TableCell>{f.categoryName}</TableCell>
+                  <TableCell>{f.itemName}</TableCell>
+                  <TableCell>{f.userName}</TableCell>
+                  <TableCell>{f.methodName}</TableCell>
+                  <TableCell>{f.note}</TableCell>
+                  <TableCell className="tabular text-right font-semibold">{rupiah(f.amount)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

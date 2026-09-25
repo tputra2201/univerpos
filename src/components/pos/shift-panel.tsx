@@ -14,7 +14,8 @@ import {
   suggestedStartCash,
   summarize, financeOfShift,
 } from "@/lib/pos/shift";
-import type { Shift } from "@/lib/pos/types";
+import type { FinanceKind, Shift } from "@/lib/pos/types";
+import { FinanceForm } from "@/components/pos/finance-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -94,6 +95,8 @@ export function ShiftPanel({
   const [nextStart, setNextStart] = useState("");
   const [nextEdited, setNextEdited] = useState(false);
   const [dayNote, setDayNote] = useState("");
+  const [finKind, setFinKind] = useState<FinanceKind | null>(null);
+  const canFinance = hasPerm(db.settings, currentUser?.role, "finance.manage");
 
   const sum = shift ? summarize(shift, salesOfShift(db, shift), financeOfShift(db, shift)) : null;
   const balance = sum ? num(actual) - sum.expected : 0;
@@ -173,6 +176,7 @@ export function ShiftPanel({
             { label: "Kas Awal", value: rupiah(shift.openingCash) },
             { label: "Penjualan Tunai", value: rupiah(sum.cashSales) },
             { label: "Non-Tunai", value: rupiah(sum.nonCashSales) },
+            { label: "Mutasi Kas Finance", value: rupiah(sum.financeCash) },
             { label: "Kas Seharusnya", value: rupiah(sum.expected) },
             { label: "Kas Fisik", value: rupiah(cashActual) },
             { label: "Selisih", value: rupiah(diff) },
@@ -241,6 +245,12 @@ export function ShiftPanel({
 
   return (
     <div className="space-y-4">
+      <FinanceForm
+        open={finKind !== null}
+        kind={finKind ?? "expense"}
+        onOpenChange={(v) => !v && setFinKind(null)}
+        onPrint={onPrint}
+      />
       {day && (
         <Card>
           <CardHeader className="pb-2">
@@ -314,8 +324,18 @@ export function ShiftPanel({
               <Field label="Omzet shift" value={rupiah(sum.omzet)} />
               <Field label="Penjualan tunai" value={rupiah(sum.cashSales)} />
               <Field label="Penjualan non-tunai" value={rupiah(sum.nonCashSales)} />
+              <Field label="Mutasi kas Finance" value={rupiah(sum.financeCash)} />
               <Field label="Kas seharusnya" value={rupiah(sum.expected)} tone="primary" />
             </div>
+            {canFinance && (
+              <div className="flex flex-wrap gap-2">
+                {(["paidin", "paidout", "expense", "income"] as FinanceKind[]).map((k) => (
+                  <Button key={k} size="sm" variant="secondary" onClick={() => setFinKind(k)}>
+                    + {k === "paidin" ? "Paid-In" : k === "paidout" ? "Paid-Out" : k === "expense" ? "Expense" : "Other Income"}
+                  </Button>
+                ))}
+              </div>
+            )}
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="cash-actual">Kas fisik di laci</Label>
