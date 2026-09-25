@@ -1,6 +1,8 @@
 import { defaultFinanceCategories } from "./finance";
+import { DEFAULT_LOYALTY } from "./members";
 import type { BusinessType, PosDatabase, Product, ServiceType } from "./types";
 import { uid } from "./format";
+
 
 function p(
   name: string,
