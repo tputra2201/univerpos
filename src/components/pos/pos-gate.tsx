@@ -316,6 +316,34 @@ function ActivationFlow() {
       toast.error("Aktivasi gagal. Coba lagi.");
       return;
     }
+    if (row.mode === "online") {
+      const { data: chk } = await supabase.rpc("check_store", { _code: row.code });
+      const info = Array.isArray(chk) ? chk[0] : null;
+      if (info?.has_data) {
+        // Store online sudah punya data pusat: perangkat ini cukup mengunduhnya.
+        localStorage.removeItem(SYNC_CURSOR_KEY);
+        localStorage.removeItem(SYNC_BASE_KEY);
+        update((current) => ({
+          ...current,
+          users: [],
+          settings: {
+            ...current.settings,
+            activated: true,
+            storeCode: row.code,
+            storeMode: "online",
+            name: row.name,
+            businessTypeName: row.business_type_name ?? "",
+            expiresAt: row.expires_at ?? null,
+            activationKey: key.trim(),
+            deviceToken,
+            deviceName: deviceName.trim() || "Kasir",
+          },
+        }));
+        toast.success("Perangkat tersambung. Data store sedang diunduh — masuk dengan PIN Anda.");
+        void navigate({ to: "/" });
+        return;
+      }
+    }
     setPicked(row);
     setType(row.base_kind === "retail" || row.base_kind === "jasa" ? row.base_kind : "kuliner");
     setStep(1);
