@@ -15,6 +15,7 @@ import { buildReceipt } from "@/lib/pos/receipt";
 import { bluetoothSupported, pickBluetoothPrinter } from "@/lib/pos/print";
 import { getServiceTypes, seedForBusiness } from "@/lib/pos/seed";
 import type { BusinessType, PosDatabase, Sale, ServiceKind, ServiceType, UserRole } from "@/lib/pos/types";
+import { emptyDatabase } from "@/lib/pos/seed";
 import { roleLabel } from "@/lib/pos/roles";
 import { UpdateCard } from "@/components/pos/update-card";
 import { DevicesCard } from "@/components/pos/devices-card";
