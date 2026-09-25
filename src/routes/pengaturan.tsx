@@ -1002,7 +1002,37 @@ export function ServiceTypesCard() {
             >
               <Trash2 className="size-4" />
             </Button>
+            <div className="flex w-full flex-wrap items-center gap-2 border-t pt-2">
+              <span className="text-xs text-muted-foreground">Penyesuaian harga</span>
+              <Input
+                aria-label={`Penyesuaian harga ${svc.name}`}
+                inputMode="numeric"
+                placeholder="0"
+                value={svc.priceAdjustValue ? String(svc.priceAdjustValue) : ""}
+                onChange={(e) => {
+                  const raw = e.target.value.replace(/[^0-9-]/g, "");
+                  patch(svc.id, { priceAdjustValue: Number(raw) || 0 });
+                }}
+                className="tabular h-9 w-28"
+              />
+              <Select
+                value={svc.priceAdjustMode ?? "amount"}
+                onValueChange={(v) => patch(svc.id, { priceAdjustMode: v as "amount" | "percent" })}
+              >
+                <SelectTrigger className="h-9 w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="amount">Rupiah</SelectItem>
+                  <SelectItem value="percent">Persen (%)</SelectItem>
+                </SelectContent>
+              </Select>
+              <span className="text-xs text-muted-foreground">
+                Isi minus untuk mengurangi harga, mis. -10.
+              </span>
+            </div>
           </div>
+
         ))}
         <div className="flex flex-wrap gap-2">
           <Input
