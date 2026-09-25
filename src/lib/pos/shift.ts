@@ -12,14 +12,14 @@ export interface ShiftSummary {
 }
 
 export function salesOfShift(db: PosDatabase, shift: Shift): Sale[] {
-  const end = shift.closedAt ?? new Date(8640000000000000).toISOString();
+  const end = shift.closedAt ?? "9999-12-31T23:59:59.999Z";
   return db.sales.filter(
     (s) => s.status === "paid" && s.createdAt >= shift.openedAt && s.createdAt <= end,
   );
 }
 
 export function financeOfShift(db: PosDatabase, shift: Shift): FinanceEntry[] {
-  const end = shift.closedAt ?? new Date(8640000000000000).toISOString();
+  const end = shift.closedAt ?? "9999-12-31T23:59:59.999Z";
   return (db.financeEntries ?? []).filter((f) =>
     f.shiftId ? f.shiftId === shift.id : f.createdAt >= shift.openedAt && f.createdAt <= end,
   );
