@@ -107,7 +107,7 @@ function readJson<T>(k: string, fallback: T): T {
 
 type PullRow = { collection: string; record_id: string; data: unknown; deleted: boolean; seq: number };
 type Rpc = (n: string, a: object) => Promise<{ data: unknown; error: { message: string } | null }>;
-const rpc = supabase.rpc as unknown as Rpc;
+const rpc: Rpc = (n, a) => (supabase.rpc as unknown as Rpc).call(supabase, n, a);
 
 async function pullAll(code: string, token: string, since: number): Promise<PullRow[]> {
   const all: PullRow[] = [];
