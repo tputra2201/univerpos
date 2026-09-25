@@ -138,15 +138,28 @@ function KasirPage() {
     [cart, settings],
   );
 
+  const activeService = useMemo(
+    () => getServiceTypes(db).find((s) => s.id === cart.serviceId),
+    [db, cart.serviceId],
+  );
+
+  const visibleCategories = useMemo(
+    () => db.categories.filter((c) => categoryAllowed(c, cart.serviceId)),
+    [db.categories, cart.serviceId],
+  );
+
   const products = useMemo(() => {
     const q = query.trim().toLowerCase();
+    const allowed = new Set(visibleCategories.map((c) => c.id));
     return db.products.filter((p) => {
       if (!p.active) return false;
+      if (p.categoryId && db.categories.some((c) => c.id === p.categoryId) && !allowed.has(p.categoryId))
+        return false;
       if (categoryId !== "all" && p.categoryId !== categoryId) return false;
       if (!q) return true;
       return p.name.toLowerCase().includes(q) || p.barcode.includes(q);
     });
-  }, [db.products, query, categoryId]);
+  }, [db.products, db.categories, visibleCategories, query, categoryId]);
 
   function addProduct(product: Product, variantName = "", priceDelta = 0) {
     if (!cart.orderType) {
@@ -171,7 +184,7 @@ function KasirPage() {
         productId: product.id,
         name: product.name,
         variantName,
-        unitPrice: product.price + priceDelta,
+        unitPrice: servicePrice(product, activeService) + priceDelta,
         qty: 1,
         note: "",
         discount: 0,
@@ -188,6 +201,7 @@ function KasirPage() {
     }
     addProduct(product);
   }
+
 
   function changeQty(lineId: string, delta: number) {
     const target = cart.lines.find((l) => l.lineId === lineId);
