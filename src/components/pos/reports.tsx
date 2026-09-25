@@ -752,3 +752,77 @@ export function FinanceReport({ range, kind }: { range: ReportRange; kind?: Fina
     </div>
   );
 }
+
+/** Laporan order online per aplikasi (Grab, Shopee, GoFood, dll). */
+export function OnlineOrderReport({ range }: { range: ReportRange }) {
+  const { db } = usePos();
+  const names = new Set((db.onlineChannels ?? []).map((c) => c.name));
+  const sales = useRangeSales(range).filter(
+    (s) => s.status === "paid" && !!s.orderType && names.has(s.orderType),
+  );
+  const byCh = new Map<string, { qty: number; amount: number }>();
+  sales.forEach((s) => bump(byCh, s.orderType!, s.total));
+  const total = sales.reduce((a, s) => a + s.total, 0);
+  return (
+    <div className="space-y-4">
+      <Section title={`Order Online · ${sales.length} transaksi · ${rupiah(total)}`}>
+        {byCh.size === 0 && <p className="text-muted-foreground">Belum ada order online pada periode ini.</p>}
+        {[...byCh.entries()].sort(byAmount).map(([name, v]) => (
+          <Row key={name} label={`${name} (${v.qty} nota)`} value={rupiah(v.amount)} />
+        ))}
+      </Section>
+      {sales.length > 0 && (
+        <Card>
+          <CardContent className="overflow-x-auto p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Waktu</TableHead>
+                  <TableHead>Nomor</TableHead>
+                  <TableHead>Aplikasi</TableHead>
+                  <TableHead>Pelanggan</TableHead>
+                  <TableHead>Kasir</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {[...sales].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)).map((s) => (
+                  <TableRow key={s.id}>
+                    <TableCell className="whitespace-nowrap">{dateTime(s.createdAt)}</TableCell>
+                    <TableCell>{s.orderNo || s.code}</TableCell>
+                    <TableCell>{s.orderType}</TableCell>
+                    <TableCell>{s.customerName}</TableCell>
+                    <TableCell>{s.userName}</TableCell>
+                    <TableCell className="tabular text-right">{rupiah(s.total)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+/** Item expense diurutkan dari nominal terbesar. */
+export function ExpenseItemReport({ range }: { range: ReportRange }) {
+  const { db } = usePos();
+  const rows = (db.financeEntries ?? []).filter((f) => f.kind === "expense" && inRange(f.createdAt, range));
+  const map = new Map<string, { qty: number; amount: number }>();
+  rows.forEach((f) => bump(map, `${f.itemName} · ${f.categoryName}`, f.amount));
+  const total = rows.reduce((a, f) => a + f.amount, 0);
+  const sorted = [...map.entries()].sort(byAmount);
+  return (
+    <Section title={`Item Expense Terbesar · ${rupiah(total)}`}>
+      {sorted.length === 0 && <p className="text-muted-foreground">Belum ada expense pada periode ini.</p>}
+      {sorted.map(([name, v], i) => (
+        <Row
+          key={name}
+          label={`${i + 1}. ${name} (${v.qty}x · ${total ? ((v.amount / total) * 100).toFixed(1) : 0}%)`}
+          value={rupiah(v.amount)}
+        />
+      ))}
+    </Section>
+  );
+}
