@@ -146,7 +146,7 @@ function KasirPage() {
       if (!svc || svc.kind !== "online") return svc;
       const ch = (db.onlineChannels ?? []).find((c) => c.name === cart.orderType);
       if (!ch?.priceAdjustValue) return svc;
-      return { ...svc, priceAdjustMode: ch.priceAdjustMode, priceAdjustValue: ch.priceAdjustValue };
+      return { ...svc, priceAdjustMode: ch.priceAdjustMode ?? "amount", priceAdjustValue: ch.priceAdjustValue } as ServiceType;
     },
     [db, cart.serviceId, cart.orderType],
   );
