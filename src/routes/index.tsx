@@ -347,8 +347,23 @@ function KasirPage() {
       orderType: cart.orderType,
       orderNo: override.orderNo ?? cart.orderNo,
       note: cart.note,
+      memberId: member?.id,
+      memberName: member?.name ?? "",
+      memberCode: member?.code ?? "",
+      memberDiscount: memberDisc,
+      pointsUsed: pointDisc > 0 && loyalty.pointValue > 0 ? Math.round(pointDisc / loyalty.pointValue) : 0,
+      pointDiscount: pointDisc,
+      pointsEarned: member ? pointsFromSpend(totals.total, loyalty) : 0,
+      pointBalance: member
+        ? Math.max(
+            0,
+            member.points -
+              (pointDisc > 0 && loyalty.pointValue > 0 ? Math.round(pointDisc / loyalty.pointValue) : 0),
+          ) + pointsFromSpend(totals.total, loyalty)
+        : undefined,
       status,
       reason: "",
+
     };
   }
 
