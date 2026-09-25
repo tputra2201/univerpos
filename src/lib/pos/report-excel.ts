@@ -2,7 +2,7 @@
 import type { PosDatabase, Sale } from "./types";
 import { dateTime } from "./format";
 import { DAY_NAMES, businessDate, inRange, rangeLabel, type ReportRange } from "./report-range";
-import { salesOfShift, summarize } from "./shift";
+import { salesOfShift, summarize, financeOfShift } from "./shift";
 
 const isCash = (name: string) => /tunai|cash/i.test(name);
 
@@ -96,7 +96,7 @@ export async function exportReportExcel(db: PosDatabase, range: ReportRange) {
   const closeOut = db.shifts
     .filter((s) => inRange(s.openedAt, range))
     .map((s) => {
-      const expected = s.expectedCash ?? summarize(s, salesOfShift(db, s)).expected;
+      const expected = s.expectedCash ?? summarize(s, salesOfShift(db, s), financeOfShift(db, s)).expected;
       return {
         Kasir: s.userName,
         Buka: dateTime(s.openedAt),

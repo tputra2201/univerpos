@@ -11,7 +11,7 @@ import {
   type RangeMode,
   type ReportRange,
 } from "@/lib/pos/report-range";
-import { salesOfShift, summarize } from "@/lib/pos/shift";
+import { salesOfShift, summarize, financeOfShift } from "@/lib/pos/shift";
 import type { Sale } from "@/lib/pos/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -518,7 +518,7 @@ export function CloseOutReport({ range }: { range: ReportRange }) {
                 {shifts
                   .sort((a, b) => (a.openedAt < b.openedAt ? 1 : -1))
                   .map((s) => {
-                    const expected = s.expectedCash ?? summarize(s, salesOfShift(db, s)).expected;
+                    const expected = s.expectedCash ?? summarize(s, salesOfShift(db, s), financeOfShift(db, s)).expected;
                     const diff = s.closedAt ? (s.closingCash ?? 0) - expected : 0;
                     return (
                       <TableRow key={s.id}>

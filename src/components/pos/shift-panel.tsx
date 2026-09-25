@@ -12,7 +12,7 @@ import {
   activeShiftOf,
   salesOfShift,
   suggestedStartCash,
-  summarize,
+  summarize, financeOfShift,
 } from "@/lib/pos/shift";
 import type { Shift } from "@/lib/pos/types";
 import { Button } from "@/components/ui/button";
@@ -95,7 +95,7 @@ export function ShiftPanel({
   const [nextEdited, setNextEdited] = useState(false);
   const [dayNote, setDayNote] = useState("");
 
-  const sum = shift ? summarize(shift, salesOfShift(db, shift)) : null;
+  const sum = shift ? summarize(shift, salesOfShift(db, shift), financeOfShift(db, shift)) : null;
   const balance = sum ? num(actual) - sum.expected : 0;
 
   const dayShifts = day ? db.shifts.filter((s) => s.openedAt >= day.openedAt) : [];
@@ -400,7 +400,7 @@ export function ShiftPanel({
             <p className="text-muted-foreground">Belum ada shift tercatat.</p>
           )}
           {sortedShifts.slice(0, 20).map((s) => {
-            const expected = s.expectedCash ?? summarize(s, salesOfShift(db, s)).expected;
+            const expected = s.expectedCash ?? summarize(s, salesOfShift(db, s), financeOfShift(db, s)).expected;
             const diff = s.closedAt ? (s.closingCash ?? 0) - expected : 0;
             return (
               <div key={s.id} className="flex flex-wrap justify-between gap-2 border-b pb-2 last:border-0">

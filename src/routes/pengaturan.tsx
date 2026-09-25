@@ -1,3 +1,4 @@
+import { FinanceSettings } from "@/components/pos/finance-settings";
 import { deliverPin, pinMessage, randomPin } from "@/lib/pos/pin";
 import { EditUserForm } from "@/components/pos/edit-user";
 import { daysLeft, formatExpiry } from "@/lib/pos/expiry";
@@ -127,6 +128,7 @@ function PengaturanPage() {
       kitchenOrders: [],
       shifts: [],
       businessDays: [],
+      financeEntries: [],
       settings: { ...cur.settings, orderSeq: 1 },
     }));
     toast.success("Seluruh transaksi telah dihapus.");
@@ -216,6 +218,7 @@ function PengaturanPage() {
           <TabsTrigger value="operasional">Meja & Staf</TabsTrigger>
           <TabsTrigger value="perangkat">Perangkat</TabsTrigger>
           <TabsTrigger value="online">Online Order</TabsTrigger>
+          <TabsTrigger value="finance">Finance</TabsTrigger>
           <TabsTrigger value="data">Data</TabsTrigger>
         </TabsList>
 
@@ -961,6 +964,10 @@ function PengaturanPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="finance" className="space-y-4">
+          <FinanceSettings />
         </TabsContent>
 
         <TabsContent value="data" className="space-y-4">

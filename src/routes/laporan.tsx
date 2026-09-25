@@ -19,7 +19,7 @@ import { dateTime, rupiah } from "@/lib/pos/format";
 import { buildReport } from "@/lib/pos/receipt";
 import { exportReportExcel } from "@/lib/pos/report-excel";
 import { defaultRange, inRange, rangeLabel, type ReportRange } from "@/lib/pos/report-range";
-import { activeShiftOf, salesOfShift, summarize } from "@/lib/pos/shift";
+import { activeShiftOf, salesOfShift, summarize, financeOfShift } from "@/lib/pos/shift";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -74,7 +74,7 @@ function LaporanPage() {
       return;
     }
     const sales = salesOfShift(db, shift);
-    const sum = summarize(shift, sales);
+    const sum = summarize(shift, sales, financeOfShift(db, shift));
     show(
       "Laporan Sementara (X)",
       buildReport(

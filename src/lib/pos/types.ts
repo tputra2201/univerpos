@@ -268,6 +268,38 @@ export interface BusinessDay {
   note?: string;
 }
 
+export type FinanceKind = "income" | "expense" | "paidin" | "paidout";
+
+export interface FinanceItem {
+  id: string;
+  name: string;
+}
+
+/** Kategori Finance beserta itemnya, per jenis transaksi. */
+export interface FinanceCategory {
+  id: string;
+  kind: FinanceKind;
+  name: string;
+  items: FinanceItem[];
+}
+
+export interface FinanceEntry {
+  id: string;
+  code: string;
+  kind: FinanceKind;
+  createdAt: string;
+  categoryId: string;
+  categoryName: string;
+  itemName: string;
+  methodId: string;
+  methodName: string;
+  isCash: boolean;
+  amount: number;
+  note: string;
+  userName: string;
+  shiftId?: string;
+}
+
 export interface PosDatabase {
   version: number;
   settings: StoreSettings;
@@ -286,4 +318,6 @@ export interface PosDatabase {
   kitchenOrders?: KitchenOrder[];
   shifts: Shift[];
   businessDays?: BusinessDay[];
+  financeCategories?: FinanceCategory[];
+  financeEntries?: FinanceEntry[];
 }
