@@ -82,6 +82,7 @@ export function emptyDatabase(): PosDatabase {
     heldOrders: [],
     kitchenOrders: [],
     shifts: [],
+    businessDays: [],
   };
 }
 

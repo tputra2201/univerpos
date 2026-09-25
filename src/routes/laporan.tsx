@@ -1,40 +1,45 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Printer, PlayCircle, StopCircle } from "lucide-react";
+import { Printer, Download } from "lucide-react";
 import { toast } from "sonner";
 import { PosGate } from "@/components/pos/pos-gate";
 import { AppShell, PageHeader } from "@/components/pos/app-shell";
 import { PrintPreview } from "@/components/pos/print-sheet";
-import { usePos } from "@/lib/pos/store";
-import { dateTime, isSameDay, rupiah, uid } from "@/lib/pos/format";
-import { buildReport } from "@/lib/pos/receipt";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ShiftPanel } from "@/components/pos/shift-panel";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  CashierReport,
+  CloseOutReport,
+  CompanyReport,
+  MethodReport,
+  RangePicker,
+  StatsReport,
+  VoidReport,
+} from "@/components/pos/reports";
+import { usePos } from "@/lib/pos/store";
+import { dateTime, rupiah } from "@/lib/pos/format";
+import { buildReport } from "@/lib/pos/receipt";
+import { exportReportExcel } from "@/lib/pos/report-excel";
+import { defaultRange, inRange, rangeLabel, type ReportRange } from "@/lib/pos/report-range";
+import { activeShiftOf, salesOfShift, summarize } from "@/lib/pos/shift";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/laporan")({
   head: () => ({
     meta: [
-      { title: "Laporan Harian & Shift — POS UKM" },
+      { title: "Laporan & Shift Kasir — POS UKM" },
       {
         name: "description",
         content:
-          "Ringkasan omzet harian, rincian metode pembayaran, produk terlaris, serta buka dan tutup kasir.",
+          "Check-in dan close out kasir, End of Day, serta laporan omzet, produk terlaku, hari ramai, QRIS, dan per kasir dengan rentang waktu.",
       },
-      { property: "og:title", content: "Laporan Harian & Shift — POS UKM" },
+      { property: "og:title", content: "Laporan & Shift Kasir — POS UKM" },
       {
         property: "og:description",
-        content: "Omzet harian, metode pembayaran, produk terlaris, dan tutup kasir.",
+        content: "Close out kasir, End of Day, dan laporan lengkap berbasis rentang waktu.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: () => (
@@ -47,287 +52,159 @@ export const Route = createFileRoute("/laporan")({
 });
 
 function LaporanPage() {
-  const { db, update, currentUser } = usePos();
+  const { db } = usePos();
   const [printLines, setPrintLines] = useState<string[] | null>(null);
   const [printTitle, setPrintTitle] = useState("Laporan");
-  const [openShiftDialog, setOpenShiftDialog] = useState(false);
-  const [closeShiftDialog, setCloseShiftDialog] = useState(false);
-  const [cashInput, setCashInput] = useState("");
+  const [range, setRange] = useState<ReportRange>(() => defaultRange(db.settings));
 
-  const today = new Date();
-  const todaySales = useMemo(
-    () => db.sales.filter((s) => isSameDay(s.createdAt, today) && s.status === "paid"),
-    [db.sales],
+  const shift = activeShiftOf(db);
+  const rangeSales = useMemo(
+    () => db.sales.filter((s) => inRange(s.createdAt, range) && s.status === "paid"),
+    [db.sales, range],
   );
-  const activeShift = db.shifts.find((s) => !s.closedAt) ?? null;
-  const shiftSales = useMemo(
-    () =>
-      activeShift
-        ? db.sales.filter((s) => s.status === "paid" && s.createdAt >= activeShift.openedAt)
-        : [],
-    [db.sales, activeShift],
-  );
+  const omzet = rangeSales.reduce((a, s) => a + s.total, 0);
 
-  const omzet = todaySales.reduce((a, s) => a + s.total, 0);
-  const byMethod = new Map<string, number>();
-  todaySales.forEach((s) =>
-    s.payments.forEach((p) => byMethod.set(p.methodName, (byMethod.get(p.methodName) ?? 0) + p.amount)),
-  );
-  const topItems = (() => {
-    const map = new Map<string, number>();
-    todaySales.forEach((s) => s.items.forEach((i) => map.set(i.name, (map.get(i.name) ?? 0) + i.qty)));
-    return [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
-  })();
+  function show(title: string, lines: string[]) {
+    setPrintTitle(title);
+    setPrintLines(lines);
+  }
 
   function printX() {
-    setPrintTitle("Laporan Sementara (X)");
-    setPrintLines(
+    if (!shift) {
+      toast.error("Belum ada kasir yang check-in.");
+      return;
+    }
+    const sales = salesOfShift(db, shift);
+    const sum = summarize(shift, sales);
+    show(
+      "Laporan Sementara (X)",
       buildReport(
         {
           title: "LAPORAN X (SEMENTARA)",
-          from: activeShift ? dateTime(activeShift.openedAt) : dateTime(today.toISOString()),
+          from: dateTime(shift.openedAt),
           to: dateTime(new Date().toISOString()),
-          sales: activeShift ? shiftSales : todaySales,
-          openingCash: activeShift?.openingCash ?? null,
+          sales,
+          openingCash: shift.openingCash,
+          extra: [
+            { label: "Kasir", value: shift.userName },
+            { label: "Penjualan Tunai", value: rupiah(sum.cashSales) },
+            { label: "Non-Tunai", value: rupiah(sum.nonCashSales) },
+            { label: "Kas Seharusnya", value: rupiah(sum.expected) },
+          ],
         },
         db,
       ),
     );
   }
 
-  function printDaily() {
-    setPrintTitle("Laporan Harian");
-    setPrintLines(
+  function printRange() {
+    show(
+      "Laporan Periode",
       buildReport(
-        {
-          title: "LAPORAN HARIAN",
-          from: today.toLocaleDateString("id-ID"),
-          to: today.toLocaleDateString("id-ID"),
-          sales: todaySales,
-        },
+        { title: "LAPORAN PERIODE", from: rangeLabel(range), to: "", sales: rangeSales },
         db,
       ),
     );
   }
-
-  function openShift() {
-    const cash = Number(cashInput.replace(/\D/g, "")) || 0;
-    update((current) => ({
-      ...current,
-      shifts: [
-        {
-          id: uid("shf"),
-          openedAt: new Date().toISOString(),
-          closedAt: null,
-          openingCash: cash,
-          closingCash: null,
-          userName: currentUser?.name ?? "Kasir",
-        },
-        ...current.shifts,
-      ],
-    }));
-    setCashInput("");
-    setOpenShiftDialog(false);
-    toast.success("Kasir dibuka.");
-  }
-
-  function closeShift() {
-    if (!activeShift) return;
-    const cash = Number(cashInput.replace(/\D/g, "")) || 0;
-    const closedAt = new Date().toISOString();
-    update((current) => ({
-      ...current,
-      shifts: current.shifts.map((s) =>
-        s.id === activeShift.id ? { ...s, closedAt, closingCash: cash } : s,
-      ),
-    }));
-    setPrintTitle("Laporan Tutup Kasir (Z)");
-    setPrintLines(
-      buildReport(
-        {
-          title: "LAPORAN Z (TUTUP KASIR)",
-          from: dateTime(activeShift.openedAt),
-          to: dateTime(closedAt),
-          sales: shiftSales,
-          openingCash: activeShift.openingCash,
-          closingCash: cash,
-        },
-        db,
-      ),
-    );
-    setCashInput("");
-    setCloseShiftDialog(false);
-    toast.success("Kasir ditutup.");
-  }
-
-  const voidRows = db.sales
-    .filter((s) => isSameDay(s.createdAt, today))
-    .flatMap((s) => {
-      if (s.status === "void")
-        return [{ key: s.id, title: `Pesanan ${s.orderNo || s.code} (seluruhnya)`, at: s.createdAt, reason: s.reason || "-", amount: s.total }];
-      return s.items
-        .filter((i) => i.voided)
-        .map((i) => ({
-          key: s.id + i.lineId,
-          title: `${i.qty}× ${i.name} — ${s.orderNo || s.code}`,
-          at: s.createdAt,
-          reason: `${i.voidReason ?? "-"} — ${i.voidedBy ?? ""}`,
-          amount: i.unitPrice * i.qty - i.discount,
-        }));
-    });
 
   return (
     <div>
       <PageHeader
         title="Laporan"
-        description={today.toLocaleDateString("id-ID", {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        })}
+        description={rangeLabel(range)}
         action={
           <div className="flex flex-wrap gap-2">
             <Button variant="secondary" className="gap-2" onClick={printX}>
               <Printer className="size-4" /> Laporan X
             </Button>
-            <Button variant="secondary" className="gap-2" onClick={printDaily}>
-              <Printer className="size-4" /> Laporan Harian
+            <Button variant="secondary" className="gap-2" onClick={printRange}>
+              <Printer className="size-4" /> Cetak Periode
             </Button>
-            {activeShift ? (
-              <Button className="gap-2" onClick={() => setCloseShiftDialog(true)}>
-                <StopCircle className="size-4" /> Tutup Kasir
-              </Button>
-            ) : (
-              <Button className="gap-2" onClick={() => setOpenShiftDialog(true)}>
-                <PlayCircle className="size-4" /> Buka Kasir
-              </Button>
-            )}
+            <Button
+              variant="secondary"
+              className="gap-2"
+              onClick={() => {
+                void exportReportExcel(db, range)
+                  .then(() => toast.success("Laporan Excel diunduh."))
+                  .catch(() => toast.error("Gagal membuat file Excel."));
+              }}
+            >
+              <Download className="size-4" /> Excel
+            </Button>
           </div>
         }
       />
 
       <div className="space-y-4 p-4 md:p-6">
+        <RangePicker range={range} onChange={setRange} />
+
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <Stat label="Omzet hari ini" value={rupiah(omzet)} />
-          <Stat label="Jumlah transaksi" value={String(todaySales.length)} />
+          <Stat label="Omzet periode" value={rupiah(omzet)} />
+          <Stat label="Jumlah transaksi" value={String(rangeSales.length)} />
           <Stat
             label="Rata-rata per transaksi"
-            value={rupiah(todaySales.length ? omzet / todaySales.length : 0)}
+            value={rupiah(rangeSales.length ? omzet / rangeSales.length : 0)}
           />
           <Stat
             label="Status kasir"
-            value={activeShift ? "Terbuka" : "Tertutup"}
-            hint={activeShift ? `Kas awal ${rupiah(activeShift.openingCash)}` : undefined}
+            value={shift ? `Terbuka · ${shift.userName}` : "Tertutup"}
+            hint={shift ? `Kas awal ${rupiah(shift.openingCash)}` : "Lakukan check-in dulu"}
           />
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Laporan Void Hari Ini</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            {voidRows.length === 0 && <p className="text-muted-foreground">Belum ada void hari ini.</p>}
-            {voidRows.map((v) => (
-              <div key={v.key} className="flex justify-between gap-3 border-b pb-2 last:border-0">
-                <div>
-                  <p className="font-semibold">{v.title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {dateTime(v.at)} • {v.reason}
-                  </p>
-                </div>
-                <span className="tabular font-semibold text-destructive">{rupiah(v.amount)}</span>
-              </div>
-            ))}
-            {voidRows.length > 0 && (
-              <div className="flex justify-between pt-1 font-semibold">
-                <span>Total void</span>
-                <span className="tabular">{rupiah(voidRows.reduce((a, v) => a + v.amount, 0))}</span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <Tabs defaultValue="shift">
+          <TabsList>
+            <TabsTrigger value="shift">Shift Kasir</TabsTrigger>
+            <TabsTrigger value="company">Company Report</TabsTrigger>
+            <TabsTrigger value="closeout">Close Out</TabsTrigger>
+            <TabsTrigger value="statistik">Statistik</TabsTrigger>
+            <TabsTrigger value="qris">QRIS</TabsTrigger>
+            <TabsTrigger value="transfer">Transfer & Kartu</TabsTrigger>
+            <TabsTrigger value="kasir">Per Kasir</TabsTrigger>
+            <TabsTrigger value="void">VOID</TabsTrigger>
+          </TabsList>
 
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Metode Pembayaran</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              {byMethod.size === 0 && (
-                <p className="text-muted-foreground">Belum ada penjualan hari ini.</p>
-              )}
-              {[...byMethod.entries()].map(([name, amount]) => (
-                <div key={name} className="flex justify-between">
-                  <span className="text-muted-foreground">{name}</span>
-                  <span className="tabular font-semibold">{rupiah(amount)}</span>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Produk Terlaris</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              {topItems.length === 0 && (
-                <p className="text-muted-foreground">Belum ada produk terjual hari ini.</p>
-              )}
-              {topItems.map(([name, qty]) => (
-                <div key={name} className="flex justify-between">
-                  <span className="truncate text-muted-foreground">{name}</span>
-                  <span className="tabular font-semibold">{qty}</span>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Riwayat Shift</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            {db.shifts.length === 0 && (
-              <p className="text-muted-foreground">Belum ada shift tercatat.</p>
-            )}
-            {db.shifts.slice(0, 10).map((s) => (
-              <div key={s.id} className="flex flex-wrap justify-between gap-2 border-b pb-2 last:border-0">
-                <span>
-                  {s.userName} · {dateTime(s.openedAt)}
-                  {s.closedAt ? ` → ${dateTime(s.closedAt)}` : " → berjalan"}
-                </span>
-                <span className="tabular text-muted-foreground">
-                  Kas awal {rupiah(s.openingCash)}
-                  {s.closingCash != null && ` · akhir ${rupiah(s.closingCash)}`}
-                </span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+          <TabsContent value="shift" className="mt-4">
+            <ShiftPanel onPrint={show} />
+          </TabsContent>
+          <TabsContent value="company" className="mt-4">
+            <CompanyReport range={range} />
+          </TabsContent>
+          <TabsContent value="closeout" className="mt-4">
+            <CloseOutReport range={range} />
+          </TabsContent>
+          <TabsContent value="statistik" className="mt-4">
+            <StatsReport range={range} />
+          </TabsContent>
+          <TabsContent value="qris" className="mt-4">
+            <MethodReport
+              range={range}
+              title="Pembayaran QRIS"
+              match={(m) => /qris|qr/i.test(m)}
+            />
+          </TabsContent>
+          <TabsContent value="transfer" className="mt-4">
+            <div className="space-y-4">
+              <MethodReport
+                range={range}
+                title="Transfer Bank"
+                match={(m) => /transfer|bank/i.test(m)}
+              />
+              <MethodReport
+                range={range}
+                title="Kartu / EDC"
+                match={(m) => /kartu|card|edc|debit|kredit/i.test(m)}
+              />
+            </div>
+          </TabsContent>
+          <TabsContent value="kasir" className="mt-4">
+            <CashierReport range={range} />
+          </TabsContent>
+          <TabsContent value="void" className="mt-4">
+            <VoidReport range={range} />
+          </TabsContent>
+        </Tabs>
       </div>
-
-      <ShiftDialog
-        open={openShiftDialog}
-        onOpenChange={setOpenShiftDialog}
-        title="Buka Kasir"
-        description="Catat uang tunai awal di kotak kasir."
-        label="Kas awal"
-        value={cashInput}
-        onChange={setCashInput}
-        onSubmit={openShift}
-      />
-      <ShiftDialog
-        open={closeShiftDialog}
-        onOpenChange={setCloseShiftDialog}
-        title="Tutup Kasir"
-        description="Hitung uang tunai di kotak kasir, lalu cetak laporan Z."
-        label="Kas akhir"
-        value={cashInput}
-        onChange={setCashInput}
-        onSubmit={closeShift}
-      />
 
       <PrintPreview
         open={printLines !== null}
@@ -346,50 +223,5 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
       <p className="tabular mt-1 text-2xl font-extrabold">{value}</p>
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
-  );
-}
-
-function ShiftDialog({
-  open,
-  onOpenChange,
-  title,
-  description,
-  label,
-  value,
-  onChange,
-  onSubmit,
-}: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  title: string;
-  description: string;
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  onSubmit: () => void;
-}) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-2">
-          <Label>{label}</Label>
-          <Input
-            inputMode="numeric"
-            value={value ? Number(value.replace(/\D/g, "")).toLocaleString("id-ID") : ""}
-            onChange={(e) => onChange(e.target.value.replace(/\D/g, ""))}
-            className="tabular h-12 text-right text-xl font-bold"
-          />
-        </div>
-        <DialogFooter>
-          <Button className="w-full h-11" onClick={onSubmit}>
-            Simpan
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }

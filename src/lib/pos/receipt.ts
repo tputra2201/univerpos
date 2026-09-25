@@ -187,6 +187,8 @@ export interface ReportInput {
   sales: Sale[];
   openingCash?: number | null;
   closingCash?: number | null;
+  /** Baris tambahan di bagian bawah, mis. rincian close out. */
+  extra?: { label: string; value: string }[];
 }
 
 export function buildReport(
@@ -240,6 +242,11 @@ export function buildReport(
       out.push(twoCol("Kas Akhir", money(input.closingCash), width));
       out.push(twoCol("Selisih", money(input.closingCash - expected), width));
     }
+  }
+
+  if (input.extra?.length) {
+    out.push(divider(width));
+    input.extra.forEach((r) => out.push(twoCol(r.label, r.value, width)));
   }
 
   footerLines(db.printer, width).forEach((l) => out.push(l));

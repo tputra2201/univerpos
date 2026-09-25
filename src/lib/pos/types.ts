@@ -241,9 +241,31 @@ export interface Shift {
   id: string;
   openedAt: string;
   closedAt: string | null;
+  /** Kas awal di laci saat check-in. */
   openingCash: number;
+  /** Kas fisik yang dihitung saat close out (cash actual). */
   closingCash: number | null;
   userName: string;
+  /** Kas yang seharusnya ada menurut sistem saat close out. */
+  expectedCash?: number;
+  /** Alasan selisih kas (wajib bila selisih tidak nol). */
+  balanceNote?: string;
+  /** Kas yang ditinggalkan untuk shift berikutnya. */
+  nextStartCash?: number;
+  /** Nama yang melakukan close out. */
+  closedBy?: string;
+  /** Hari usaha tempat shift ini berjalan. */
+  businessDayId?: string;
+}
+
+/** Satu hari usaha, ditutup lewat prosedur End of Day. */
+export interface BusinessDay {
+  id: string;
+  openedAt: string;
+  closedAt: string | null;
+  openedBy: string;
+  closedBy?: string;
+  note?: string;
 }
 
 export interface PosDatabase {
@@ -263,4 +285,5 @@ export interface PosDatabase {
   heldOrders: HeldOrder[];
   kitchenOrders?: KitchenOrder[];
   shifts: Shift[];
+  businessDays?: BusinessDay[];
 }

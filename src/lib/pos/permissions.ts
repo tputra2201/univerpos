@@ -7,6 +7,8 @@ export type PermKey =
   | "transaction.view"
   | "transaction.void"
   | "report.view"
+  | "shift.manage"
+  | "eod.close"
   | "settings.manage"
   | "users.manage";
 
@@ -16,6 +18,8 @@ export const PERM_GROUPS: { title: string; items: { key: PermKey; label: string 
     items: [
       { key: "pos.access", label: "Membuka halaman kasir" },
       { key: "order.void", label: "Otorisasi void pesanan (PIN)" },
+      { key: "shift.manage", label: "Check-in & close out kasir" },
+      { key: "eod.close", label: "Tutup hari usaha (End of Day)" },
     ],
   },
   {
@@ -46,8 +50,15 @@ export const LIMITED_ROLES: LimitedRole[] = ["manager", "supervisor", "cashier"]
 
 export const DEFAULT_PERMS: Record<LimitedRole, PermKey[]> = {
   manager: [...ALL_PERMS],
-  supervisor: ["pos.access", "order.void", "transaction.view", "transaction.void", "report.view"],
-  cashier: ["pos.access", "transaction.view"],
+  supervisor: [
+    "pos.access",
+    "order.void",
+    "transaction.view",
+    "transaction.void",
+    "report.view",
+    "shift.manage",
+  ],
+  cashier: ["pos.access", "transaction.view", "shift.manage"],
 };
 
 export function permsFor(settings: StoreSettings, role: LimitedRole): PermKey[] {
