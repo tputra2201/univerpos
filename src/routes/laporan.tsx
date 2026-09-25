@@ -11,6 +11,8 @@ import {
   CompanyReport,
   FinanceReport,
   MethodReport,
+  OnlineOrderReport,
+  ExpenseItemReport,
   RangePicker,
   StatsReport,
   VoidReport,
@@ -162,6 +164,7 @@ function LaporanPage() {
             <TabsTrigger value="statistik">Statistik</TabsTrigger>
             <TabsTrigger value="qris">QRIS</TabsTrigger>
             <TabsTrigger value="transfer">Transfer & Kartu</TabsTrigger>
+            <TabsTrigger value="online">Order Online</TabsTrigger>
             <TabsTrigger value="kasir">Per Kasir</TabsTrigger>
             <TabsTrigger value="void">VOID</TabsTrigger>
             {canFinance && <TabsTrigger value="finance">Finance</TabsTrigger>}
@@ -203,6 +206,9 @@ function LaporanPage() {
               />
             </div>
           </TabsContent>
+          <TabsContent value="online" className="mt-4">
+            <OnlineOrderReport range={range} />
+          </TabsContent>
           <TabsContent value="kasir" className="mt-4">
             <CashierReport range={range} />
           </TabsContent>
@@ -213,7 +219,8 @@ function LaporanPage() {
             <FinanceReport range={range} />
           </TabsContent>
           {FINANCE_KINDS.map((k) => (
-            <TabsContent key={k.kind} value={`fin-${k.kind}`} className="mt-4">
+            <TabsContent key={k.kind} value={`fin-${k.kind}`} className="mt-4 space-y-4">
+              {k.kind === "expense" && <ExpenseItemReport range={range} />}
               <FinanceReport range={range} kind={k.kind} />
             </TabsContent>
           ))}
