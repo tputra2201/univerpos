@@ -61,7 +61,7 @@ export const Route = createFileRoute("/pengaturan")({
 });
 
 function PengaturanPage() {
-  const { db, update, replaceAll } = usePos();
+  const { db, update, replaceAll, currentUser } = usePos();
   const [printLines, setPrintLines] = useState<string[] | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
