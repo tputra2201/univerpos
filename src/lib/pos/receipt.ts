@@ -187,6 +187,8 @@ export interface ReportInput {
   sales: Sale[];
   openingCash?: number | null;
   closingCash?: number | null;
+  /** Baris tambahan di bagian bawah, mis. rincian close out. */
+  extra?: { label: string; value: string }[];
 }
 
 export function buildReport(
