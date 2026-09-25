@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { PosGate } from "@/components/pos/pos-gate";
 import { AppShell, PageHeader } from "@/components/pos/app-shell";
 import { PrintPreview } from "@/components/pos/print-sheet";
-import { ShiftPanel } from "@/components/pos/shift-panel";
 import {
   CashierReport,
   CloseOutReport,
@@ -152,9 +151,8 @@ function LaporanPage() {
           />
         </div>
 
-        <Tabs defaultValue="shift">
+        <Tabs defaultValue="company">
           <TabsList>
-            <TabsTrigger value="shift">Shift Kasir</TabsTrigger>
             <TabsTrigger value="company">Company Report</TabsTrigger>
             <TabsTrigger value="closeout">Close Out</TabsTrigger>
             <TabsTrigger value="statistik">Statistik</TabsTrigger>
@@ -164,9 +162,6 @@ function LaporanPage() {
             <TabsTrigger value="void">VOID</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="shift" className="mt-4">
-            <ShiftPanel onPrint={show} />
-          </TabsContent>
           <TabsContent value="company" className="mt-4">
             <CompanyReport range={range} />
           </TabsContent>

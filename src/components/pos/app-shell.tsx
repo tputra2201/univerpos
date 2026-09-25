@@ -9,6 +9,7 @@ import {
   LogOut,
   Wifi,
   WifiOff,
+  Clock,
 } from "lucide-react";
 import { usePos } from "@/lib/pos/store";
 import { BrandIcon, useBranding } from "@/lib/pos/branding";
@@ -24,6 +25,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 
 const NAV: { to: string; label: string; icon: typeof ShoppingCart; perm: PermKey }[] = [
   { to: "/", label: "Kasir", icon: ShoppingCart, perm: "pos.access" },
+  { to: "/shift", label: "Shift", icon: Clock, perm: "shift.manage" },
   { to: "/produk", label: "Produk", icon: Package, perm: "product.manage" },
   { to: "/transaksi", label: "Transaksi", icon: ReceiptText, perm: "transaction.view" },
   { to: "/laporan", label: "Laporan", icon: BarChart3, perm: "report.view" },

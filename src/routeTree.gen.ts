@@ -16,6 +16,7 @@ import { Route as LaporanRouteImport } from './routes/laporan'
 import { Route as ManifestDotwebmanifestRouteImport } from './routes/manifest[.]webmanifest'
 import { Route as PengaturanRouteImport } from './routes/pengaturan'
 import { Route as ProdukRouteImport } from './routes/produk'
+import { Route as ShiftRouteImport } from './routes/shift'
 import { Route as TransaksiRouteImport } from './routes/transaksi'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 
@@ -54,6 +55,11 @@ const ProdukRoute = ProdukRouteImport.update({
   path: '/produk',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShiftRoute = ShiftRouteImport.update({
+  id: '/shift',
+  path: '/shift',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TransaksiRoute = TransaksiRouteImport.update({
   id: '/transaksi',
   path: '/transaksi',
@@ -74,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
   '/pengaturan': typeof PengaturanRoute
   '/produk': typeof ProdukRoute
+  '/shift': typeof ShiftRoute
   '/transaksi': typeof TransaksiRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
@@ -85,6 +92,7 @@ export interface FileRoutesByTo {
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
   '/pengaturan': typeof PengaturanRoute
   '/produk': typeof ProdukRoute
+  '/shift': typeof ShiftRoute
   '/transaksi': typeof TransaksiRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
@@ -97,6 +105,7 @@ export interface FileRoutesById {
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
   '/pengaturan': typeof PengaturanRoute
   '/produk': typeof ProdukRoute
+  '/shift': typeof ShiftRoute
   '/transaksi': typeof TransaksiRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
@@ -110,6 +119,7 @@ export interface FileRouteTypes {
     | '/manifest.webmanifest'
     | '/pengaturan'
     | '/produk'
+    | '/shift'
     | '/transaksi'
     | '/lovable/email/transactional/preview'
   fileRoutesByTo: FileRoutesByTo
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
     | '/manifest.webmanifest'
     | '/pengaturan'
     | '/produk'
+    | '/shift'
     | '/transaksi'
     | '/lovable/email/transactional/preview'
   id:
@@ -132,6 +143,7 @@ export interface FileRouteTypes {
     | '/manifest.webmanifest'
     | '/pengaturan'
     | '/produk'
+    | '/shift'
     | '/transaksi'
     | '/lovable/email/transactional/preview'
   fileRoutesById: FileRoutesById
@@ -144,6 +156,7 @@ export interface RootRouteChildren {
   ManifestDotwebmanifestRoute: typeof ManifestDotwebmanifestRoute
   PengaturanRoute: typeof PengaturanRoute
   ProdukRoute: typeof ProdukRoute
+  ShiftRoute: typeof ShiftRoute
   TransaksiRoute: typeof TransaksiRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
@@ -199,6 +212,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProdukRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/shift': {
+      id: '/shift'
+      path: '/shift'
+      fullPath: '/shift'
+      preLoaderRoute: typeof ShiftRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/transaksi': {
       id: '/transaksi'
       path: '/transaksi'
@@ -224,6 +244,7 @@ const rootRouteChildren: RootRouteChildren = {
   ManifestDotwebmanifestRoute: ManifestDotwebmanifestRoute,
   PengaturanRoute: PengaturanRoute,
   ProdukRoute: ProdukRoute,
+  ShiftRoute: ShiftRoute,
   TransaksiRoute: TransaksiRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }
