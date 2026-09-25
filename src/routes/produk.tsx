@@ -249,6 +249,9 @@ function ProdukPage() {
                         <Badge variant="secondary">{product.variants.length} varian</Badge>
                       )}
                       {!product.active && <Badge variant="outline">Nonaktif</Badge>}
+                      <Badge variant="outline">
+                        {product.printLabel === false ? "Tanpa cetak" : product.labelStation === "bar" ? "Bar" : "Kitchen"}
+                      </Badge>
                     </div>
                   </div>
                   <div className="flex gap-1">
@@ -849,6 +852,30 @@ function ProductDialog({
               checked={draft.active}
               onCheckedChange={(v) => setDraft({ ...draft, active: v })}
             />
+          </div>
+          <div className="space-y-3 rounded-lg border p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">Cetak tiket / label</p>
+                <p className="text-xs text-muted-foreground">Dicetak saat pesanan dikirim ke dapur.</p>
+              </div>
+              <Switch
+                checked={draft.printLabel !== false}
+                onCheckedChange={(v) => setDraft({ ...draft, printLabel: v })}
+              />
+            </div>
+            {draft.printLabel !== false && (
+              <Select
+                value={draft.labelStation ?? "kitchen"}
+                onValueChange={(v) => setDraft({ ...draft, labelStation: v === "bar" ? "bar" : "kitchen" })}
+              >
+                <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="kitchen">Printer Kitchen (dapur / makanan)</SelectItem>
+                  <SelectItem value="bar">Printer Bar (minuman)</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <ListEditor
