@@ -50,16 +50,16 @@ function dominantColor(src: string): Promise<[number, number, number] | null> {
         const ctx = c.getContext("2d");
         if (!ctx) return resolve(null);
         ctx.drawImage(img, 0, 0, 40, 40);
-        const d = ctx.getImageData(0, 0, 40, 40).data;
+        const d = Array.from(ctx.getImageData(0, 0, 40, 40).data) as number[];
         let r = 0, g = 0, bl = 0, w = 0;
         for (let i = 0; i < d.length; i += 4) {
-          if (d[i + 3] < 128) continue;
-          const max = Math.max(d[i], d[i + 1], d[i + 2]), min = Math.min(d[i], d[i + 1], d[i + 2]);
+          if ((d[i + 3] ?? 0) < 128) continue;
+          const max = Math.max((d[i] ?? 0), (d[i + 1] ?? 0), (d[i + 2] ?? 0)), min = Math.min((d[i] ?? 0), (d[i + 1] ?? 0), (d[i + 2] ?? 0));
           const sat = max === 0 ? 0 : (max - min) / max;
           if (max > 240 && sat < 0.1) continue; // putih
           if (max < 25) continue; // hitam
           const wt = 0.05 + sat * sat;
-          r += d[i] * wt; g += d[i + 1] * wt; bl += d[i + 2] * wt; w += wt;
+          r += (d[i] ?? 0) * wt; g += (d[i + 1] ?? 0) * wt; bl += (d[i + 2] ?? 0) * wt; w += wt;
         }
         resolve(w ? [Math.round(r / w), Math.round(g / w), Math.round(bl / w)] : null);
       } catch { resolve(null); }
