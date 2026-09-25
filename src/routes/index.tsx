@@ -1343,7 +1343,7 @@ function PaymentDialog({
   const paidSplit = split.reduce((s, p) => s + p.amount, 0);
   const remaining = Math.max(0, total - paidSplit);
   const entered = Number(amount.replace(/\D/g, "")) || 0;
-  const cashValue = method?.isCash ? entered : remaining;
+  const cashValue = method?.isCash ? entered : amount ? Math.min(entered, remaining) : remaining;
   const change = Math.max(0, paidSplit + cashValue - total);
 
   const quick = [remaining, 50000, 100000, 150000, 200000].filter(
@@ -1363,6 +1363,10 @@ function PaymentDialog({
     if (!method) return;
     if (method.isCash && entered < remaining) {
       toast.error("Uang tunai belum cukup untuk melunasi transaksi.");
+      return;
+    }
+    if (!method.isCash && amount && entered < remaining) {
+      toast.error("Nominal belum melunasi. Tekan \"Bayar sebagian\" atau kosongkan nominal.");
       return;
     }
     onComplete([
@@ -1394,27 +1398,33 @@ function PaymentDialog({
                 key={m.id}
                 variant={methodId === m.id ? "default" : "secondary"}
                 className="h-12"
-                onClick={() => setMethodId(m.id)}
+                type="button"
+                onClick={() => {
+                  setMethodId(m.id);
+                  setAmount("");
+                }}
               >
                 {m.name}
               </Button>
             ))}
           </div>
 
-          {method?.isCash && (
+          {method && (
             <div className="space-y-2">
-              <Label htmlFor="cash-received">Uang diterima</Label>
+              <Label htmlFor="cash-received">
+                {method.isCash ? "Uang diterima" : `Nominal ${method.name} (kosong = sisa tagihan)`}
+              </Label>
               <Input
                 id="cash-received"
                 inputMode="numeric"
                 autoFocus
                 value={amount ? Number(amount.replace(/\D/g, "")).toLocaleString("id-ID") : ""}
                 onChange={(e) => setAmount(e.target.value.replace(/\D/g, ""))}
-                placeholder="0"
+                placeholder={method.isCash ? "0" : remaining.toLocaleString("id-ID")}
                 className="tabular h-14 text-right text-2xl font-bold"
               />
               <div className="flex flex-wrap gap-2">
-                {quick.map((v) => (
+                {(method.isCash ? quick : [remaining].filter((v) => v > 0)).map((v) => (
                   <Button
                     key={v}
                     size="sm"
@@ -1426,9 +1436,9 @@ function PaymentDialog({
                   </Button>
                 ))}
               </div>
-              <p className="tabular text-sm text-muted-foreground">
+              {method.isCash && <p className="tabular text-sm text-muted-foreground">
                 Kembalian: <span className="font-semibold text-foreground">{rupiah(change)}</span>
-              </p>
+              </p>}
             </div>
           )}
 
@@ -1437,7 +1447,17 @@ function PaymentDialog({
               {split.map((p, i) => (
                 <li key={i} className="flex justify-between">
                   <span>{p.methodName}</span>
-                  <span className="tabular">{rupiah(p.amount)}</span>
+                  <span className="flex items-center gap-2">
+                    <span className="tabular">{rupiah(p.amount)}</span>
+                    <button
+                      type="button"
+                      aria-label="Hapus pembayaran"
+                      className="text-muted-foreground hover:text-destructive"
+                      onClick={() => setSplit((prev) => prev.filter((_, j) => j !== i))}
+                    >
+                      ✕
+                    </button>
+                  </span>
                 </li>
               ))}
             </ul>
