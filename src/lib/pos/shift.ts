@@ -1,5 +1,5 @@
 /** Hitungan kas untuk prosedur check-in dan close out kasir. */
-import type { PosDatabase, Sale, Shift } from "./types";
+import type { FinanceEntry, PosDatabase, Sale, Shift } from "./types";
 
 export interface ShiftSummary {
   count: number;
@@ -7,6 +7,8 @@ export interface ShiftSummary {
   cashSales: number;
   nonCashSales: number;
   expected: number;
+  /** Mutasi kas tunai dari Finance (income − expense + paid-in − paid-out). */
+  financeCash: number;
 }
 
 export function salesOfShift(db: PosDatabase, shift: Shift): Sale[] {
@@ -16,7 +18,18 @@ export function salesOfShift(db: PosDatabase, shift: Shift): Sale[] {
   );
 }
 
-export function summarize(shift: Shift, sales: Sale[]): ShiftSummary {
+export function financeOfShift(db: PosDatabase, shift: Shift): FinanceEntry[] {
+  const end = shift.closedAt ?? new Date(8640000000000000).toISOString();
+  return (db.financeEntries ?? []).filter((f) =>
+    f.shiftId ? f.shiftId === shift.id : f.createdAt >= shift.openedAt && f.createdAt <= end,
+  );
+}
+
+export function financeSign(kind: FinanceEntry["kind"]): 1 | -1 {
+  return kind === "income" || kind === "paidin" ? 1 : -1;
+}
+
+export function summarize(shift: Shift, sales: Sale[], finance: FinanceEntry[] = []): ShiftSummary {
   let cashSales = 0;
   let nonCashSales = 0;
   let omzet = 0;
@@ -27,12 +40,16 @@ export function summarize(shift: Shift, sales: Sale[]): ShiftSummary {
       else nonCashSales += p.amount;
     }
   }
+  const financeCash = finance
+    .filter((f) => f.isCash)
+    .reduce((a, f) => a + financeSign(f.kind) * f.amount, 0);
   return {
+    financeCash,
     count: sales.length,
     omzet,
     cashSales,
     nonCashSales,
-    expected: shift.openingCash + cashSales,
+    expected: shift.openingCash + cashSales + financeCash,
   };
 }
 

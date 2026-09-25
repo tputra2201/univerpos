@@ -12,3 +12,4 @@
 ## Rules
 
 - Report date ranges and shift/business-day math live in `src/lib/pos/report-range.ts` and `src/lib/pos/shift.ts`; report UIs in `src/components/pos/reports.tsx` consume them. Why: keeps business-day (operating-hours) logic in one place so every report and close-out agrees.
+- Finance (income/expense/paid-in/paid-out) lives in src/lib/pos/finance.ts; entries feed shift expected cash via financeOfShift in shift.ts. Why: one source for cash math.

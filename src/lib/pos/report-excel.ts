@@ -1,8 +1,9 @@
 /** Ekspor laporan ke file Excel siap pakai. */
 import type { PosDatabase, Sale } from "./types";
 import { dateTime } from "./format";
+import { kindLabel } from "./finance";
 import { DAY_NAMES, businessDate, inRange, rangeLabel, type ReportRange } from "./report-range";
-import { salesOfShift, summarize } from "./shift";
+import { salesOfShift, summarize, financeOfShift } from "./shift";
 
 const isCash = (name: string) => /tunai|cash/i.test(name);
 
@@ -96,7 +97,7 @@ export async function exportReportExcel(db: PosDatabase, range: ReportRange) {
   const closeOut = db.shifts
     .filter((s) => inRange(s.openedAt, range))
     .map((s) => {
-      const expected = s.expectedCash ?? summarize(s, salesOfShift(db, s)).expected;
+      const expected = s.expectedCash ?? summarize(s, salesOfShift(db, s), financeOfShift(db, s)).expected;
       return {
         Kasir: s.userName,
         Buka: dateTime(s.openedAt),
@@ -143,6 +144,22 @@ export async function exportReportExcel(db: PosDatabase, range: ReportRange) {
   add("Statistik", statistik);
   add("Close Out", closeOut);
   add("VOID", voidRows);
+  add(
+    "Finance",
+    (db.financeEntries ?? [])
+      .filter((f) => inRange(f.createdAt, range))
+      .map((f) => ({
+        Waktu: dateTime(f.createdAt),
+        Nomor: f.code,
+        Jenis: kindLabel(f.kind),
+        Kategori: f.categoryName,
+        Item: f.itemName,
+        Kasir: f.userName,
+        Metode: f.methodName,
+        Keterangan: f.note,
+        Nominal: f.amount,
+      })),
+  );
 
   const label = `${range.from}${range.from === range.to ? "" : "_" + range.to}`;
   XLSX.writeFile(wb, `laporan-${label}.xlsx`);

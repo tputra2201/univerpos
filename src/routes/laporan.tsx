@@ -9,17 +9,20 @@ import {
   CashierReport,
   CloseOutReport,
   CompanyReport,
+  FinanceReport,
   MethodReport,
   RangePicker,
   StatsReport,
   VoidReport,
 } from "@/components/pos/reports";
 import { usePos } from "@/lib/pos/store";
+import { hasPerm } from "@/lib/pos/permissions";
+import { FINANCE_KINDS } from "@/lib/pos/finance";
 import { dateTime, rupiah } from "@/lib/pos/format";
 import { buildReport } from "@/lib/pos/receipt";
 import { exportReportExcel } from "@/lib/pos/report-excel";
 import { defaultRange, inRange, rangeLabel, type ReportRange } from "@/lib/pos/report-range";
-import { activeShiftOf, salesOfShift, summarize } from "@/lib/pos/shift";
+import { activeShiftOf, salesOfShift, summarize, financeOfShift } from "@/lib/pos/shift";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -51,7 +54,8 @@ export const Route = createFileRoute("/laporan")({
 });
 
 function LaporanPage() {
-  const { db } = usePos();
+  const { db, currentUser } = usePos();
+  const canFinance = hasPerm(db.settings, currentUser?.role, "finance.view");
   const [printLines, setPrintLines] = useState<string[] | null>(null);
   const [printTitle, setPrintTitle] = useState("Laporan");
   const [range, setRange] = useState<ReportRange>(() => defaultRange(db.settings));
@@ -74,7 +78,7 @@ function LaporanPage() {
       return;
     }
     const sales = salesOfShift(db, shift);
-    const sum = summarize(shift, sales);
+    const sum = summarize(shift, sales, financeOfShift(db, shift));
     show(
       "Laporan Sementara (X)",
       buildReport(
@@ -152,7 +156,7 @@ function LaporanPage() {
         </div>
 
         <Tabs defaultValue="company">
-          <TabsList>
+          <TabsList className="h-auto flex-wrap justify-start">
             <TabsTrigger value="company">Company Report</TabsTrigger>
             <TabsTrigger value="closeout">Close Out</TabsTrigger>
             <TabsTrigger value="statistik">Statistik</TabsTrigger>
@@ -160,6 +164,13 @@ function LaporanPage() {
             <TabsTrigger value="transfer">Transfer & Kartu</TabsTrigger>
             <TabsTrigger value="kasir">Per Kasir</TabsTrigger>
             <TabsTrigger value="void">VOID</TabsTrigger>
+            {canFinance && <TabsTrigger value="finance">Finance</TabsTrigger>}
+            {canFinance &&
+              FINANCE_KINDS.map((k) => (
+                <TabsTrigger key={k.kind} value={`fin-${k.kind}`}>
+                  {k.label}
+                </TabsTrigger>
+              ))}
           </TabsList>
 
           <TabsContent value="company" className="mt-4">
@@ -198,6 +209,14 @@ function LaporanPage() {
           <TabsContent value="void" className="mt-4">
             <VoidReport range={range} />
           </TabsContent>
+          <TabsContent value="finance" className="mt-4">
+            <FinanceReport range={range} />
+          </TabsContent>
+          {FINANCE_KINDS.map((k) => (
+            <TabsContent key={k.kind} value={`fin-${k.kind}`} className="mt-4">
+              <FinanceReport range={range} kind={k.kind} />
+            </TabsContent>
+          ))}
         </Tabs>
       </div>
 

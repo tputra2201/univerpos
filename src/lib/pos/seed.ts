@@ -1,3 +1,4 @@
+import { defaultFinanceCategories } from "./finance";
 import type { BusinessType, PosDatabase, Product, ServiceType } from "./types";
 import { uid } from "./format";
 
@@ -83,6 +84,8 @@ export function emptyDatabase(): PosDatabase {
     kitchenOrders: [],
     shifts: [],
     businessDays: [],
+    financeCategories: defaultFinanceCategories(),
+    financeEntries: [],
   };
 }
 
