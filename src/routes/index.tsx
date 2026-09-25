@@ -1408,16 +1408,24 @@ function PaymentDialog({
     setAmount("");
   }
 
-  function finish() {
-    if (!method) return;
+  const [confirming, setConfirming] = useState(false);
+  useEffect(() => { if (!open) setConfirming(false); }, [open]);
+
+  function validate() {
+    if (!method) return false;
     if (method.isCash && entered < remaining) {
       toast.error("Uang tunai belum cukup untuk melunasi transaksi.");
-      return;
+      return false;
     }
     if (!method.isCash && amount && entered < remaining) {
       toast.error("Nominal belum melunasi. Tekan \"Bayar sebagian\" atau kosongkan nominal.");
-      return;
+      return false;
     }
+    return true;
+  }
+
+  function finish() {
+    if (!method || !validate()) return;
     onComplete([
       ...split,
       {
@@ -1513,14 +1521,32 @@ function PaymentDialog({
           )}
         </div>
 
+        {confirming && method ? (
+          <div className="space-y-3 rounded-lg border border-primary/40 bg-primary/5 p-3">
+            <p className="font-semibold">Selesaikan pembayaran?</p>
+            <div className="tabular space-y-1 text-sm">
+              {split.map((p, i) => (
+                <div key={i} className="flex justify-between"><span>{p.methodName}</span><span>{rupiah(p.amount)}</span></div>
+              ))}
+              <div className="flex justify-between"><span>{method.name}</span><span>{rupiah(method.isCash ? entered : remaining)}</span></div>
+              <div className="flex justify-between font-semibold"><span>Total</span><span>{rupiah(total)}</span></div>
+              {method.isCash && <div className="flex justify-between"><span>Kembalian</span><span className="font-semibold">{rupiah(change)}</span></div>}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="secondary" className="h-12 flex-1" onClick={() => setConfirming(false)}>Batal</Button>
+              <Button className="h-12 flex-1 text-base font-bold" autoFocus onClick={() => { setConfirming(false); finish(); }}>Ya, selesaikan</Button>
+            </div>
+          </div>
+        ) : (
         <DialogFooter className="gap-2 sm:justify-between">
           <Button variant="secondary" onClick={addSplit} disabled={remaining <= 0}>
             Bayar sebagian
           </Button>
-          <Button className="h-12 text-base font-bold" onClick={finish}>
+          <Button className="h-12 text-base font-bold" onClick={() => { if (validate()) setConfirming(true); }}>
             Selesaikan
           </Button>
         </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );
