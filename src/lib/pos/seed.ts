@@ -51,7 +51,9 @@ export function emptyDatabase(): PosDatabase {
       serviceEnabled: false,
       servicePercent: 5,
       orderSeq: 1,
+      loyalty: { ...DEFAULT_LOYALTY },
     },
+
     printer: {
       printMode: "dialog",
       paperWidth: 32,
@@ -86,8 +88,11 @@ export function emptyDatabase(): PosDatabase {
     kitchenOrders: [],
     shifts: [],
     businessDays: [],
+    members: [],
+    memberPoints: [],
     financeCategories: defaultFinanceCategories(),
     financeEntries: [],
+
   };
 }
 

@@ -11,6 +11,8 @@ export type PermKey =
   | "eod.close"
   | "finance.manage"
   | "finance.view"
+  | "member.manage"
+
   | "settings.manage"
   | "users.manage";
 
