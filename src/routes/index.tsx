@@ -18,7 +18,9 @@ import {
   Bike,
   Printer,
   Tags,
+  Users,
 } from "lucide-react";
+
 import { toast } from "sonner";
 import { PosGate } from "@/components/pos/pos-gate";
 import { AppShell } from "@/components/pos/app-shell";
@@ -31,11 +33,22 @@ import { layoutFor, printerFor, printersFor, productStation, sendToPrinter, spli
 import type { PrinterRole } from "@/lib/pos/types";
 import { getServiceTypes } from "@/lib/pos/seed";
 import { categoryAllowed, servicePrice } from "@/lib/pos/pricing";
+import { MemberPicker } from "@/components/pos/member-picker";
+import {
+  loyaltyOf,
+  maxRedeemable,
+  memberDiscountOf,
+  memberPointsOf,
+  membersOf,
+  pointsFromSpend,
+  pointsToRupiah,
+} from "@/lib/pos/members";
 
 import { CART_STORAGE_KEY, readLocal, writeLocal } from "@/lib/pos/storage";
 import { hasPerm } from "@/lib/pos/permissions";
 import { formatOrderNo, roleLabel } from "@/lib/pos/roles";
-import type { CartLine, HeldOrder, ServiceType, Product, Sale, SalePayment } from "@/lib/pos/types";
+import type { CartLine, HeldOrder, MemberPoint, ServiceType, Product, Sale, SalePayment } from "@/lib/pos/types";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -797,6 +810,9 @@ function KasirPage() {
           onKitchen={sendToKitchen}
           onHold={holdOrder}
           onPrintLabels={printLabels}
+          memberDiscount={memberDisc}
+          pointDiscount={pointDisc}
+
         />
       </aside>
 
@@ -835,6 +851,9 @@ function KasirPage() {
             onKitchen={sendToKitchen}
             onHold={holdOrder}
             onPrintLabels={printLabels}
+            memberDiscount={memberDisc}
+            pointDiscount={pointDisc}
+
           />
           </div>
         </SheetContent>
