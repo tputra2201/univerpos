@@ -256,8 +256,10 @@ export function useCentralSync() {
       }
     };
 
+    // Sinkron berbasis peristiwa: saat dibuka, saat internet kembali, saat aplikasi
+    // kembali aktif, dan setelah ada perubahan data. Polling cadangan jarang (2 menit).
     void cycle();
-    const t = setInterval(() => void cycle(), 8000);
+    const t = setInterval(() => document.visibilityState === "visible" && void cycle(), 120_000);
     const onOnline = () => void cycle();
     const onVis = () => document.visibilityState === "visible" && void cycle();
     window.addEventListener("online", onOnline);
@@ -273,10 +275,26 @@ export function useCentralSync() {
     };
   }, [enabled, code, token, update]);
 
-  // Kirim cepat setelah ada perubahan.
+  // Kirim setelah ada perubahan lokal (transaksi, produk, pengaturan, dll).
+  // Perubahan beruntun digabung jadi satu kiriman setelah 4 detik tenang.
+  const lastHash = useRef<string>("");
   useEffect(() => {
     if (!enabled) return;
-    const t = setTimeout(() => (globalThis as { __posSyncNow?: () => void }).__posSyncNow?.(), 1500);
+    const t = setTimeout(() => {
+      const base = readJson<Record<string, string>>(SYNC_BASE_KEY, {});
+      const local = records(dbRef.current);
+      let dirty = Object.keys(base).some((k) => !local.has(k));
+      if (!dirty) for (const r of local.values()) if (base[r.key] !== hash(r.d)) { dirty = true; break; }
+      if (!dirty) return;
+      const sig = String(local.size) + Date.now();
+      lastHash.current = sig;
+      (globalThis as { __posSyncNow?: () => void }).__posSyncNow?.();
+    }, 4000);
     return () => clearTimeout(t);
   }, [db, enabled]);
+}
+
+/** Minta sinkron segera (mis. sebelum checkout atau setelah transaksi). */
+export function requestSync() {
+  (globalThis as { __posSyncNow?: () => void }).__posSyncNow?.();
 }
