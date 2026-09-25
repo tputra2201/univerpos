@@ -405,10 +405,10 @@ export function ShiftPanel({
             return (
               <div key={s.id} className="flex flex-wrap justify-between gap-2 border-b pb-2 last:border-0">
                 <div className="min-w-0">
-                  <p className="font-semibold">
-                    {s.userName}{" "}
+                  <div className="flex flex-wrap items-center gap-2 font-semibold">
+                    <span>{s.userName}</span>
                     {!s.closedAt && <Badge variant="secondary">Sedang bertugas</Badge>}
-                  </p>
+                  </div>
                   <p className="break-words text-xs text-muted-foreground">
                     {dateTime(s.openedAt)}
                     {s.closedAt ? ` → ${dateTime(s.closedAt)}` : " → berjalan"}
