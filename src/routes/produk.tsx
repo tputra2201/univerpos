@@ -770,7 +770,38 @@ function ProductDialog({
               </Select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          {services.length > 0 && (
+            <div className="space-y-2 rounded-lg border p-3">
+              <p className="text-sm font-medium">Harga khusus per jenis layanan</p>
+              <p className="text-xs text-muted-foreground">
+                Kosongkan untuk mengikuti harga standar dan penyesuaian layanan.
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {services.map((s) => {
+                  const custom = draft.servicePrices?.[s.id];
+                  return (
+                    <div key={s.id} className="space-y-1">
+                      <Label className="text-xs">{s.name}</Label>
+                      <Input
+                        inputMode="numeric"
+                        placeholder={String(servicePrice(draft, s))}
+                        value={custom ? String(custom) : ""}
+                        onChange={(e) => {
+                          const v = Number(e.target.value.replace(/\D/g, "")) || 0;
+                          const next = { ...(draft.servicePrices ?? {}) };
+                          if (v > 0) next[s.id] = v;
+                          else delete next[s.id];
+                          setDraft({ ...draft, servicePrices: next });
+                        }}
+                        className="tabular h-10"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
             <div className="space-y-2">
               <Label>Satuan</Label>
               <Input
