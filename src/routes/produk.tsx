@@ -704,12 +704,15 @@ function ProductDialog({
   onSave,
   categories,
   modifiers,
+  services,
 }: {
   product: Product | null;
   onClose: () => void;
   onSave: (p: Product) => void;
   categories: { id: string; name: string }[];
   modifiers: Modifier[];
+  services: ServiceType[];
+
 }) {
   const [draft, setDraft] = useState<Product | null>(product);
   const [key, setKey] = useState("");
