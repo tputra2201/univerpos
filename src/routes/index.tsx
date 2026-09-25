@@ -141,8 +141,14 @@ function KasirPage() {
   );
 
   const activeService = useMemo(
-    () => getServiceTypes(db).find((s) => s.id === cart.serviceId),
-    [db, cart.serviceId],
+    () => {
+      const svc = getServiceTypes(db).find((s) => s.id === cart.serviceId);
+      if (!svc || svc.kind !== "online") return svc;
+      const ch = (db.onlineChannels ?? []).find((c) => c.name === cart.orderType);
+      if (!ch?.priceAdjustValue) return svc;
+      return { ...svc, priceAdjustMode: ch.priceAdjustMode, priceAdjustValue: ch.priceAdjustValue };
+    },
+    [db, cart.serviceId, cart.orderType],
   );
 
   const visibleCategories = useMemo(

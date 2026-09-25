@@ -131,6 +131,9 @@ export interface OnlineChannel {
   id: string;
   name: string;
   active: boolean;
+  /** Penyesuaian harga khusus aplikasi online; kosong = ikut jenis layanan. */
+  priceAdjustMode?: "amount" | "percent";
+  priceAdjustValue?: number;
 }
 
 export type ServiceKind = "takeout" | "dinein" | "online";
