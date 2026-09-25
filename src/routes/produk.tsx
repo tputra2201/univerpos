@@ -8,6 +8,10 @@ import { usePos } from "@/lib/pos/store";
 import { rupiah, uid } from "@/lib/pos/format";
 import type { Modifier, Product, Variant } from "@/lib/pos/types";
 import { exportProductsExcel, importProductsExcel } from "@/lib/pos/product-excel";
+import { getServiceTypes } from "@/lib/pos/seed";
+import { servicePrice } from "@/lib/pos/pricing";
+import type { ServiceType } from "@/lib/pos/types";
+
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,6 +77,8 @@ function ProdukPage() {
   const [editing, setEditing] = useState<Product | null>(null);
   const [newCategory, setNewCategory] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const services = useMemo(() => getServiceTypes(db).filter((s) => s.active), [db]);
+
 
   const list = useMemo(() => {
     const q = query.trim().toLowerCase();
