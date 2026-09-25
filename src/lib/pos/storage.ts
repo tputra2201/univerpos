@@ -8,6 +8,7 @@ import type { PosDatabase } from "./types";
 const DB_NAME = "wo-pos";
 const STORE_NAME = "kv";
 const KEY = "database";
+const PRINTER_KEY = "wo-pos-printer-settings";
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -60,6 +61,26 @@ export async function clearDatabase(): Promise<void> {
     tx.oncomplete = () => resolve();
     tx.onerror = () => resolve();
   });
+}
+
+/** Pengaturan printer bersifat khusus perangkat dan tidak boleh tertimpa sinkronisasi store. */
+export function loadPrinterSettings(): PosDatabase["printer"] | null {
+  if (typeof localStorage === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(PRINTER_KEY);
+    return raw ? (JSON.parse(raw) as PosDatabase["printer"]) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function savePrinterSettings(printer: PosDatabase["printer"]): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.setItem(PRINTER_KEY, JSON.stringify(printer));
+  } catch {
+    /* penyimpanan tidak tersedia */
+  }
 }
 
 const SESSION_KEY = "wo-pos-session";

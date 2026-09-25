@@ -590,6 +590,22 @@ function PengaturanPage() {
                   </SelectContent>
                 </Select>
               </Field>
+              <Field label="Cara mencetak utama">
+                <Select
+                  value={db.printer.printMode ?? "dialog"}
+                  onValueChange={(value) =>
+                    setPrinter({ printMode: value === "bluetooth" ? "bluetooth" : "dialog" })
+                  }
+                >
+                  <SelectTrigger className="h-11 max-w-60">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="dialog">Dialog cetak perangkat</SelectItem>
+                    <SelectItem value="bluetooth">Printer Bluetooth langsung</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
               <div className="grid gap-3 md:grid-cols-2">
                 <Field label="Header 1">
                   <Input
@@ -646,9 +662,13 @@ function PengaturanPage() {
                   disabled={!bluetoothSupported()}
                   onClick={async () => {
                     try {
-                      const name = await pickBluetoothPrinter();
-                      setPrinter({ deviceName: name });
-                      toast.success(`Printer ${name} tersimpan.`);
+                      const device = await pickBluetoothPrinter();
+                      setPrinter({
+                        printMode: "bluetooth",
+                        deviceId: device.id,
+                        deviceName: device.name,
+                      });
+                      toast.success(`Printer ${device.name} tersimpan di perangkat ini.`);
                     } catch (err) {
                       toast.error(
                         err instanceof Error ? err.message : "Pencarian printer dibatalkan.",

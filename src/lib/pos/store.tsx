@@ -13,7 +13,9 @@ import type { PosDatabase, PosUser } from "./types";
 import { emptyDatabase } from "./seed";
 import {
   loadDatabase,
+  loadPrinterSettings,
   saveDatabase,
+  savePrinterSettings,
   readLocal,
   writeLocal,
   removeLocal,
@@ -44,7 +46,18 @@ export function PosProvider({ children }: { children: ReactNode }) {
     let alive = true;
     loadDatabase().then((loaded) => {
       if (!alive) return;
-      if (loaded) setDb({ ...emptyDatabase(), ...loaded });
+      const defaults = emptyDatabase();
+      const savedPrinter = loadPrinterSettings();
+      if (loaded) {
+        setDb({
+          ...defaults,
+          ...loaded,
+          settings: { ...defaults.settings, ...loaded.settings },
+          printer: { ...defaults.printer, ...loaded.printer, ...savedPrinter },
+        });
+      } else if (savedPrinter) {
+        setDb({ ...defaults, printer: { ...defaults.printer, ...savedPrinter } });
+      }
       setUserId(readLocal<string>(SESSION_STORAGE_KEY));
       setReady(true);
     });
@@ -59,6 +72,11 @@ export function PosProvider({ children }: { children: ReactNode }) {
     return () => clearTimeout(t);
   }, [db, ready]);
 
+  useEffect(() => {
+    if (!ready) return;
+    savePrinterSettings(db.printer);
+  }, [db.printer, ready]);
+
   const update = useCallback((updater: (current: PosDatabase) => PosDatabase) => {
     dirty.current = true;
     setDb((current) => updater(current));
@@ -66,7 +84,11 @@ export function PosProvider({ children }: { children: ReactNode }) {
 
   const replaceAll = useCallback((next: PosDatabase) => {
     dirty.current = true;
-    setDb({ ...emptyDatabase(), ...next });
+    setDb((current) => ({
+      ...emptyDatabase(),
+      ...next,
+      printer: current.printer,
+    }));
   }, []);
 
   const signIn = useCallback((user: PosUser) => {
