@@ -127,6 +127,53 @@ export type Database = {
           },
         ]
       }
+      store_records: {
+        Row: {
+          collection: string
+          created_at: string
+          data: Json | null
+          deleted: boolean
+          device_id: string | null
+          id: string
+          record_id: string
+          seq: number
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          collection: string
+          created_at?: string
+          data?: Json | null
+          deleted?: boolean
+          device_id?: string | null
+          id?: string
+          record_id: string
+          seq?: number
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          collection?: string
+          created_at?: string
+          data?: Json | null
+          deleted?: boolean
+          device_id?: string | null
+          id?: string
+          record_id?: string
+          seq?: number
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_records_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stores: {
         Row: {
           activation_key: string
@@ -262,6 +309,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _sync_device: {
+        Args: { _code: string; _token: string }
+        Returns: {
+          device_id: string
+          store_id: string
+        }[]
+      }
       activate_device: {
         Args: {
           _code: string
@@ -300,6 +354,7 @@ export type Database = {
         Returns: {
           active: boolean
           expires_at: string
+          has_data: boolean
           mode: string
         }[]
       }
@@ -352,6 +407,20 @@ export type Database = {
           last_seen_at: string
           max_devices: number
         }[]
+      }
+      sync_pull: {
+        Args: { _code: string; _since: number; _token: string }
+        Returns: {
+          collection: string
+          data: Json
+          deleted: boolean
+          record_id: string
+          seq: number
+        }[]
+      }
+      sync_push: {
+        Args: { _code: string; _records: Json; _token: string }
+        Returns: number
       }
       update_request_status: {
         Args: { _id: string }

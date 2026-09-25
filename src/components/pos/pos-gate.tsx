@@ -18,13 +18,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ChangePinForm } from "@/components/pos/change-pin";
 import { normalizeEmail, normalizeWa, pinMessage, randomPin, deliverPin } from "@/lib/pos/pin";
 import { daysLeft, formatExpiry } from "@/lib/pos/expiry";
+import { SYNC_BASE_KEY, SYNC_CURSOR_KEY, useCentralSync } from "@/lib/pos/sync";
 
 const DEVICE_TOKEN_KEY = "wo-pos-device-token";
 
 /** Hapus seluruh data store di perangkat ini lalu kembali ke halaman aktivasi. */
 async function resetDevice(message?: string) {
   await clearDatabase().catch(() => undefined);
-  for (const k of ["wo-pos-session", "wo-pos-cart", "wo-pos-update-request", DEVICE_TOKEN_KEY]) {
+  for (const k of ["wo-pos-session", "wo-pos-cart", "wo-pos-update-request", DEVICE_TOKEN_KEY, SYNC_CURSOR_KEY, SYNC_BASE_KEY]) {
     window.localStorage.removeItem(k);
   }
   if (message) window.sessionStorage.setItem("wo-pos-reset-msg", message);
@@ -76,6 +77,7 @@ export function PosGate({ children }: { children: ReactNode }) {
   const code = db.settings.storeCode;
   const activated = db.settings.activated;
   const online = activated && db.settings.storeMode === "online";
+  useCentralSync();
 
   useEffect(() => {
     if (!ready || !activated || !code || typeof navigator === "undefined" || !navigator.onLine) return;
@@ -89,8 +91,11 @@ export function PosGate({ children }: { children: ReactNode }) {
       if (online) setBlocked(!row || !row.active);
       if (row) {
         const exp = (row as { expires_at?: string | null }).expires_at ?? null;
+        const mode = row.mode === "online" ? "online" : "offline";
         update((cur) =>
-          (cur.settings.expiresAt ?? null) === exp ? cur : { ...cur, settings: { ...cur.settings, expiresAt: exp } },
+          (cur.settings.expiresAt ?? null) === exp && cur.settings.storeMode === mode
+            ? cur
+            : { ...cur, settings: { ...cur.settings, expiresAt: exp, storeMode: mode } },
         );
       }
     });
@@ -310,6 +315,34 @@ function ActivationFlow() {
     if (!row) {
       toast.error("Aktivasi gagal. Coba lagi.");
       return;
+    }
+    if (row.mode === "online") {
+      const { data: chk } = await supabase.rpc("check_store", { _code: row.code });
+      const info = Array.isArray(chk) ? chk[0] : null;
+      if (info?.has_data) {
+        // Store online sudah punya data pusat: perangkat ini cukup mengunduhnya.
+        localStorage.removeItem(SYNC_CURSOR_KEY);
+        localStorage.removeItem(SYNC_BASE_KEY);
+        update((current) => ({
+          ...current,
+          users: [],
+          settings: {
+            ...current.settings,
+            activated: true,
+            storeCode: row.code,
+            storeMode: "online",
+            name: row.name,
+            businessTypeName: row.business_type_name ?? "",
+            expiresAt: row.expires_at ?? null,
+            activationKey: key.trim(),
+            deviceToken,
+            deviceName: deviceName.trim() || "Kasir",
+          },
+        }));
+        toast.success("Perangkat tersambung. Data store sedang diunduh — masuk dengan PIN Anda.");
+        void navigate({ to: "/" });
+        return;
+      }
     }
     setPicked(row);
     setType(row.base_kind === "retail" || row.base_kind === "jasa" ? row.base_kind : "kuliner");
