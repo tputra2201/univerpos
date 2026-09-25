@@ -37,7 +37,22 @@ export interface StoreSettings {
   closeTime?: string;
   /** Hak akses per level (selain pemilik). Kosong = setelan standar. */
   rolePermissions?: Partial<Record<"manager" | "supervisor" | "cashier", string[]>>;
+  /** Program membership / loyalitas pelanggan. */
+  loyalty?: LoyaltySettings;
 }
+
+export interface LoyaltySettings {
+  enabled: boolean;
+  /** Setiap kelipatan rupiah ini menghasilkan 1 poin. */
+  earnPerAmount: number;
+  /** Nilai 1 poin dalam rupiah saat ditukar. */
+  pointValue: number;
+  /** Poin minimum agar bisa ditukar. */
+  minRedeem: number;
+  /** Diskon otomatis untuk member (persen dari subtotal). */
+  memberDiscountPercent: number;
+}
+
 
 export interface PrinterSettings {
   /** Cara cetak utama pada perangkat ini. */
@@ -234,9 +249,24 @@ export interface Sale {
   orderNo?: string;
   /** Catatan pesanan (tingkat transaksi). */
   note?: string;
+  /** Member yang dipakai pada transaksi ini. */
+  memberId?: string | undefined;
+  memberName?: string | undefined;
+  memberCode?: string | undefined;
+  /** Poin yang didapat dari transaksi ini. */
+  pointsEarned?: number | undefined;
+  /** Poin yang ditukarkan menjadi potongan. */
+  pointsUsed?: number | undefined;
+  /** Nilai rupiah potongan dari penukaran poin. */
+  pointDiscount?: number | undefined;
+  /** Nilai rupiah diskon khusus member. */
+  memberDiscount?: number | undefined;
+  /** Saldo poin member setelah transaksi ini. */
+  pointBalance?: number | undefined;
   status: SaleStatus;
   reason: string;
 }
+
 
 export interface HeldOrder {
   serviceId?: string | undefined;
@@ -326,7 +356,41 @@ export interface FinanceEntry {
   shiftId?: string;
 }
 
+/** Pelanggan terdaftar (member) untuk program loyalitas. */
+export interface Member {
+  id: string;
+  /** Kode member, mis. MBR-000001. */
+  code: string;
+  name: string;
+  /** Nomor WhatsApp / telepon, dipakai untuk pencarian. */
+  phone: string;
+  email?: string;
+  note?: string;
+  /** Saldo poin saat ini. */
+  points: number;
+  /** Total akumulasi belanja. */
+  totalSpend: number;
+  /** Jumlah transaksi. */
+  visits: number;
+  joinedAt: string;
+  active: boolean;
+}
+
+/** Riwayat poin member. */
+export interface MemberPoint {
+  id: string;
+  memberId: string;
+  createdAt: string;
+  type: "earn" | "redeem" | "adjust";
+  points: number;
+  note: string;
+  saleId?: string;
+  saleCode?: string;
+  userName: string;
+}
+
 export interface PosDatabase {
+
   version: number;
   settings: StoreSettings;
   printer: PrinterSettings;
@@ -344,6 +408,9 @@ export interface PosDatabase {
   kitchenOrders?: KitchenOrder[];
   shifts: Shift[];
   businessDays?: BusinessDay[];
+  members?: Member[] | undefined;
+  memberPoints?: MemberPoint[] | undefined;
   financeCategories?: FinanceCategory[];
+
   financeEntries?: FinanceEntry[];
 }

@@ -1,4 +1,6 @@
 import { FinanceSettings } from "@/components/pos/finance-settings";
+import { MemberSettings } from "@/components/pos/member-settings";
+
 import { PrintersSettings } from "@/components/pos/printers-settings";
 import { deliverPin, pinMessage, randomPin } from "@/lib/pos/pin";
 import { EditUserForm } from "@/components/pos/edit-user";
@@ -130,7 +132,10 @@ function PengaturanPage() {
       shifts: [],
       businessDays: [],
       financeEntries: [],
+      memberPoints: [],
+      members: (cur.members ?? []).map((m) => ({ ...m, points: 0, totalSpend: 0, visits: 0 })),
       settings: { ...cur.settings, orderSeq: 1 },
+
     }));
     toast.success("Seluruh transaksi telah dihapus.");
   }
@@ -220,6 +225,8 @@ function PengaturanPage() {
           <TabsTrigger value="perangkat">Perangkat</TabsTrigger>
           <TabsTrigger value="online">Online Order</TabsTrigger>
           <TabsTrigger value="finance">Finance</TabsTrigger>
+          <TabsTrigger value="member">Member</TabsTrigger>
+
           <TabsTrigger value="data">Data</TabsTrigger>
         </TabsList>
 
@@ -971,6 +978,11 @@ function PengaturanPage() {
         <TabsContent value="finance" className="space-y-4">
           <FinanceSettings />
         </TabsContent>
+
+        <TabsContent value="member" className="space-y-4">
+          <MemberSettings />
+        </TabsContent>
+
 
         <TabsContent value="data" className="space-y-4">
           <Card>

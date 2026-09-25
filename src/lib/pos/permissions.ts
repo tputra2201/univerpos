@@ -11,6 +11,8 @@ export type PermKey =
   | "eod.close"
   | "finance.manage"
   | "finance.view"
+  | "member.manage"
+
   | "settings.manage"
   | "users.manage";
 
@@ -44,6 +46,11 @@ export const PERM_GROUPS: { title: string; items: { key: PermKey; label: string 
     ],
   },
   {
+    title: "Member",
+    items: [{ key: "member.manage", label: "Kelola member & poin loyalitas" }],
+  },
+
+  {
     title: "Pengaturan",
     items: [
       { key: "settings.manage", label: "Membuka pengaturan store" },
@@ -68,8 +75,10 @@ export const DEFAULT_PERMS: Record<LimitedRole, PermKey[]> = {
     "shift.manage",
     "finance.manage",
     "finance.view",
+    "member.manage",
   ],
-  cashier: ["pos.access", "transaction.view", "shift.manage", "finance.manage"],
+  cashier: ["pos.access", "transaction.view", "shift.manage", "finance.manage", "member.manage"],
+
 };
 
 export function permsFor(settings: StoreSettings, role: LimitedRole): PermKey[] {

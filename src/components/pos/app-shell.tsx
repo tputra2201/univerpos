@@ -11,6 +11,8 @@ import {
   WifiOff,
   Clock,
   Wallet,
+  Users,
+
 } from "lucide-react";
 import { usePos } from "@/lib/pos/store";
 import { BrandIcon, useBranding } from "@/lib/pos/branding";
@@ -29,7 +31,9 @@ const NAV: { to: string; label: string; icon: typeof ShoppingCart; perm: PermKey
   { to: "/shift", label: "Shift", icon: Clock, perm: "shift.manage" },
   { to: "/keuangan", label: "Finance", icon: Wallet, perm: "finance.manage" },
   { to: "/produk", label: "Produk", icon: Package, perm: "product.manage" },
+  { to: "/member", label: "Member", icon: Users, perm: "member.manage" },
   { to: "/transaksi", label: "Transaksi", icon: ReceiptText, perm: "transaction.view" },
+
   { to: "/laporan", label: "Laporan", icon: BarChart3, perm: "report.view" },
   { to: "/pengaturan", label: "Pengaturan", icon: Settings, perm: "settings.manage" },
 ];

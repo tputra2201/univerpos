@@ -26,8 +26,11 @@ const COLLECTIONS = [
   "kitchenOrders",
   "shifts",
   "businessDays",
+  "members",
+  "memberPoints",
   "financeCategories",
   "financeEntries",
+
 ] as const;
 type Col = (typeof COLLECTIONS)[number];
 

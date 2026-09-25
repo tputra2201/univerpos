@@ -18,7 +18,9 @@ import {
   Bike,
   Printer,
   Tags,
+  Users,
 } from "lucide-react";
+
 import { toast } from "sonner";
 import { PosGate } from "@/components/pos/pos-gate";
 import { AppShell } from "@/components/pos/app-shell";
@@ -31,11 +33,22 @@ import { layoutFor, printerFor, printersFor, productStation, sendToPrinter, spli
 import type { PrinterRole } from "@/lib/pos/types";
 import { getServiceTypes } from "@/lib/pos/seed";
 import { categoryAllowed, servicePrice } from "@/lib/pos/pricing";
+import { MemberPicker } from "@/components/pos/member-picker";
+import {
+  loyaltyOf,
+  maxRedeemable,
+  memberDiscountOf,
+  memberPointsOf,
+  membersOf,
+  pointsFromSpend,
+  pointsToRupiah,
+} from "@/lib/pos/members";
 
 import { CART_STORAGE_KEY, readLocal, writeLocal } from "@/lib/pos/storage";
 import { hasPerm } from "@/lib/pos/permissions";
 import { formatOrderNo, roleLabel } from "@/lib/pos/roles";
-import type { CartLine, HeldOrder, ServiceType, Product, Sale, SalePayment } from "@/lib/pos/types";
+import type { CartLine, HeldOrder, MemberPoint, ServiceType, Product, Sale, SalePayment } from "@/lib/pos/types";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -95,6 +108,12 @@ interface CartState {
   orderNo: string;
   /** sudah dikirim ke dapur */
   sentToKitchen: boolean;
+  /** member terpilih */
+  memberId?: string | undefined;
+  memberName?: string | undefined;
+  memberCode?: string | undefined;
+  /** poin yang akan ditukar jadi potongan */
+  redeemPoints?: number | undefined;
 }
 
 const EMPTY_CART: CartState = {
@@ -106,7 +125,12 @@ const EMPTY_CART: CartState = {
   note: "",
   orderNo: "",
   sentToKitchen: false,
+  memberId: undefined,
+  memberName: "",
+  memberCode: "",
+  redeemPoints: 0,
 };
+
 
 function KasirPage() {
   const { db, update, currentUser } = usePos();
@@ -141,10 +165,34 @@ function KasirPage() {
     if (hydrated) writeLocal(CART_STORAGE_KEY, cart);
   }, [cart, hydrated]);
 
-  const totals = useMemo(
-    () => computeTotals(cart.lines, settings, cart.billDiscount),
-    [cart, settings],
+  const loyalty = useMemo(() => loyaltyOf(settings), [settings]);
+  const member = useMemo(
+    () => membersOf(db).find((m) => m.id === cart.memberId) ?? null,
+    [db, cart.memberId],
   );
+
+  const baseTotals = useMemo(
+    () => computeTotals(cart.lines, settings, cart.billDiscount),
+    [cart.lines, cart.billDiscount, settings],
+  );
+
+  const memberDisc = useMemo(
+    () => (member ? memberDiscountOf(baseTotals.subtotal - baseTotals.discount, loyalty) : 0),
+    [member, baseTotals, loyalty],
+  );
+
+  const pointDisc = useMemo(() => {
+    if (!member) return 0;
+    const billable = Math.max(0, baseTotals.subtotal - baseTotals.discount - memberDisc);
+    const points = Math.min(Math.max(0, cart.redeemPoints ?? 0), member.points);
+    return Math.min(billable, pointsToRupiah(points, loyalty));
+  }, [member, baseTotals, memberDisc, cart.redeemPoints, loyalty]);
+
+  const totals = useMemo(
+    () => computeTotals(cart.lines, settings, cart.billDiscount + memberDisc + pointDisc),
+    [cart.lines, cart.billDiscount, settings, memberDisc, pointDisc],
+  );
+
 
   const activeService = useMemo(
     () => {
@@ -312,8 +360,23 @@ function KasirPage() {
       orderType: cart.orderType,
       orderNo: override.orderNo ?? cart.orderNo,
       note: cart.note,
+      memberId: member?.id,
+      memberName: member?.name ?? "",
+      memberCode: member?.code ?? "",
+      memberDiscount: memberDisc,
+      pointsUsed: pointDisc > 0 && loyalty.pointValue > 0 ? Math.round(pointDisc / loyalty.pointValue) : 0,
+      pointDiscount: pointDisc,
+      pointsEarned: member ? pointsFromSpend(totals.total, loyalty) : 0,
+      pointBalance: member
+        ? Math.max(
+            0,
+            member.points -
+              (pointDisc > 0 && loyalty.pointValue > 0 ? Math.round(pointDisc / loyalty.pointValue) : 0),
+          ) + pointsFromSpend(totals.total, loyalty)
+        : undefined,
       status,
       reason: "",
+
     };
   }
 
@@ -539,12 +602,54 @@ function KasirPage() {
       paid,
       change: Math.max(0, paid - totals.total),
     };
+    const used = sale.pointsUsed ?? 0;
+    const earned = sale.pointsEarned ?? 0;
+    const now = new Date().toISOString();
+    const ledger: MemberPoint[] = [];
+    if (sale.memberId && used > 0)
+      ledger.push({
+        id: uid("mpt"),
+        memberId: sale.memberId,
+        createdAt: now,
+        type: "redeem",
+        points: -used,
+        note: `Potongan ${rupiah(sale.pointDiscount ?? 0)}`,
+        saleId: sale.id,
+        saleCode: sale.code,
+        userName: sale.userName,
+      });
+    if (sale.memberId && earned > 0)
+      ledger.push({
+        id: uid("mpt"),
+        memberId: sale.memberId,
+        createdAt: now,
+        type: "earn",
+        points: earned,
+        note: `Belanja ${rupiah(sale.total)}`,
+        saleId: sale.id,
+        saleCode: sale.code,
+        userName: sale.userName,
+      });
+
     update((current) => ({
       ...current,
       sales: [sale, ...current.sales],
       heldOrders: cart.heldId
         ? current.heldOrders.filter((h) => h.id !== cart.heldId)
         : current.heldOrders,
+      members: sale.memberId
+        ? membersOf(current).map((m) =>
+            m.id === sale.memberId
+              ? {
+                  ...m,
+                  points: Math.max(0, m.points - used) + earned,
+                  totalSpend: m.totalSpend + sale.total,
+                  visits: m.visits + 1,
+                }
+              : m,
+          )
+        : membersOf(current),
+      memberPoints: ledger.length ? [...memberPointsOf(current), ...ledger] : memberPointsOf(current),
       products: current.products.map((p) => {
         const sold = sale.items
           .filter((i) => i.productId === p.id)
@@ -552,6 +657,7 @@ function KasirPage() {
         return sold > 0 && p.stock != null ? { ...p, stock: p.stock - sold } : p;
       }),
     }));
+
     setCart(EMPTY_CART);
     setPayOpen(false);
     setCartOpen(false);
@@ -704,6 +810,9 @@ function KasirPage() {
           onKitchen={sendToKitchen}
           onHold={holdOrder}
           onPrintLabels={printLabels}
+          memberDiscount={memberDisc}
+          pointDiscount={pointDisc}
+
         />
       </aside>
 
@@ -742,6 +851,9 @@ function KasirPage() {
             onKitchen={sendToKitchen}
             onHold={holdOrder}
             onPrintLabels={printLabels}
+            memberDiscount={memberDisc}
+            pointDiscount={pointDisc}
+
           />
           </div>
         </SheetContent>
@@ -1099,6 +1211,8 @@ function CartPanel({
   onKitchen,
   onHold,
   onPrintLabels,
+  memberDiscount = 0,
+  pointDiscount = 0,
 }: {
   cart: CartState;
   setCart: React.Dispatch<React.SetStateAction<CartState>>;
@@ -1111,9 +1225,15 @@ function CartPanel({
   onKitchen: () => void;
   onHold: () => void;
   onPrintLabels: (lines: CartLine[]) => void;
+  memberDiscount?: number;
+  pointDiscount?: number;
 }) {
   const { db } = usePos();
   const type = db.settings.businessType;
+  const loyalty = loyaltyOf(db.settings);
+  const member = membersOf(db).find((m) => m.id === cart.memberId) ?? null;
+  const [memberOpen, setMemberOpen] = useState(false);
+
 
   return (
     <div className="flex h-full flex-col">
@@ -1153,6 +1273,64 @@ function CartPanel({
           placeholder={type === "jasa" ? "Nama pelanggan" : "Nama pelanggan (opsional)"}
           className="h-10"
         />
+        {loyalty.enabled && (
+          <div className="rounded-lg border p-2">
+            {member ? (
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold">{member.name}</p>
+                  <p className="tabular text-xs text-muted-foreground">
+                    {member.code} • {member.points} poin
+                  </p>
+                </div>
+                <div className="flex gap-1">
+                  <Button size="sm" variant="secondary" className="h-8" onClick={() => setMemberOpen(true)}>
+                    Ganti
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8"
+                    onClick={() =>
+                      setCart((prev) => ({
+                        ...prev,
+                        memberId: undefined,
+                        memberName: "",
+                        memberCode: "",
+                        redeemPoints: 0,
+                      }))
+                    }
+                  >
+                    Lepas
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button
+                variant="secondary"
+                className="h-9 w-full gap-2 text-sm"
+                onClick={() => setMemberOpen(true)}
+              >
+                <Users className="size-4" /> Pilih / daftar member
+              </Button>
+            )}
+          </div>
+        )}
+        <MemberPicker
+          open={memberOpen}
+          onOpenChange={setMemberOpen}
+          onPick={(m) =>
+            setCart((prev) => ({
+              ...prev,
+              memberId: m.id,
+              memberName: m.name,
+              memberCode: m.code,
+              redeemPoints: 0,
+              customerName: prev.customerName || m.name,
+            }))
+          }
+        />
+
         <Textarea
           id="order-note"
           value={cart.note}
@@ -1304,6 +1482,41 @@ function CartPanel({
               className="tabular h-8 w-28 text-right"
             />
           </div>
+          {memberDiscount > 0 && (
+            <Row
+              label={`Diskon member ${loyalty.memberDiscountPercent}%`}
+              value={"−" + rupiah(memberDiscount)}
+            />
+          )}
+          {member && (
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">
+                Tukar poin{" "}
+                <span className="tabular text-xs">
+                  (maks {maxRedeemable(member, Math.max(0, totals.subtotal - totals.discount + memberDiscount + pointDiscount), loyalty)})
+                </span>
+              </span>
+              <Input
+                inputMode="numeric"
+                value={cart.redeemPoints ? String(cart.redeemPoints) : ""}
+                onChange={(e) => {
+                  const wanted = Number(e.target.value.replace(/\D/g, "")) || 0;
+                  const cap = maxRedeemable(
+                    member,
+                    Math.max(0, totals.subtotal - totals.discount + memberDiscount + pointDiscount),
+                    loyalty,
+                  );
+                  setCart((prev) => ({ ...prev, redeemPoints: Math.min(wanted, cap) }));
+                }}
+                placeholder="0"
+                className="tabular h-8 w-28 text-right"
+              />
+            </div>
+          )}
+          {pointDiscount > 0 && (
+            <Row label="Potongan poin" value={"−" + rupiah(pointDiscount)} />
+          )}
+
           {totals.service > 0 && (
             <Row
               label={`Layanan ${db.settings.servicePercent}%`}

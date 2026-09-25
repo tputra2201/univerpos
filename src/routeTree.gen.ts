@@ -15,6 +15,7 @@ import { Route as KeuanganRouteImport } from './routes/keuangan'
 import { Route as KontrolRouteImport } from './routes/kontrol'
 import { Route as LaporanRouteImport } from './routes/laporan'
 import { Route as ManifestDotwebmanifestRouteImport } from './routes/manifest[.]webmanifest'
+import { Route as MemberRouteImport } from './routes/member'
 import { Route as PengaturanRouteImport } from './routes/pengaturan'
 import { Route as ProdukRouteImport } from './routes/produk'
 import { Route as ShiftRouteImport } from './routes/shift'
@@ -51,6 +52,11 @@ const ManifestDotwebmanifestRoute = ManifestDotwebmanifestRouteImport.update({
   path: '/manifest.webmanifest',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MemberRoute = MemberRouteImport.update({
+  id: '/member',
+  path: '/member',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PengaturanRoute = PengaturanRouteImport.update({
   id: '/pengaturan',
   path: '/pengaturan',
@@ -85,6 +91,7 @@ export interface FileRoutesByFullPath {
   '/kontrol': typeof KontrolRoute
   '/laporan': typeof LaporanRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
+  '/member': typeof MemberRoute
   '/pengaturan': typeof PengaturanRoute
   '/produk': typeof ProdukRoute
   '/shift': typeof ShiftRoute
@@ -98,6 +105,7 @@ export interface FileRoutesByTo {
   '/kontrol': typeof KontrolRoute
   '/laporan': typeof LaporanRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
+  '/member': typeof MemberRoute
   '/pengaturan': typeof PengaturanRoute
   '/produk': typeof ProdukRoute
   '/shift': typeof ShiftRoute
@@ -112,6 +120,7 @@ export interface FileRoutesById {
   '/kontrol': typeof KontrolRoute
   '/laporan': typeof LaporanRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
+  '/member': typeof MemberRoute
   '/pengaturan': typeof PengaturanRoute
   '/produk': typeof ProdukRoute
   '/shift': typeof ShiftRoute
@@ -127,6 +136,7 @@ export interface FileRouteTypes {
     | '/kontrol'
     | '/laporan'
     | '/manifest.webmanifest'
+    | '/member'
     | '/pengaturan'
     | '/produk'
     | '/shift'
@@ -140,6 +150,7 @@ export interface FileRouteTypes {
     | '/kontrol'
     | '/laporan'
     | '/manifest.webmanifest'
+    | '/member'
     | '/pengaturan'
     | '/produk'
     | '/shift'
@@ -153,6 +164,7 @@ export interface FileRouteTypes {
     | '/kontrol'
     | '/laporan'
     | '/manifest.webmanifest'
+    | '/member'
     | '/pengaturan'
     | '/produk'
     | '/shift'
@@ -167,6 +179,7 @@ export interface RootRouteChildren {
   KontrolRoute: typeof KontrolRoute
   LaporanRoute: typeof LaporanRoute
   ManifestDotwebmanifestRoute: typeof ManifestDotwebmanifestRoute
+  MemberRoute: typeof MemberRoute
   PengaturanRoute: typeof PengaturanRoute
   ProdukRoute: typeof ProdukRoute
   ShiftRoute: typeof ShiftRoute
@@ -218,6 +231,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManifestDotwebmanifestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/member': {
+      id: '/member'
+      path: '/member'
+      fullPath: '/member'
+      preLoaderRoute: typeof MemberRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pengaturan': {
       id: '/pengaturan'
       path: '/pengaturan'
@@ -263,6 +283,7 @@ const rootRouteChildren: RootRouteChildren = {
   KontrolRoute: KontrolRoute,
   LaporanRoute: LaporanRoute,
   ManifestDotwebmanifestRoute: ManifestDotwebmanifestRoute,
+  MemberRoute: MemberRoute,
   PengaturanRoute: PengaturanRoute,
   ProdukRoute: ProdukRoute,
   ShiftRoute: ShiftRoute,
