@@ -838,21 +838,17 @@ function PengaturanPage() {
                   </div>
                   <div className="flex w-full flex-wrap items-center gap-2 border-t pt-2">
                     <span className="text-xs text-muted-foreground">Penyesuaian harga</span>
-                    <Input
-                      aria-label={`Penyesuaian harga ${c.name}`}
-                      inputMode="numeric"
-                      placeholder="0"
-                      value={c.priceAdjustValue ? String(c.priceAdjustValue) : ""}
-                      onChange={(e) => {
-                        const v = Number(e.target.value.replace(/[^0-9-]/g, "")) || 0;
+                    <AdjustInput
+                      label={`Penyesuaian harga ${c.name}`}
+                      value={c.priceAdjustValue ?? 0}
+                      onChange={(v) =>
                         update((current) => ({
                           ...current,
                           onlineChannels: current.onlineChannels.map((x) =>
                             x.id === c.id ? { ...x, priceAdjustValue: v } : x,
                           ),
-                        }));
-                      }}
-                      className="tabular h-9 w-28"
+                        }))
+                      }
                     />
                     <Select
                       value={c.priceAdjustMode ?? "amount"}
@@ -1065,16 +1061,10 @@ export function ServiceTypesCard() {
             </Button>
             <div className="flex w-full flex-wrap items-center gap-2 border-t pt-2">
               <span className="text-xs text-muted-foreground">Penyesuaian harga</span>
-              <Input
-                aria-label={`Penyesuaian harga ${svc.name}`}
-                inputMode="numeric"
-                placeholder="0"
-                value={svc.priceAdjustValue ? String(svc.priceAdjustValue) : ""}
-                onChange={(e) => {
-                  const raw = e.target.value.replace(/[^0-9-]/g, "");
-                  patch(svc.id, { priceAdjustValue: Number(raw) || 0 });
-                }}
-                className="tabular h-9 w-28"
+              <AdjustInput
+                label={`Penyesuaian harga ${svc.name}`}
+                value={svc.priceAdjustValue ?? 0}
+                onChange={(v) => patch(svc.id, { priceAdjustValue: v })}
               />
               <Select
                 value={svc.priceAdjustMode ?? "amount"}
