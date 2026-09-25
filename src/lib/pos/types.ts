@@ -408,6 +408,9 @@ export interface PosDatabase {
   kitchenOrders?: KitchenOrder[];
   shifts: Shift[];
   businessDays?: BusinessDay[];
+  members?: Member[];
+  memberPoints?: MemberPoint[];
   financeCategories?: FinanceCategory[];
+
   financeEntries?: FinanceEntry[];
 }
