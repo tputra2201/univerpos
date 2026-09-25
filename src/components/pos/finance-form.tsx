@@ -48,13 +48,13 @@ export function FinanceForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialKind]);
 
-  function submit() {
+  function submit(): void {
     const value = Number(amount) || 0;
     const method = methods.find((m) => m.id === methodId);
-    if (!cat) return toast.error("Pilih kategori.");
-    if (!itemName) return toast.error("Pilih item.");
-    if (!method) return toast.error("Pilih metode pembayaran.");
-    if (value <= 0) return toast.error("Isi nominal.");
+    if (!cat) { toast.error("Pilih kategori."); return; }
+    if (!itemName) { toast.error("Pilih item."); return; }
+    if (!method) { toast.error("Pilih metode pembayaran."); return; }
+    if (value <= 0) { toast.error("Isi nominal."); return; }
     const shift = activeShiftOf(db);
     const meta = FINANCE_KINDS.find((k) => k.kind === kind)!;
     const now = new Date();
