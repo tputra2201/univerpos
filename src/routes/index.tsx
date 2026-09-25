@@ -1192,6 +1192,8 @@ function CartPanel({
   onKitchen,
   onHold,
   onPrintLabels,
+  memberDiscount = 0,
+  pointDiscount = 0,
 }: {
   cart: CartState;
   setCart: React.Dispatch<React.SetStateAction<CartState>>;
@@ -1204,9 +1206,15 @@ function CartPanel({
   onKitchen: () => void;
   onHold: () => void;
   onPrintLabels: (lines: CartLine[]) => void;
+  memberDiscount?: number;
+  pointDiscount?: number;
 }) {
   const { db } = usePos();
   const type = db.settings.businessType;
+  const loyalty = loyaltyOf(db.settings);
+  const member = membersOf(db).find((m) => m.id === cart.memberId) ?? null;
+  const [memberOpen, setMemberOpen] = useState(false);
+
 
   return (
     <div className="flex h-full flex-col">
