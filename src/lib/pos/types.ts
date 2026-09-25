@@ -35,6 +35,8 @@ export interface StoreSettings {
   /** Jam operasional, format HH:MM. */
   openTime?: string;
   closeTime?: string;
+  /** Hak akses per level (selain pemilik). Kosong = setelan standar. */
+  rolePermissions?: Partial<Record<"manager" | "supervisor" | "cashier", string[]>>;
 }
 
 export interface PrinterSettings {

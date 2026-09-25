@@ -13,7 +13,8 @@ import {
 import { usePos } from "@/lib/pos/store";
 import { BrandIcon, useBranding } from "@/lib/pos/branding";
 import { useSyncStatus } from "@/lib/pos/sync";
-import { canManage, roleLabel } from "@/lib/pos/roles";
+import { roleLabel } from "@/lib/pos/roles";
+import { hasPerm, type PermKey } from "@/lib/pos/permissions";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { KeyRound, UserPen } from "lucide-react";
@@ -21,13 +22,13 @@ import { EditUserForm } from "@/components/pos/edit-user";
 import { ChangePinForm } from "@/components/pos/change-pin";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-const NAV = [
-  { to: "/", label: "Kasir", icon: ShoppingCart, ownerOnly: false },
-  { to: "/produk", label: "Produk", icon: Package, ownerOnly: true },
-  { to: "/transaksi", label: "Transaksi", icon: ReceiptText, ownerOnly: false },
-  { to: "/laporan", label: "Laporan", icon: BarChart3, ownerOnly: false },
-  { to: "/pengaturan", label: "Pengaturan", icon: Settings, ownerOnly: true },
-] as const;
+const NAV: { to: string; label: string; icon: typeof ShoppingCart; perm: PermKey }[] = [
+  { to: "/", label: "Kasir", icon: ShoppingCart, perm: "pos.access" },
+  { to: "/produk", label: "Produk", icon: Package, perm: "product.manage" },
+  { to: "/transaksi", label: "Transaksi", icon: ReceiptText, perm: "transaction.view" },
+  { to: "/laporan", label: "Laporan", icon: BarChart3, perm: "report.view" },
+  { to: "/pengaturan", label: "Pengaturan", icon: Settings, perm: "settings.manage" },
+];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { db, currentUser, signOut } = usePos();
@@ -58,7 +59,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const items = NAV.filter((n) => !n.ownerOnly || canManage(currentUser?.role));
+  const items = NAV.filter((n) => hasPerm(db.settings, currentUser?.role, n.perm));
+  const here = NAV.find((n) => n.to === pathname);
+  const blocked = !!here && !hasPerm(db.settings, currentUser?.role, here.perm);
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -150,7 +153,15 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Button>
           </div>
         </header>
-        <main className="min-w-0 flex-1">{children}</main>
+        <main className="min-w-0 flex-1">
+          {blocked ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">
+              Anda tidak punya akses ke halaman ini. Hubungi pemilik store untuk mengatur hak akses.
+            </div>
+          ) : (
+            children
+          )}
+        </main>
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t bg-card/95 backdrop-blur md:hidden">
