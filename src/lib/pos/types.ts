@@ -106,7 +106,10 @@ export interface Product {
   sizes?: Variant[];
   toppings?: Variant[];
   modifierIds?: string[];
+  /** Harga khusus per jenis layanan. Kosong = ikut harga standar. */
+  servicePrices?: Record<string, number>;
 }
+
 
 export interface PaymentMethod {
   id: string;
@@ -135,7 +138,11 @@ export interface ServiceType {
   code: string;
   kind: ServiceKind;
   active: boolean;
+  /** Penyesuaian harga global: nominal rupiah atau persen (boleh negatif). */
+  priceAdjustMode?: "amount" | "percent";
+  priceAdjustValue?: number;
 }
+
 
 export interface Staff {
   id: string;
