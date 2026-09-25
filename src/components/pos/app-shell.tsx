@@ -89,8 +89,11 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="space-y-3 px-2">
           <div className="flex items-center gap-2 text-xs text-sidebar-foreground/60">
             {online ? <Wifi className="size-3.5" /> : <WifiOff className="size-3.5" />}
-            {online ? "Online — data tetap di perangkat" : "Offline — tetap bisa berjualan"}
+            {central
+              ? online ? "Online — data terpusat" : "Offline — tetap bisa berjualan"
+              : online ? "Online — data tetap di perangkat" : "Offline — tetap bisa berjualan"}
           </div>
+          {central && <p className="text-xs text-sidebar-foreground/60">{syncLabel}</p>}
           <div className="text-sm">
             <p className="font-semibold">{currentUser?.name}</p>
             <p className="text-xs text-sidebar-foreground/60">
@@ -121,7 +124,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                 className={`inline-block size-2 rounded-full ${online ? "bg-primary" : "bg-destructive"}`}
                 aria-hidden
               />
-              {online ? "Online" : "Offline"} · {currentUser?.name}
+              {online ? "Online" : "Offline"}
+              {central ? ` · ${syncLabel}` : ""} · {currentUser?.name}
             </p>
           </div>
           </div>
