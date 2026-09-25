@@ -7,6 +7,7 @@ import { AppShell, PageHeader } from "@/components/pos/app-shell";
 import { usePos } from "@/lib/pos/store";
 import { rupiah, uid } from "@/lib/pos/format";
 import type { Modifier, Product, Variant } from "@/lib/pos/types";
+import { exportProductsExcel, importProductsExcel } from "@/lib/pos/product-excel";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -105,35 +106,36 @@ function ProdukPage() {
   }
 
   function exportProducts() {
-    const payload = JSON.stringify(
-      { categories: db.categories, products: db.products, modifiers: db.modifiers ?? [] },
-      null,
-      2,
-    );
-    const blob = new Blob([payload], { type: "application/json" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `produk-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(a.href);
+    void exportProductsExcel(db).catch(() => toast.error("Gagal membuat file Excel."));
   }
 
   async function importProducts(file: File) {
     try {
-      const parsed = JSON.parse(await file.text()) as {
-        categories?: typeof db.categories;
-        products?: Product[];
-        modifiers?: Modifier[];
-      };
+      if (file.name.toLowerCase().endsWith(".json")) {
+        const parsed = JSON.parse(await file.text()) as {
+          categories?: typeof db.categories;
+          products?: Product[];
+          modifiers?: Modifier[];
+        };
+        update((current) => ({
+          ...current,
+          categories: parsed.categories?.length ? parsed.categories : current.categories,
+          products: parsed.products?.length ? parsed.products : current.products,
+          modifiers: parsed.modifiers?.length ? parsed.modifiers : (current.modifiers ?? []),
+        }));
+        toast.success("Daftar produk berhasil diimpor.");
+        return;
+      }
+      const { next, count } = await importProductsExcel(file, db);
       update((current) => ({
         ...current,
-        categories: parsed.categories?.length ? parsed.categories : current.categories,
-        products: parsed.products?.length ? parsed.products : current.products,
-        modifiers: parsed.modifiers?.length ? parsed.modifiers : (current.modifiers ?? []),
+        categories: next.categories,
+        products: next.products,
+        modifiers: next.modifiers ?? [],
       }));
-      toast.success("Daftar produk berhasil diimpor.");
+      toast.success(`${count} produk berhasil diimpor dari Excel.`);
     } catch {
-      toast.error("Berkas tidak dapat dibaca. Pastikan hasil ekspor dari aplikasi ini.");
+      toast.error("Berkas tidak dapat dibaca. Gunakan file Excel hasil ekspor aplikasi ini.");
     }
   }
 
@@ -153,7 +155,7 @@ function ProdukPage() {
             <input
               ref={fileRef}
               type="file"
-              accept="application/json"
+              accept=".xlsx,.xls,.csv,.json"
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];
