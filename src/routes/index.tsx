@@ -152,10 +152,34 @@ function KasirPage() {
     if (hydrated) writeLocal(CART_STORAGE_KEY, cart);
   }, [cart, hydrated]);
 
-  const totals = useMemo(
-    () => computeTotals(cart.lines, settings, cart.billDiscount),
-    [cart, settings],
+  const loyalty = useMemo(() => loyaltyOf(settings), [settings]);
+  const member = useMemo(
+    () => membersOf(db).find((m) => m.id === cart.memberId) ?? null,
+    [db, cart.memberId],
   );
+
+  const baseTotals = useMemo(
+    () => computeTotals(cart.lines, settings, cart.billDiscount),
+    [cart.lines, cart.billDiscount, settings],
+  );
+
+  const memberDisc = useMemo(
+    () => (member ? memberDiscountOf(baseTotals.subtotal - baseTotals.discount, loyalty) : 0),
+    [member, baseTotals, loyalty],
+  );
+
+  const pointDisc = useMemo(() => {
+    if (!member) return 0;
+    const billable = Math.max(0, baseTotals.subtotal - baseTotals.discount - memberDisc);
+    const points = Math.min(Math.max(0, cart.redeemPoints ?? 0), member.points);
+    return Math.min(billable, pointsToRupiah(points, loyalty));
+  }, [member, baseTotals, memberDisc, cart.redeemPoints, loyalty]);
+
+  const totals = useMemo(
+    () => computeTotals(cart.lines, settings, cart.billDiscount + memberDisc + pointDisc),
+    [cart.lines, cart.billDiscount, settings, memberDisc, pointDisc],
+  );
+
 
   const activeService = useMemo(
     () => {
