@@ -2,7 +2,6 @@ import type { StoreSettings, UserRole } from "./types";
 
 export type PermKey =
   | "pos.access"
-  | "pos.discount"
   | "order.void"
   | "product.manage"
   | "transaction.view"
@@ -16,7 +15,6 @@ export const PERM_GROUPS: { title: string; items: { key: PermKey; label: string 
     title: "Kasir",
     items: [
       { key: "pos.access", label: "Membuka halaman kasir" },
-      { key: "pos.discount", label: "Memberi diskon item" },
       { key: "order.void", label: "Otorisasi void pesanan (PIN)" },
     ],
   },
@@ -48,7 +46,7 @@ export const LIMITED_ROLES: LimitedRole[] = ["manager", "supervisor", "cashier"]
 
 export const DEFAULT_PERMS: Record<LimitedRole, PermKey[]> = {
   manager: [...ALL_PERMS],
-  supervisor: ["pos.access", "pos.discount", "order.void", "transaction.view", "transaction.void", "report.view"],
+  supervisor: ["pos.access", "order.void", "transaction.view", "transaction.void", "report.view"],
   cashier: ["pos.access", "transaction.view"],
 };
 

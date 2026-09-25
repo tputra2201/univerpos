@@ -9,7 +9,7 @@ import { usePos } from "@/lib/pos/store";
 import { dateTime, rupiah } from "@/lib/pos/format";
 import { buildReceipt } from "@/lib/pos/receipt";
 import type { Sale } from "@/lib/pos/types";
-import { canAuthorizeVoid } from "@/lib/pos/roles";
+import { hasPerm } from "@/lib/pos/permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -187,7 +187,7 @@ function TransaksiPage() {
             <Button variant="secondary" className="gap-2" onClick={() => detail && reprint(detail)}>
               <Printer className="size-4" /> Cetak ulang
             </Button>
-            {detail?.status === "paid" && canAuthorizeVoid(currentUser?.role) && (
+            {detail?.status === "paid" && hasPerm(db.settings, currentUser?.role, "transaction.void") && (
               <>
                 <Button
                   variant="secondary"

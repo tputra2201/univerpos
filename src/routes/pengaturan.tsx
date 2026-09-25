@@ -23,6 +23,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { AccessMatrix } from "@/components/pos/access-matrix";
+import { hasPerm } from "@/lib/pos/permissions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -153,7 +155,12 @@ function PengaturanPage() {
         <TabsList>
           <TabsTrigger value="store">Store</TabsTrigger>
           <TabsTrigger value="layanan">Jenis Layanan</TabsTrigger>
-          <TabsTrigger value="pengguna">Pengguna</TabsTrigger>
+          {hasPerm(db.settings, currentUser?.role, "users.manage") && (
+            <>
+              <TabsTrigger value="pengguna">Pengguna</TabsTrigger>
+              <TabsTrigger value="akses">Hak Akses</TabsTrigger>
+            </>
+          )}
           <TabsTrigger value="pembayaran">Pembayaran</TabsTrigger>
           <TabsTrigger value="printer">Printer</TabsTrigger>
           <TabsTrigger value="operasional">Meja & Staf</TabsTrigger>
@@ -161,6 +168,10 @@ function PengaturanPage() {
           <TabsTrigger value="online">Online Order</TabsTrigger>
           <TabsTrigger value="data">Data</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="akses" className="space-y-4">
+          <AccessMatrix />
+        </TabsContent>
 
         <TabsContent value="perangkat" className="space-y-4">
           <DevicesCard />

@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { Loader2, Smartphone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePos } from "@/lib/pos/store";
-import { canManage } from "@/lib/pos/roles";
+import { hasPerm } from "@/lib/pos/permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,7 +43,7 @@ export function DevicesCard() {
   }, [load]);
 
   async function release(d: DeviceRow) {
-    if (!currentUser || !canManage(currentUser.role)) {
+    if (!currentUser || !hasPerm(db.settings, currentUser.role, "settings.manage")) {
       toast.error("Hanya manajer atau pemilik yang boleh melepas perangkat.");
       return;
     }

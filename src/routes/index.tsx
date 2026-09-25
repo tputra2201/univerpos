@@ -29,7 +29,8 @@ import { getServiceTypes } from "@/lib/pos/seed";
 import { categoryAllowed, servicePrice } from "@/lib/pos/pricing";
 
 import { CART_STORAGE_KEY, readLocal, writeLocal } from "@/lib/pos/storage";
-import { canAuthorizeVoid, formatOrderNo, roleLabel } from "@/lib/pos/roles";
+import { hasPerm } from "@/lib/pos/permissions";
+import { formatOrderNo, roleLabel } from "@/lib/pos/roles";
 import type { CartLine, HeldOrder, ServiceType, Product, Sale, SalePayment } from "@/lib/pos/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1548,9 +1549,9 @@ function VoidDialog({
 
   function submit() {
     if (!line) return;
-    const approver = db.users.find((u) => u.pin === pin && canAuthorizeVoid(u.role));
+    const approver = db.users.find((u) => u.pin === pin && hasPerm(db.settings, u.role, "order.void"));
     if (!approver) {
-      toast.error("PIN tidak valid atau peran tidak berwenang. Perlu supervisor/manager.");
+      toast.error("PIN tidak valid atau peran tidak berwenang. Perlu pengguna dengan izin void.");
       return;
     }
     if (!reason.trim()) {
