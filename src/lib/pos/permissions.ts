@@ -1,0 +1,64 @@
+import type { StoreSettings, UserRole } from "./types";
+
+export type PermKey =
+  | "pos.access"
+  | "pos.discount"
+  | "order.void"
+  | "product.manage"
+  | "transaction.view"
+  | "transaction.void"
+  | "report.view"
+  | "settings.manage"
+  | "users.manage";
+
+export const PERM_GROUPS: { title: string; items: { key: PermKey; label: string }[] }[] = [
+  {
+    title: "Kasir",
+    items: [
+      { key: "pos.access", label: "Membuka halaman kasir" },
+      { key: "pos.discount", label: "Memberi diskon item" },
+      { key: "order.void", label: "Otorisasi void pesanan (PIN)" },
+    ],
+  },
+  {
+    title: "Produk",
+    items: [{ key: "product.manage", label: "Kelola produk, kategori & modifier" }],
+  },
+  {
+    title: "Transaksi & Laporan",
+    items: [
+      { key: "transaction.view", label: "Melihat riwayat transaksi" },
+      { key: "transaction.void", label: "Void / refund transaksi lunas" },
+      { key: "report.view", label: "Melihat laporan" },
+    ],
+  },
+  {
+    title: "Pengaturan",
+    items: [
+      { key: "settings.manage", label: "Membuka pengaturan store" },
+      { key: "users.manage", label: "Kelola pengguna & hak akses" },
+    ],
+  },
+];
+
+export const ALL_PERMS: PermKey[] = PERM_GROUPS.flatMap((g) => g.items.map((i) => i.key));
+
+export type LimitedRole = Exclude<UserRole, "owner">;
+export const LIMITED_ROLES: LimitedRole[] = ["manager", "supervisor", "cashier"];
+
+export const DEFAULT_PERMS: Record<LimitedRole, PermKey[]> = {
+  manager: [...ALL_PERMS],
+  supervisor: ["pos.access", "pos.discount", "order.void", "transaction.view", "transaction.void", "report.view"],
+  cashier: ["pos.access", "transaction.view"],
+};
+
+export function permsFor(settings: StoreSettings, role: LimitedRole): PermKey[] {
+  return (settings.rolePermissions?.[role] as PermKey[] | undefined) ?? DEFAULT_PERMS[role];
+}
+
+/** Pemilik selalu punya akses penuh. */
+export function hasPerm(settings: StoreSettings, role: UserRole | undefined, key: PermKey): boolean {
+  if (!role) return false;
+  if (role === "owner") return true;
+  return permsFor(settings, role).includes(key);
+}
