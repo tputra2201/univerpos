@@ -244,6 +244,11 @@ export function buildReport(
     }
   }
 
+  if (input.extra?.length) {
+    out.push(divider(width));
+    input.extra.forEach((r) => out.push(twoCol(r.label, r.value, width)));
+  }
+
   footerLines(db.printer, width).forEach((l) => out.push(l));
   return out;
 }
