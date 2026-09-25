@@ -563,7 +563,7 @@ function KasirPage() {
                   <span className="line-clamp-2 text-sm font-semibold">{product.name}</span>
                   <span className="mt-2 block">
                     <span className="tabular block font-bold text-primary">
-                      {rupiah(product.price)}
+                      {rupiah(servicePrice(product, activeService))}
                     </span>
                     {product.stock != null && (
                       <span
@@ -648,7 +648,12 @@ function KasirPage() {
         }}
         onAdd={(label, extra) => {
           if (variantProduct && optionLine) {
-            const base = { ...optionLine, variantName: label, unitPrice: variantProduct.price + extra };
+            const base = {
+              ...optionLine,
+              variantName: label,
+              unitPrice: servicePrice(variantProduct, activeService) + extra,
+            };
+
             setCart((prev) => ({
               ...prev,
               lines: prev.lines.map((l) => (l.lineId === base.lineId ? base : l)),
