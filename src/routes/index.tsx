@@ -150,6 +150,14 @@ function KasirPage() {
     [db.categories, cart.serviceId],
   );
 
+  // Kategori yang dipilih bisa tidak tersedia lagi setelah layanan berganti.
+  useEffect(() => {
+    if (categoryId !== "all" && !visibleCategories.some((c) => c.id === categoryId))
+      setCategoryId("all");
+  }, [categoryId, visibleCategories]);
+
+
+
   const products = useMemo(() => {
     const q = query.trim().toLowerCase();
     const allowed = new Set(visibleCategories.map((c) => c.id));
