@@ -95,6 +95,12 @@ interface CartState {
   orderNo: string;
   /** sudah dikirim ke dapur */
   sentToKitchen: boolean;
+  /** member terpilih */
+  memberId?: string;
+  memberName?: string;
+  memberCode?: string;
+  /** poin yang akan ditukar jadi potongan */
+  redeemPoints?: number;
 }
 
 const EMPTY_CART: CartState = {
@@ -106,7 +112,12 @@ const EMPTY_CART: CartState = {
   note: "",
   orderNo: "",
   sentToKitchen: false,
+  memberId: undefined,
+  memberName: "",
+  memberCode: "",
+  redeemPoints: 0,
 };
+
 
 function KasirPage() {
   const { db, update, currentUser } = usePos();
