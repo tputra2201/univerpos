@@ -377,6 +377,8 @@ function ProdukPage() {
         onSave={saveProduct}
         categories={db.categories}
         modifiers={db.modifiers ?? []}
+        services={services}
+
       />
     </div>
   );
