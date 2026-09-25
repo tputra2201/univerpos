@@ -576,7 +576,7 @@ function KasirPage() {
               <span className="hidden sm:inline">Diproses</span>
               {processingCount > 0 && <Badge variant="default">{processingCount}</Badge>}
             </Button>
-            <Button variant="secondary" className="h-11 gap-2" onClick={() => setHeldOpen(true)}>
+            <Button variant="secondary" className="h-11 gap-2" onClick={() => requireShift() && setHeldOpen(true)}>
               <Play className="size-4" />
               <span className="hidden sm:inline">Tertahan</span>
               {db.heldOrders.length > 0 && <Badge variant="default">{db.heldOrders.length}</Badge>}
@@ -646,7 +646,7 @@ function KasirPage() {
           onEditLine={setEditLine}
           onChangeQty={changeQty}
           onRemoveLine={removeLine}
-          onPay={() => setPayOpen(true)}
+          onPay={() => requireShift() && setPayOpen(true)}
           onBill={printBill}
           onKitchen={sendToKitchen}
           onHold={holdOrder}
@@ -683,7 +683,7 @@ function KasirPage() {
             onEditLine={setEditLine}
             onChangeQty={changeQty}
             onRemoveLine={removeLine}
-            onPay={() => setPayOpen(true)}
+            onPay={() => requireShift() && setPayOpen(true)}
             onBill={printBill}
             onKitchen={sendToKitchen}
             onHold={holdOrder}
