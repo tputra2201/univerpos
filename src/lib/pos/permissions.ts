@@ -50,8 +50,15 @@ export const LIMITED_ROLES: LimitedRole[] = ["manager", "supervisor", "cashier"]
 
 export const DEFAULT_PERMS: Record<LimitedRole, PermKey[]> = {
   manager: [...ALL_PERMS],
-  supervisor: ["pos.access", "order.void", "transaction.view", "transaction.void", "report.view"],
-  cashier: ["pos.access", "transaction.view"],
+  supervisor: [
+    "pos.access",
+    "order.void",
+    "transaction.view",
+    "transaction.void",
+    "report.view",
+    "shift.manage",
+  ],
+  cashier: ["pos.access", "transaction.view", "shift.manage"],
 };
 
 export function permsFor(settings: StoreSettings, role: LimitedRole): PermKey[] {
