@@ -801,6 +801,7 @@ function ProductDialog({
               </div>
             </div>
           )}
+          <div className="grid grid-cols-2 gap-3">
 
             <div className="space-y-2">
               <Label>Satuan</Label>
