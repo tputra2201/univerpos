@@ -43,7 +43,7 @@ export function escposBytes(lines: string[], autoCut = true): Uint8Array {
   return new Uint8Array(out);
 }
 
-let cachedDevice: any = null;
+const devices = new Map<string, any>();
 
 export async function pickBluetoothPrinter(): Promise<{ id: string; name: string }> {
   const bluetooth = bt();
@@ -52,18 +52,18 @@ export async function pickBluetoothPrinter(): Promise<{ id: string; name: string
     acceptAllDevices: true,
     optionalServices: [SPP_SERVICE, 0x18f0, "000018f0-0000-1000-8000-00805f9b34fb"],
   });
-  cachedDevice = device;
+  devices.set(device.id ?? "", device);
   return { id: device.id ?? "", name: device.name ?? "Printer Bluetooth" };
 }
 
 async function restoreBluetoothPrinter(deviceId?: string, deviceName?: string): Promise<any | null> {
   const bluetooth = bt();
   if (!bluetooth?.getDevices) return null;
-  const devices = await bluetooth.getDevices();
-  const found = devices.find((device) =>
+  const list = await bluetooth.getDevices();
+  const found = list.find((device) =>
     deviceId ? device.id === deviceId : Boolean(deviceName && device.name === deviceName),
   );
-  if (found) cachedDevice = found;
+  if (found) devices.set(found.id ?? "", found);
   return found ?? null;
 }
 
@@ -85,9 +85,15 @@ export async function printViaBluetooth(
 ): Promise<void> {
   const bluetooth = bt();
   if (!bluetooth) throw new Error("Perangkat/browser ini tidak mendukung Bluetooth langsung.");
-  if (!cachedDevice) await restoreBluetoothPrinter(preferred?.deviceId, preferred?.deviceName);
-  if (!cachedDevice) await pickBluetoothPrinter();
-  const characteristic = await writableCharacteristic(cachedDevice);
+  let device =
+    (preferred?.deviceId && devices.get(preferred.deviceId)) ||
+    (await restoreBluetoothPrinter(preferred?.deviceId, preferred?.deviceName));
+  if (!device && !preferred?.deviceId && devices.size > 0) device = [...devices.values()][0];
+  if (!device) {
+    const picked = await pickBluetoothPrinter();
+    device = devices.get(picked.id);
+  }
+  const characteristic = await writableCharacteristic(device);
   const data = escposBytes(lines);
   const chunkSize = 180;
   for (let i = 0; i < data.length; i += chunkSize) {

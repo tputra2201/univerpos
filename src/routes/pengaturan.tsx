@@ -1,4 +1,5 @@
 import { FinanceSettings } from "@/components/pos/finance-settings";
+import { PrintersSettings } from "@/components/pos/printers-settings";
 import { deliverPin, pinMessage, randomPin } from "@/lib/pos/pin";
 import { EditUserForm } from "@/components/pos/edit-user";
 import { daysLeft, formatExpiry } from "@/lib/pos/expiry";
@@ -631,6 +632,7 @@ function PengaturanPage() {
         </TabsContent>
 
         <TabsContent value="printer" className="space-y-4">
+          <PrintersSettings />
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Printer Thermal</CardTitle>
@@ -1044,6 +1046,7 @@ function PengaturanPage() {
         onOpenChange={(v) => !v && setPrintLines(null)}
         title="Uji Cetak"
         lines={printLines ?? []}
+        role="receipt"
       />
     </div>
   );
