@@ -21,6 +21,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 function num(value: string): number {
   return Number(value.replace(/[^0-9]/g, "")) || 0;
@@ -96,6 +100,7 @@ export function ShiftPanel({
   const [nextEdited, setNextEdited] = useState(false);
   const [dayNote, setDayNote] = useState("");
   const [finKind, setFinKind] = useState<FinanceKind | null>(null);
+  const [confirmClose, setConfirmClose] = useState(false);
   const canFinance = hasPerm(db.settings, currentUser?.role, "finance.manage");
 
   const sum = shift ? summarize(shift, salesOfShift(db, shift), financeOfShift(db, shift)) : null;
@@ -375,9 +380,35 @@ export function ShiftPanel({
                 />
               </div>
             </div>
-            <Button className="gap-2" onClick={closeOut}>
+            <Button
+              className="gap-2"
+              onClick={() => {
+                if (!actual.trim()) { toast.error("Isi jumlah kas fisik di laci."); return; }
+                if (balance !== 0 && !note.trim()) { toast.error("Ada selisih kas, isi catatan selisih dulu."); return; }
+                setConfirmClose(true);
+              }}
+            >
               <Printer className="size-4" /> Close Out & Cetak
             </Button>
+            <AlertDialog open={confirmClose} onOpenChange={setConfirmClose}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Tutup shift sekarang?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Shift {shift.userName} akan ditutup dan laporan Z dicetak. Tindakan ini tidak bisa dibatalkan.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  <Field label="Kas seharusnya" value={rupiah(sum.expected)} />
+                  <Field label="Kas fisik" value={rupiah(num(actual))} tone="primary" />
+                  <Field label="Selisih" value={rupiah(balance)} tone={balance === 0 ? undefined : balance > 0 ? "good" : "bad"} />
+                </div>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Batal</AlertDialogCancel>
+                  <AlertDialogAction onClick={closeOut}>Ya, close out</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </CardContent>
         </Card>
       )}
