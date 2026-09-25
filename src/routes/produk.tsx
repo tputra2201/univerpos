@@ -194,16 +194,42 @@ function ProdukPage() {
               className="h-10 pl-9"
             />
           </div>
+          {list.length === 0 && (
+            <p className="text-sm text-muted-foreground">Belum ada produk.</p>
+          )}
+          {[...db.categories, { id: "__none", name: "Tanpa kategori" }].map((cat) => {
+            const items = list.filter((p) =>
+              cat.id === "__none"
+                ? !db.categories.some((c) => c.id === p.categoryId)
+                : p.categoryId === cat.id,
+            );
+            if (!items.length) return null;
+            return (
+              <section key={cat.id} className="space-y-2">
+                <div className="flex items-center justify-between gap-2 border-b pb-1">
+                  <h3 className="font-semibold">{cat.name}</h3>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">{items.length} produk</Badge>
+                    {cat.id !== "__none" && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 gap-1"
+                        onClick={() => setEditing(emptyProduct(cat.id))}
+                      >
+                        <Plus className="size-3.5" /> Tambah
+                      </Button>
+                    )}
+                  </div>
+                </div>
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-            {list.map((product) => (
+            {items.map((product) => (
               <div key={product.id} className="rounded-xl border bg-card p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="truncate font-semibold">{product.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {db.categories.find((c) => c.id === product.categoryId)?.name ??
-                        "Tanpa kategori"}{" "}
-                      · {product.unit}
+                      {product.unit}
                       {product.barcode && ` · ${product.barcode}`}
                     </p>
                     <p className="tabular mt-1 font-bold text-primary">{rupiah(product.price)}</p>
@@ -240,10 +266,10 @@ function ProdukPage() {
                 </div>
               </div>
             ))}
-            {list.length === 0 && (
-              <p className="text-sm text-muted-foreground">Belum ada produk.</p>
-            )}
           </div>
+              </section>
+            );
+          })}
         </TabsContent>
 
         <TabsContent value="kategori" className="space-y-3">
