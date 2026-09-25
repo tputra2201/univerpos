@@ -220,6 +220,8 @@ function PengaturanPage() {
           <TabsTrigger value="perangkat">Perangkat</TabsTrigger>
           <TabsTrigger value="online">Online Order</TabsTrigger>
           <TabsTrigger value="finance">Finance</TabsTrigger>
+          <TabsTrigger value="member">Member</TabsTrigger>
+
           <TabsTrigger value="data">Data</TabsTrigger>
         </TabsList>
 
