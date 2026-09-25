@@ -1254,6 +1254,64 @@ function CartPanel({
           placeholder={type === "jasa" ? "Nama pelanggan" : "Nama pelanggan (opsional)"}
           className="h-10"
         />
+        {loyalty.enabled && (
+          <div className="rounded-lg border p-2">
+            {member ? (
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold">{member.name}</p>
+                  <p className="tabular text-xs text-muted-foreground">
+                    {member.code} • {member.points} poin
+                  </p>
+                </div>
+                <div className="flex gap-1">
+                  <Button size="sm" variant="secondary" className="h-8" onClick={() => setMemberOpen(true)}>
+                    Ganti
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8"
+                    onClick={() =>
+                      setCart((prev) => ({
+                        ...prev,
+                        memberId: undefined,
+                        memberName: "",
+                        memberCode: "",
+                        redeemPoints: 0,
+                      }))
+                    }
+                  >
+                    Lepas
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button
+                variant="secondary"
+                className="h-9 w-full gap-2 text-sm"
+                onClick={() => setMemberOpen(true)}
+              >
+                <Users className="size-4" /> Pilih / daftar member
+              </Button>
+            )}
+          </div>
+        )}
+        <MemberPicker
+          open={memberOpen}
+          onOpenChange={setMemberOpen}
+          onPick={(m) =>
+            setCart((prev) => ({
+              ...prev,
+              memberId: m.id,
+              memberName: m.name,
+              memberCode: m.code,
+              redeemPoints: 0,
+              customerName: prev.customerName || m.name,
+            }))
+          }
+        />
+
         <Textarea
           id="order-note"
           value={cart.note}
