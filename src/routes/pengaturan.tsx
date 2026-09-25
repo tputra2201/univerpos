@@ -1044,6 +1044,7 @@ function PengaturanPage() {
         onOpenChange={(v) => !v && setPrintLines(null)}
         title="Uji Cetak"
         lines={printLines ?? []}
+        role="receipt"
       />
     </div>
   );

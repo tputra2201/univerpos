@@ -236,6 +236,7 @@ function TransaksiPage() {
         onOpenChange={(v) => !v && setPrintLines(null)}
         title="Cetak Ulang Struk"
         lines={printLines ?? []}
+        role="receipt"
       />
     </div>
   );
