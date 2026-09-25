@@ -1463,6 +1463,41 @@ function CartPanel({
               className="tabular h-8 w-28 text-right"
             />
           </div>
+          {memberDiscount > 0 && (
+            <Row
+              label={`Diskon member ${loyalty.memberDiscountPercent}%`}
+              value={"−" + rupiah(memberDiscount)}
+            />
+          )}
+          {member && (
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">
+                Tukar poin{" "}
+                <span className="tabular text-xs">
+                  (maks {maxRedeemable(member, Math.max(0, totals.subtotal - totals.discount + memberDiscount + pointDiscount), loyalty)})
+                </span>
+              </span>
+              <Input
+                inputMode="numeric"
+                value={cart.redeemPoints ? String(cart.redeemPoints) : ""}
+                onChange={(e) => {
+                  const wanted = Number(e.target.value.replace(/\D/g, "")) || 0;
+                  const cap = maxRedeemable(
+                    member,
+                    Math.max(0, totals.subtotal - totals.discount + memberDiscount + pointDiscount),
+                    loyalty,
+                  );
+                  setCart((prev) => ({ ...prev, redeemPoints: Math.min(wanted, cap) }));
+                }}
+                placeholder="0"
+                className="tabular h-8 w-28 text-right"
+              />
+            </div>
+          )}
+          {pointDiscount > 0 && (
+            <Row label="Potongan poin" value={"−" + rupiah(pointDiscount)} />
+          )}
+
           {totals.service > 0 && (
             <Row
               label={`Layanan ${db.settings.servicePercent}%`}
