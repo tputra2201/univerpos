@@ -31,8 +31,8 @@ export function PrintPreview({
     setSending(true);
     try {
       await printViaBluetooth(lines, {
-        deviceId: db.printer.deviceId,
-        deviceName: db.printer.deviceName,
+        ...(db.printer.deviceId ? { deviceId: db.printer.deviceId } : {}),
+        ...(db.printer.deviceName ? { deviceName: db.printer.deviceName } : {}),
       });
       toast.success("Data cetak terkirim ke printer.");
     } catch (err) {

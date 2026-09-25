@@ -476,8 +476,8 @@ function KasirPage() {
     if (db.printer.autoPrintOnPay) {
       if (db.printer.printMode === "bluetooth") {
         void printViaBluetooth(lines, {
-          deviceId: db.printer.deviceId,
-          deviceName: db.printer.deviceName,
+          ...(db.printer.deviceId ? { deviceId: db.printer.deviceId } : {}),
+          ...(db.printer.deviceName ? { deviceName: db.printer.deviceName } : {}),
         })
           .then(() => toast.success(`Pembayaran ${rupiah(sale.total)} tersimpan. Struk dicetak.`))
           .catch((error: unknown) =>
