@@ -26,6 +26,8 @@ import { rupiah, uid } from "@/lib/pos/format";
 import { buildReceipt } from "@/lib/pos/receipt";
 import { printViaDialog } from "@/lib/pos/print";
 import { getServiceTypes } from "@/lib/pos/seed";
+import { categoryAllowed, servicePrice } from "@/lib/pos/pricing";
+
 import { CART_STORAGE_KEY, readLocal, writeLocal } from "@/lib/pos/storage";
 import { canAuthorizeVoid, formatOrderNo, roleLabel } from "@/lib/pos/roles";
 import type { CartLine, HeldOrder, ServiceType, Product, Sale, SalePayment } from "@/lib/pos/types";
@@ -533,7 +535,7 @@ function KasirPage() {
                 label="Semua"
                 onClick={() => setCategoryId("all")}
               />
-              {db.categories.map((c) => (
+              {visibleCategories.map((c) => (
                 <CategoryChip
                   key={c.id}
                   active={categoryId === c.id}
