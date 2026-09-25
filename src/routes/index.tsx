@@ -25,7 +25,8 @@ import { usePos } from "@/lib/pos/store";
 import { computeTotals, lineTotal } from "@/lib/pos/calc";
 import { rupiah, uid } from "@/lib/pos/format";
 import { buildReceipt } from "@/lib/pos/receipt";
-import { printViaBluetooth, printViaDialog } from "@/lib/pos/print";
+import { layoutFor, printerFor, printersFor, sendToPrinter, splitByStation } from "@/lib/pos/printers";
+import type { PrinterRole } from "@/lib/pos/types";
 import { getServiceTypes } from "@/lib/pos/seed";
 import { categoryAllowed, servicePrice } from "@/lib/pos/pricing";
 
@@ -126,6 +127,7 @@ function KasirPage() {
   const processingCount = kitchenOrders.filter((k) => k.status === "processing").length;
   const [printLines, setPrintLines] = useState<string[] | null>(null);
   const [printTitle, setPrintTitle] = useState("Struk");
+  const [printRole, setPrintRole] = useState<PrinterRole>("receipt");
 
   useEffect(() => {
     const saved = readLocal<CartState>(CART_STORAGE_KEY);
@@ -313,15 +315,22 @@ function KasirPage() {
     };
   }
 
-  function showPrint(title: string, lines: string[]) {
+  function showPrint(title: string, lines: string[], role: PrinterRole = "receipt") {
     setPrintTitle(title);
+    setPrintRole(role);
     setPrintLines(lines);
   }
 
   function printBill() {
     if (cart.lines.length === 0) return;
     const orderNo = ensureOrderNo();
-    showPrint("Bill Sementara", buildReceipt("bill", draftSale("paid", { orderNo }), settings, db.printer));
+    const cfg = printerFor(db, "bill");
+    const lines = buildReceipt("bill", draftSale("paid", { orderNo }), settings, layoutFor(db, cfg));
+    if (cfg.autoPrint && cfg.id !== "legacy") {
+      sendToPrinter(cfg, lines).catch((error: unknown) =>
+        toast.error(error instanceof Error ? error.message : "Bill gagal dicetak."),
+      );
+    } else showPrint("Bill Sementara", lines, "bill");
   }
 
   function sendToKitchen() {
@@ -350,11 +359,36 @@ function KasirPage() {
     });
     // Kalau pesanan ini memang sudah tertahan, perbarui isinya (tanpa membuat duplikat).
     if (cart.heldId) saveHeld({ lines, orderNo, sentToKitchen: true });
-    const order = buildReceipt("order", sale, settings, db.printer);
-    const label = buildReceipt("label", sale, settings, db.printer);
-    printViaDialog([...order, "", ...label], db.printer.paperWidth);
     setCart((prev) => ({ ...prev, lines, orderNo, sentToKitchen: true, kitchenId }));
     toast.success(`Pesanan ${orderNo} dikirim ke dapur.`);
+    printStations(sale);
+  }
+
+  /** Cetak tiket/label ke printer Kitchen dan Bar sesuai pengaturan tiap menu. */
+  function printStations(sale: Sale) {
+    const groups = splitByStation(db, sale.items);
+    const preview: string[] = [];
+    for (const station of ["kitchen", "bar"] as const) {
+      const items = groups[station];
+      if (items.length === 0) continue;
+      const part = { ...sale, items };
+      for (const cfg of printersFor(db, station)) {
+        const layout = layoutFor(db, cfg);
+        const out: string[] = [];
+        if (cfg.printTicket !== false) out.push(...buildReceipt("order", part, settings, layout));
+        if (cfg.printLabels) out.push(...(out.length ? [""] : []), ...buildReceipt("label", part, settings, layout));
+        if (out.length === 0) continue;
+        if (station === "bar") out[0] = out[0]?.replace("PESANAN DAPUR", "PESANAN BAR ") ?? "";
+        if (cfg.autoPrint) {
+          sendToPrinter(cfg, out).catch((error: unknown) =>
+            toast.error(`${cfg.name}: ${error instanceof Error ? error.message : "gagal mencetak."}`),
+          );
+        } else {
+          preview.push(...(preview.length ? ["", ""] : []), ...out);
+        }
+      }
+    }
+    if (preview.length) showPrint("Tiket Dapur / Bar", preview, "kitchen");
   }
 
   function saveHeld(
@@ -495,23 +529,16 @@ function KasirPage() {
     setCart(EMPTY_CART);
     setPayOpen(false);
     setCartOpen(false);
-    const lines = buildReceipt("receipt", sale, settings, db.printer);
-    if (db.printer.autoPrintOnPay) {
-      if (db.printer.printMode === "bluetooth") {
-        void printViaBluetooth(lines, {
-          ...(db.printer.deviceId ? { deviceId: db.printer.deviceId } : {}),
-          ...(db.printer.deviceName ? { deviceName: db.printer.deviceName } : {}),
-        })
-          .then(() => toast.success(`Pembayaran ${rupiah(sale.total)} tersimpan. Struk dicetak.`))
-          .catch((error: unknown) =>
-            toast.error(error instanceof Error ? error.message : "Struk gagal dicetak."),
-          );
-      } else {
-        printViaDialog(lines, db.printer.paperWidth);
-        toast.success(`Pembayaran ${rupiah(sale.total)} tersimpan. Struk dicetak.`);
-      }
+    const receiptPrinter = printerFor(db, "receipt");
+    const lines = buildReceipt("receipt", sale, settings, layoutFor(db, receiptPrinter));
+    if (receiptPrinter.autoPrint) {
+      sendToPrinter(receiptPrinter, lines)
+        .then(() => toast.success(`Pembayaran ${rupiah(sale.total)} tersimpan. Struk dicetak.`))
+        .catch((error: unknown) =>
+          toast.error(error instanceof Error ? error.message : "Struk gagal dicetak."),
+        );
     } else {
-      showPrint("Struk Penjualan", lines);
+      showPrint("Struk Penjualan", lines, "receipt");
       toast.success(`Pembayaran ${rupiah(sale.total)} tersimpan.`);
     }
   }
@@ -874,6 +901,7 @@ function KasirPage() {
         onOpenChange={(v) => !v && setPrintLines(null)}
         title={printTitle}
         lines={printLines ?? []}
+        role={printRole}
       />
     </div>
   );
