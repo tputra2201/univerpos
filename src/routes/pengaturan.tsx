@@ -808,7 +808,7 @@ function PengaturanPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {(db.onlineChannels ?? []).map((c) => (
-                <div key={c.id} className="flex items-center justify-between rounded-lg border px-3 py-2">
+                <div key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2">
                   <span className="font-medium">{c.name}</span>
                   <div className="flex items-center gap-3">
                     <Switch
@@ -835,6 +835,47 @@ function PengaturanPage() {
                     >
                       <Trash2 className="size-4" />
                     </Button>
+                  </div>
+                  <div className="flex w-full flex-wrap items-center gap-2 border-t pt-2">
+                    <span className="text-xs text-muted-foreground">Penyesuaian harga</span>
+                    <Input
+                      aria-label={`Penyesuaian harga ${c.name}`}
+                      inputMode="numeric"
+                      placeholder="0"
+                      value={c.priceAdjustValue ? String(c.priceAdjustValue) : ""}
+                      onChange={(e) => {
+                        const v = Number(e.target.value.replace(/[^0-9-]/g, "")) || 0;
+                        update((current) => ({
+                          ...current,
+                          onlineChannels: current.onlineChannels.map((x) =>
+                            x.id === c.id ? { ...x, priceAdjustValue: v } : x,
+                          ),
+                        }));
+                      }}
+                      className="tabular h-9 w-28"
+                    />
+                    <Select
+                      value={c.priceAdjustMode ?? "amount"}
+                      onValueChange={(v) =>
+                        update((current) => ({
+                          ...current,
+                          onlineChannels: current.onlineChannels.map((x) =>
+                            x.id === c.id ? { ...x, priceAdjustMode: v as "amount" | "percent" } : x,
+                          ),
+                        }))
+                      }
+                    >
+                      <SelectTrigger className="h-9 w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="amount">Rupiah</SelectItem>
+                        <SelectItem value="percent">Persen (%)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <span className="text-xs text-muted-foreground">
+                      Kosong = ikut jenis layanan. Minus untuk mengurangi.
+                    </span>
                   </div>
                 </div>
               ))}
