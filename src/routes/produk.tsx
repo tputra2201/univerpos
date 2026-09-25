@@ -8,6 +8,10 @@ import { usePos } from "@/lib/pos/store";
 import { rupiah, uid } from "@/lib/pos/format";
 import type { Modifier, Product, Variant } from "@/lib/pos/types";
 import { exportProductsExcel, importProductsExcel } from "@/lib/pos/product-excel";
+import { getServiceTypes } from "@/lib/pos/seed";
+import { servicePrice } from "@/lib/pos/pricing";
+import type { ServiceType } from "@/lib/pos/types";
+
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,6 +77,8 @@ function ProdukPage() {
   const [editing, setEditing] = useState<Product | null>(null);
   const [newCategory, setNewCategory] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const services = useMemo(() => getServiceTypes(db).filter((s) => s.active), [db]);
+
 
   const list = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -294,36 +300,74 @@ function ProdukPage() {
             </Button>
           </div>
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-            {db.categories.map((c) => (
-              <div key={c.id} className="flex items-center gap-2 rounded-xl border bg-card p-3">
-                <Input
-                  value={c.name}
-                  onChange={(e) =>
-                    update((current) => ({
-                      ...current,
-                      categories: current.categories.map((x) =>
-                        x.id === c.id ? { ...x, name: e.target.value } : x,
-                      ),
-                    }))
-                  }
-                  className="h-9"
-                />
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  aria-label="Hapus kategori"
-                  onClick={() =>
-                    update((current) => ({
-                      ...current,
-                      categories: current.categories.filter((x) => x.id !== c.id),
-                    }))
-                  }
-                >
-                  <Trash2 className="size-4" />
-                </Button>
-              </div>
-            ))}
+            {db.categories.map((c) => {
+              const picked = c.serviceIds ?? [];
+              return (
+                <div key={c.id} className="space-y-3 rounded-xl border bg-card p-3">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={c.name}
+                      onChange={(e) =>
+                        update((current) => ({
+                          ...current,
+                          categories: current.categories.map((x) =>
+                            x.id === c.id ? { ...x, name: e.target.value } : x,
+                          ),
+                        }))
+                      }
+                      className="h-9"
+                    />
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label="Hapus kategori"
+                      onClick={() =>
+                        update((current) => ({
+                          ...current,
+                          categories: current.categories.filter((x) => x.id !== c.id),
+                        }))
+                      }
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Tersedia untuk jenis layanan
+                      {picked.length === 0 && " — semua layanan"}
+                    </p>
+                    <div className="flex flex-wrap gap-3">
+                      {services.map((s) => (
+                        <label key={s.id} className="flex items-center gap-2 text-sm">
+                          <Checkbox
+                            checked={picked.length === 0 || picked.includes(s.id)}
+                            onCheckedChange={(v) =>
+                              update((current) => ({
+                                ...current,
+                                categories: current.categories.map((x) => {
+                                  if (x.id !== c.id) return x;
+                                  const base =
+                                    x.serviceIds && x.serviceIds.length
+                                      ? x.serviceIds
+                                      : services.map((y) => y.id);
+                                  const next = v
+                                    ? [...new Set([...base, s.id])]
+                                    : base.filter((id) => id !== s.id);
+                                  return { ...x, serviceIds: next };
+                                }),
+                              }))
+                            }
+                          />
+                          {s.name}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
+
         </TabsContent>
       </Tabs>
 
@@ -333,6 +377,8 @@ function ProdukPage() {
         onSave={saveProduct}
         categories={db.categories}
         modifiers={db.modifiers ?? []}
+        services={services}
+
       />
     </div>
   );
@@ -658,12 +704,15 @@ function ProductDialog({
   onSave,
   categories,
   modifiers,
+  services,
 }: {
   product: Product | null;
   onClose: () => void;
   onSave: (p: Product) => void;
   categories: { id: string; name: string }[];
   modifiers: Modifier[];
+  services: ServiceType[];
+
 }) {
   const [draft, setDraft] = useState<Product | null>(product);
   const [key, setKey] = useState("");
@@ -721,7 +770,39 @@ function ProductDialog({
               </Select>
             </div>
           </div>
+          {services.length > 0 && (
+            <div className="space-y-2 rounded-lg border p-3">
+              <p className="text-sm font-medium">Harga khusus per jenis layanan</p>
+              <p className="text-xs text-muted-foreground">
+                Kosongkan untuk mengikuti harga standar dan penyesuaian layanan.
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {services.map((s) => {
+                  const custom = draft.servicePrices?.[s.id];
+                  return (
+                    <div key={s.id} className="space-y-1">
+                      <Label className="text-xs">{s.name}</Label>
+                      <Input
+                        inputMode="numeric"
+                        placeholder={String(servicePrice(draft, s))}
+                        value={custom ? String(custom) : ""}
+                        onChange={(e) => {
+                          const v = Number(e.target.value.replace(/\D/g, "")) || 0;
+                          const next = { ...(draft.servicePrices ?? {}) };
+                          if (v > 0) next[s.id] = v;
+                          else delete next[s.id];
+                          setDraft({ ...draft, servicePrices: next });
+                        }}
+                        className="tabular h-10"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
+
             <div className="space-y-2">
               <Label>Satuan</Label>
               <Input

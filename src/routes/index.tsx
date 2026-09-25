@@ -26,6 +26,8 @@ import { rupiah, uid } from "@/lib/pos/format";
 import { buildReceipt } from "@/lib/pos/receipt";
 import { printViaDialog } from "@/lib/pos/print";
 import { getServiceTypes } from "@/lib/pos/seed";
+import { categoryAllowed, servicePrice } from "@/lib/pos/pricing";
+
 import { CART_STORAGE_KEY, readLocal, writeLocal } from "@/lib/pos/storage";
 import { canAuthorizeVoid, formatOrderNo, roleLabel } from "@/lib/pos/roles";
 import type { CartLine, HeldOrder, ServiceType, Product, Sale, SalePayment } from "@/lib/pos/types";
@@ -138,15 +140,36 @@ function KasirPage() {
     [cart, settings],
   );
 
+  const activeService = useMemo(
+    () => getServiceTypes(db).find((s) => s.id === cart.serviceId),
+    [db, cart.serviceId],
+  );
+
+  const visibleCategories = useMemo(
+    () => db.categories.filter((c) => categoryAllowed(c, cart.serviceId)),
+    [db.categories, cart.serviceId],
+  );
+
+  // Kategori yang dipilih bisa tidak tersedia lagi setelah layanan berganti.
+  useEffect(() => {
+    if (categoryId !== "all" && !visibleCategories.some((c) => c.id === categoryId))
+      setCategoryId("all");
+  }, [categoryId, visibleCategories]);
+
+
+
   const products = useMemo(() => {
     const q = query.trim().toLowerCase();
+    const allowed = new Set(visibleCategories.map((c) => c.id));
     return db.products.filter((p) => {
       if (!p.active) return false;
+      if (p.categoryId && db.categories.some((c) => c.id === p.categoryId) && !allowed.has(p.categoryId))
+        return false;
       if (categoryId !== "all" && p.categoryId !== categoryId) return false;
       if (!q) return true;
       return p.name.toLowerCase().includes(q) || p.barcode.includes(q);
     });
-  }, [db.products, query, categoryId]);
+  }, [db.products, db.categories, visibleCategories, query, categoryId]);
 
   function addProduct(product: Product, variantName = "", priceDelta = 0) {
     if (!cart.orderType) {
@@ -171,7 +194,7 @@ function KasirPage() {
         productId: product.id,
         name: product.name,
         variantName,
-        unitPrice: product.price + priceDelta,
+        unitPrice: servicePrice(product, activeService) + priceDelta,
         qty: 1,
         note: "",
         discount: 0,
@@ -188,6 +211,7 @@ function KasirPage() {
     }
     addProduct(product);
   }
+
 
   function changeQty(lineId: string, delta: number) {
     const target = cart.lines.find((l) => l.lineId === lineId);
@@ -519,7 +543,7 @@ function KasirPage() {
                 label="Semua"
                 onClick={() => setCategoryId("all")}
               />
-              {db.categories.map((c) => (
+              {visibleCategories.map((c) => (
                 <CategoryChip
                   key={c.id}
                   active={categoryId === c.id}
@@ -547,7 +571,7 @@ function KasirPage() {
                   <span className="line-clamp-2 text-sm font-semibold">{product.name}</span>
                   <span className="mt-2 block">
                     <span className="tabular block font-bold text-primary">
-                      {rupiah(product.price)}
+                      {rupiah(servicePrice(product, activeService))}
                     </span>
                     {product.stock != null && (
                       <span
@@ -632,7 +656,12 @@ function KasirPage() {
         }}
         onAdd={(label, extra) => {
           if (variantProduct && optionLine) {
-            const base = { ...optionLine, variantName: label, unitPrice: variantProduct.price + extra };
+            const base = {
+              ...optionLine,
+              variantName: label,
+              unitPrice: servicePrice(variantProduct, activeService) + extra,
+            };
+
             setCart((prev) => ({
               ...prev,
               lines: prev.lines.map((l) => (l.lineId === base.lineId ? base : l)),
