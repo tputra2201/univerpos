@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { usePos } from "@/lib/pos/store";
 import { getServiceTypes, seedForBusiness } from "@/lib/pos/seed";
 import { uid } from "@/lib/pos/format";
+import { clearDatabase } from "@/lib/pos/storage";
 import type { BusinessType } from "@/lib/pos/types";
 import { roleLabel } from "@/lib/pos/roles";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,31 @@ import { normalizeEmail, normalizeWa, pinMessage, randomPin, deliverPin } from "
 import { daysLeft, formatExpiry } from "@/lib/pos/expiry";
 
 const DEVICE_TOKEN_KEY = "wo-pos-device-token";
+
+/** Hapus seluruh data store di perangkat ini lalu kembali ke halaman aktivasi. */
+async function resetDevice(message?: string) {
+  await clearDatabase().catch(() => undefined);
+  for (const k of ["wo-pos-session", "wo-pos-cart", "wo-pos-update-request", DEVICE_TOKEN_KEY]) {
+    window.localStorage.removeItem(k);
+  }
+  if (message) window.sessionStorage.setItem("wo-pos-reset-msg", message);
+  window.location.replace("/");
+}
+
+function ResetStoreButton() {
+  return (
+    <button
+      type="button"
+      className="mx-auto mt-4 block text-xs text-muted-foreground underline"
+      onClick={() => {
+        if (window.confirm("Hapus semua data store di perangkat ini dan kembali ke halaman aktivasi? Data yang belum dicadangkan akan hilang."))
+          void resetDevice();
+      }}
+    >
+      Bukan store Anda? Ganti / Reset Aktivasi Store
+    </button>
+  );
+}
 
 /** Tebak tipe perangkat, mis. "Redmi Note 8 Pro" (Android Chrome) atau "iPhone". */
 async function detectDeviceModel(): Promise<string> {
@@ -56,6 +82,10 @@ export function PosGate({ children }: { children: ReactNode }) {
     supabase.rpc("check_store", { _code: code }).then(({ data, error }) => {
       if (error) return; // gangguan jaringan: tetap izinkan kerja offline
       const row = Array.isArray(data) ? data[0] : null;
+      if (!row) {
+        void resetDevice("Store sudah dihapus oleh pengelola. Silakan aktivasi store baru.");
+        return;
+      }
       if (online) setBlocked(!row || !row.active);
       if (row) {
         const exp = (row as { expires_at?: string | null }).expires_at ?? null;
@@ -139,7 +169,10 @@ export function PosGate({ children }: { children: ReactNode }) {
               Kode store {db.settings.storeCode} tidak aktif lagi. Hubungi developer untuk mengaktifkan kembali.
             </CardDescription>
           </CardHeader>
-          <CardContent>{contact}</CardContent>
+          <CardContent>
+            {contact}
+            <ResetStoreButton />
+          </CardContent>
         </Card>
       </Frame>
     );
@@ -236,6 +269,14 @@ function ActivationFlow() {
   const [ownerName, setOwnerName] = useState("");
   const [pin, setPin] = useState("");
   const [pin2, setPin2] = useState("");
+
+  useEffect(() => {
+    const msg = window.sessionStorage.getItem("wo-pos-reset-msg");
+    if (msg) {
+      window.sessionStorage.removeItem("wo-pos-reset-msg");
+      toast.info(msg, { duration: 8000 });
+    }
+  }, []);
 
   const deviceToken = useMemo(() => {
     if (typeof localStorage === "undefined") return uid("dev");
@@ -616,6 +657,7 @@ function LoginScreen() {
           <button type="button" className="mx-auto block text-sm font-medium text-primary underline" onClick={() => setMode("forgot")}>
             Lupa PIN?
           </button>
+          <ResetStoreButton />
         </CardContent>
       </Card>
     </Frame>
