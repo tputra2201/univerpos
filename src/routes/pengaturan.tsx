@@ -141,7 +141,7 @@ function PengaturanPage() {
         ...fresh,
         users: cur.users,
         printer: cur.printer,
-        settings: {
+        settings: ({
           ...fresh.settings,
           activated: s.activated,
           storeCode: s.storeCode,
@@ -156,6 +156,7 @@ function PengaturanPage() {
           devEmail: s.devEmail,
           devPhone: s.devPhone,
           activatedAt: s.activatedAt,
+        } as PosDatabase["settings"]),
         },
       };
     });
