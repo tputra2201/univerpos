@@ -110,6 +110,7 @@ function KasirPage() {
   const [query, setQuery] = useState("");
   const [categoryId, setCategoryId] = useState<string>("all");
   const [variantProduct, setVariantProduct] = useState<Product | null>(null);
+  const [optionLine, setOptionLine] = useState<CartLine | null>(null);
   const [editLine, setEditLine] = useState<CartLine | null>(null);
   const [voidTarget, setVoidTarget] = useState<CartLine | null>(null);
   const [payOpen, setPayOpen] = useState(false);
@@ -625,9 +626,19 @@ function KasirPage() {
       <OptionPicker
         product={variantProduct}
         modifiers={db.modifiers ?? []}
-        onClose={() => setVariantProduct(null)}
+        onClose={() => {
+          setVariantProduct(null);
+          setOptionLine(null);
+        }}
         onAdd={(label, extra) => {
-          if (variantProduct) addProduct(variantProduct, label, extra);
+          if (variantProduct && optionLine) {
+            const base = { ...optionLine, variantName: label, unitPrice: variantProduct.price + extra };
+            setCart((prev) => ({
+              ...prev,
+              lines: prev.lines.map((l) => (l.lineId === base.lineId ? base : l)),
+            }));
+            setOptionLine(null);
+          } else if (variantProduct) addProduct(variantProduct, label, extra);
           setVariantProduct(null);
         }}
       />
@@ -636,6 +647,15 @@ function KasirPage() {
         line={editLine}
         onClose={() => setEditLine(null)}
         onSave={saveLine}
+        onChangeOptions={(() => {
+          const p = editLine && db.products.find((x) => x.id === editLine.productId);
+          if (!p || !productHasOptions(p, db.modifiers ?? [])) return undefined;
+          return (draft: CartLine) => {
+            setOptionLine(draft);
+            setEditLine(null);
+            setVariantProduct(p);
+          };
+        })()}
         staffNames={db.staff.map((s) => s.name)}
         showStaff={settings.businessType === "jasa"}
       />
@@ -1048,6 +1068,7 @@ function CartPanel({
                     <p className="tabular text-xs text-muted-foreground">
                       {rupiah(line.unitPrice)}
                       {line.discount > 0 && ` · diskon ${rupiah(line.discount)}`}
+                      {!line.voided && <span className="ml-1 font-medium text-primary">· Ubah</span>}
                     </p>
                     {line.note && <p className="text-xs text-accent-foreground">* {line.note}</p>}
                     {line.staffName && (
@@ -1198,12 +1219,14 @@ function LineEditor({
   onSave,
   staffNames,
   showStaff,
+  onChangeOptions,
 }: {
   line: CartLine | null;
   onClose: () => void;
   onSave: (line: CartLine) => void;
   staffNames: string[];
   showStaff: boolean;
+  onChangeOptions?: ((line: CartLine) => void) | undefined;
 }) {
   const [draft, setDraft] = useState<CartLine | null>(line);
 
@@ -1276,7 +1299,12 @@ function LineEditor({
             </div>
           )}
         </div>
-        <DialogFooter>
+        <DialogFooter className="flex-col gap-2 sm:flex-col">
+          {onChangeOptions && !draft.sentToKitchen && (
+            <Button variant="outline" className="w-full" onClick={() => onChangeOptions(draft)}>
+              Ubah pilihan (varian / ukuran / topping / modifier)
+            </Button>
+          )}
           <Button className="w-full" onClick={() => onSave(draft)}>
             Simpan
           </Button>
