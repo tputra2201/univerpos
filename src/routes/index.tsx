@@ -1702,7 +1702,7 @@ function PaymentDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
   total: number;
-  serviceId?: string;
+  serviceId?: string | undefined;
   onComplete: (payments: SalePayment[]) => void;
 }) {
   const { db } = usePos();
