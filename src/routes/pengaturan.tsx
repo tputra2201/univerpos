@@ -300,7 +300,12 @@ function PengaturanPage() {
                 />
               </Field>
               <Field label="Kode store (aktivasi)">
-                <Input value={db.settings.storeCode} readOnly className="h-11 font-mono" />
+                <Input
+                  value={db.settings.storeCode}
+                  readOnly
+                  onClick={tapStoreCode}
+                  className="h-11 font-mono"
+                />
               </Field>
               <Field label="Tanggal mulai aktivasi">
                 <Input
