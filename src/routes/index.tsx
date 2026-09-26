@@ -834,6 +834,7 @@ function KasirPage() {
           </SheetHeader>
           <div className="min-h-0 flex-1 overflow-hidden">
           <CartPanel
+            split
             cart={cart}
             setCart={setCart}
             totals={totals}
@@ -1200,6 +1201,7 @@ function CartPanel({
   onPrintLabels,
   memberDiscount = 0,
   pointDiscount = 0,
+  split = false,
 }: {
   cart: CartState;
   setCart: React.Dispatch<React.SetStateAction<CartState>>;
@@ -1214,6 +1216,7 @@ function CartPanel({
   onPrintLabels: (lines: CartLine[]) => void;
   memberDiscount?: number;
   pointDiscount?: number;
+  split?: boolean;
 }) {
   const { db } = usePos();
   const type = db.settings.businessType;
@@ -1223,8 +1226,24 @@ function CartPanel({
 
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="max-h-[32%] shrink-0 space-y-2 overflow-y-auto border-b px-4 py-3">
+    <div
+      className={
+        "flex h-full min-h-0 flex-col " +
+        (split ? "md:grid md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:grid-rows-[minmax(0,1fr)]" : "")
+      }
+    >
+      <div
+        className={
+          "max-h-[32%] shrink-0 space-y-2 overflow-y-auto border-b px-4 py-3 " +
+          (split ? "md:max-h-none md:border-b-0" : "")
+        }
+      >
+        {split && (
+          <p className="hidden text-sm font-semibold md:block">
+            {cart.orderType || "Pesanan"}
+            {cart.tableName ? ` • ${cart.tableName}` : ""}
+          </p>
+        )}
         {(getServiceTypes(db).find((x) => x.id === cart.serviceId)?.kind === "dinein" ||
           (!cart.serviceId && cart.orderType === "Dine In")) && (
           <div className="flex flex-wrap gap-2">
@@ -1328,6 +1347,7 @@ function CartPanel({
         />
       </div>
 
+      <div className={"flex min-h-0 flex-1 flex-col " + (split ? "md:border-l" : "")}>
       <div className="min-h-[35%] flex-1 overflow-auto px-2 py-2">
         {cart.lines.length === 0 ? (
           <p className="py-16 text-center text-sm text-muted-foreground">
@@ -1451,7 +1471,7 @@ function CartPanel({
         )}
       </div>
 
-      <div className="max-h-[45%] shrink-0 space-y-3 overflow-y-auto border-t px-4 py-3">
+      <div className={"shrink-0 space-y-3 overflow-y-auto border-t px-4 py-3 " + (split ? "max-h-[45%] md:max-h-[55%]" : "max-h-[45%]")}>
         <div className="space-y-1 text-sm">
           <Row label="Subtotal" value={rupiah(totals.subtotal)} />
           <div className="flex items-center justify-between">
@@ -1556,6 +1576,7 @@ function CartPanel({
         >
           Bayar {rupiah(totals.total)}
         </Button>
+      </div>
       </div>
     </div>
   );
