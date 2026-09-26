@@ -207,7 +207,7 @@ function PengaturanPage() {
 
   return (
     <div>
-      <PageHeader title="Setup" description="Sesuaikan aplikasi dengan cara kerja store Anda." action={<Link to="/produk" className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Kelola Produk</Link>} />
+      <PageHeader title="Setup" description="Sesuaikan aplikasi dengan cara kerja store Anda." action={<div className="flex flex-wrap gap-2"><Link to="/produk" className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Kelola Produk</Link><Link to="/kontrol" className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold">Portal Kontrol</Link></div>} />
 
       <Tabs defaultValue="store" className="p-4 md:p-6">
         <TabsList>

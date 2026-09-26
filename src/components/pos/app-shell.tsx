@@ -25,6 +25,7 @@ import { KeyRound, UserPen } from "lucide-react";
 import { EditUserForm } from "@/components/pos/edit-user";
 import { ChangePinForm } from "@/components/pos/change-pin";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DevStoreSwitcher } from "@/components/pos/dev-store-switcher";
 
 const NAV: { to: string; label: string; icon: typeof ShoppingCart; perm: PermKey }[] = [
   { to: "/", label: "Kasir", icon: ShoppingCart, perm: "pos.access" },
@@ -118,6 +119,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               : online ? "Online — data tetap di perangkat" : "Offline — tetap bisa berjualan"}
           </div>
           {central && <p className="text-xs text-sidebar-foreground/60">{syncLabel}</p>}
+          <DevStoreSwitcher />
           <div className="text-sm">
             <p className="font-semibold">{currentUser?.name}</p>
             <p className="text-xs text-sidebar-foreground/60">
@@ -154,6 +156,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
           </div>
           <div className="flex items-center">
+          <DevStoreSwitcher compact />
           <EditProfileButton />
           <ChangePinButton />
           <Button variant="ghost" size="icon" onClick={signOut} aria-label="Keluar">
