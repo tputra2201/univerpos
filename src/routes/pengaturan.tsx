@@ -69,6 +69,20 @@ function PengaturanPage() {
   const { db, update, replaceAll, currentUser } = usePos();
   const [printLines, setPrintLines] = useState<string[] | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
+  const tapRef = useRef({ count: 0, at: 0 });
+
+  /** Ketuk kode store 5x cepat untuk membuka Portal Kontrol (tersembunyi dari pengguna biasa). */
+  function tapStoreCode() {
+    const now = Date.now();
+    const t = tapRef.current;
+    t.count = now - t.at > 1200 ? 1 : t.count + 1;
+    t.at = now;
+    if (t.count >= 5) {
+      t.count = 0;
+      navigate({ to: "/kontrol" });
+    }
+  }
 
   const [newUser, setNewUser] = useState({ name: "", email: "", whatsapp: "", role: "cashier" as UserRole });
   const [newMethod, setNewMethod] = useState("");
