@@ -945,11 +945,11 @@ function KasirPage() {
       </Dialog>
 
       <Sheet open={heldOpen} onOpenChange={setHeldOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-sm">
-          <SheetHeader>
-            <SheetTitle>Pesanan Tertahan</SheetTitle>
+        <SheetContent side="right" className="flex h-full w-full flex-col gap-0 sm:max-w-xl">
+          <SheetHeader className="shrink-0">
+            <SheetTitle>Pesanan Tertahan ({db.heldOrders.length})</SheetTitle>
           </SheetHeader>
-          <div className="space-y-2 overflow-auto px-4 pb-6">
+          <div className="grid min-h-0 flex-1 content-start gap-2 overflow-y-auto px-4 pb-6 sm:grid-cols-2">
             {db.heldOrders.length === 0 && (
               <p className="text-sm text-muted-foreground">Belum ada pesanan tertahan.</p>
             )}
