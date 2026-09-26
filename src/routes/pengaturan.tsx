@@ -6,7 +6,7 @@ import { deliverPin, pinMessage, randomPin } from "@/lib/pos/pin";
 import { EditUserForm } from "@/components/pos/edit-user";
 import { daysLeft, formatExpiry } from "@/lib/pos/expiry";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Bluetooth, Download, Plus, Trash2, Upload, Printer } from "lucide-react";
 import { toast } from "sonner";
@@ -69,6 +69,20 @@ function PengaturanPage() {
   const { db, update, replaceAll, currentUser } = usePos();
   const [printLines, setPrintLines] = useState<string[] | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
+  const tapRef = useRef({ count: 0, at: 0 });
+
+  /** Ketuk kode store 5x cepat untuk membuka Portal Kontrol (tersembunyi dari pengguna biasa). */
+  function tapStoreCode() {
+    const now = Date.now();
+    const t = tapRef.current;
+    t.count = now - t.at > 1200 ? 1 : t.count + 1;
+    t.at = now;
+    if (t.count >= 5) {
+      t.count = 0;
+      navigate({ to: "/kontrol" });
+    }
+  }
 
   const [newUser, setNewUser] = useState({ name: "", email: "", whatsapp: "", role: "cashier" as UserRole });
   const [newMethod, setNewMethod] = useState("");
@@ -206,7 +220,7 @@ function PengaturanPage() {
 
   return (
     <div>
-      <PageHeader title="Setup" description="Sesuaikan aplikasi dengan cara kerja store Anda." action={<div className="flex flex-wrap gap-2"><Link to="/produk" className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Kelola Produk</Link><Link to="/kontrol" className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold">Portal Kontrol</Link></div>} />
+      <PageHeader title="Setup" description="Sesuaikan aplikasi dengan cara kerja store Anda." action={<div className="flex flex-wrap gap-2"><Link to="/produk" className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Kelola Produk</Link></div>} />
 
       <Tabs defaultValue="store" className="p-4 md:p-6">
         <TabsList>
@@ -286,7 +300,12 @@ function PengaturanPage() {
                 />
               </Field>
               <Field label="Kode store (aktivasi)">
-                <Input value={db.settings.storeCode} readOnly className="h-11 font-mono" />
+                <Input
+                  value={db.settings.storeCode}
+                  readOnly
+                  onClick={tapStoreCode}
+                  className="h-11 font-mono"
+                />
               </Field>
               <Field label="Tanggal mulai aktivasi">
                 <Input
