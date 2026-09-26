@@ -195,7 +195,11 @@ export interface ServiceType {
   /** Penyesuaian harga global: nominal rupiah atau persen (boleh negatif). */
   priceAdjustMode?: "amount" | "percent";
   priceAdjustValue?: number;
+  /** Boleh bayar sebagian (split bill). Kosong = boleh. */
+  allowSplit?: boolean;
 }
+
+
 
 
 export interface Staff {

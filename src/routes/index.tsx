@@ -1685,6 +1685,7 @@ function PaymentDialog({
   onComplete: (payments: SalePayment[]) => void;
 }) {
   const { db } = usePos();
+  const allowSplit = (db.serviceTypes ?? []).find((s) => s.id === serviceId)?.allowSplit !== false;
   const methods = db.paymentMethods.filter(
     (m) =>
       m.active &&
@@ -1732,7 +1733,7 @@ function PaymentDialog({
       return false;
     }
     if (!method.isCash && amount && entered < remaining) {
-      toast.error("Nominal belum melunasi. Tekan \"Bayar sebagian\" atau kosongkan nominal.");
+      toast.error(allowSplit ? "Nominal belum melunasi. Tekan \"Bayar sebagian\" atau kosongkan nominal." : "Layanan ini harus dibayar lunas sekaligus.");
       return false;
     }
     return true;
@@ -1853,9 +1854,11 @@ function PaymentDialog({
           </div>
         ) : (
         <DialogFooter className="gap-2 sm:justify-between">
-          <Button variant="secondary" onClick={addSplit} disabled={remaining <= 0}>
-            Bayar sebagian
-          </Button>
+          {allowSplit ? (
+            <Button variant="secondary" onClick={addSplit} disabled={remaining <= 0}>
+              Bayar sebagian
+            </Button>
+          ) : <span />}
           <Button className="h-12 text-base font-bold" onClick={() => { if (validate()) setConfirming(true); }}>
             Selesaikan
           </Button>
