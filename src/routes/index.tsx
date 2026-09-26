@@ -1696,15 +1696,21 @@ function PaymentDialog({
   open,
   onOpenChange,
   total,
+  serviceId,
   onComplete,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   total: number;
+  serviceId?: string;
   onComplete: (payments: SalePayment[]) => void;
 }) {
   const { db } = usePos();
-  const methods = db.paymentMethods.filter((m) => m.active);
+  const methods = db.paymentMethods.filter(
+    (m) =>
+      m.active &&
+      (!m.serviceIds || m.serviceIds.length === 0 || !serviceId || m.serviceIds.includes(serviceId)),
+  );
   const [methodId, setMethodId] = useState(methods[0]?.id ?? "");
   const [amount, setAmount] = useState("");
   const [split, setSplit] = useState<SalePayment[]>([]);
