@@ -6,7 +6,7 @@ import { deliverPin, pinMessage, randomPin } from "@/lib/pos/pin";
 import { EditUserForm } from "@/components/pos/edit-user";
 import { daysLeft, formatExpiry } from "@/lib/pos/expiry";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Bluetooth, Download, Plus, Trash2, Upload, Printer } from "lucide-react";
 import { toast } from "sonner";
@@ -207,7 +207,7 @@ function PengaturanPage() {
 
   return (
     <div>
-      <PageHeader title="Pengaturan" description="Sesuaikan aplikasi dengan cara kerja store Anda." />
+      <PageHeader title="Setup" description="Sesuaikan aplikasi dengan cara kerja store Anda." action={<Link to="/produk" className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Kelola Produk</Link>} />
 
       <Tabs defaultValue="store" className="p-4 md:p-6">
         <TabsList>
