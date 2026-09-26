@@ -94,6 +94,7 @@ export type Database = {
           device_token: string
           id: string
           is_active: boolean
+          is_developer: boolean
           last_seen_at: string
           store_id: string
         }
@@ -104,6 +105,7 @@ export type Database = {
           device_token: string
           id?: string
           is_active?: boolean
+          is_developer?: boolean
           last_seen_at?: string
           store_id: string
         }
@@ -114,6 +116,7 @@ export type Database = {
           device_token?: string
           id?: string
           is_active?: boolean
+          is_developer?: boolean
           last_seen_at?: string
           store_id?: string
         }
@@ -356,6 +359,18 @@ export type Database = {
           expires_at: string
           has_data: boolean
           mode: string
+        }[]
+      }
+      dev_attach_device: {
+        Args: { _code: string; _device_name: string; _token: string }
+        Returns: {
+          activation_key: string
+          business_type_name: string
+          code: string
+          expires_at: string
+          has_data: boolean
+          mode: string
+          name: string
         }[]
       }
       developer_contact: {
