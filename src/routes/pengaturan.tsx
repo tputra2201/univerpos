@@ -565,11 +565,18 @@ function PengaturanPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Metode Pembayaran</CardTitle>
-              <CardDescription>Nonaktifkan yang tidak dipakai agar kasir lebih cepat.</CardDescription>
+              <CardDescription>
+                Nonaktifkan yang tidak dipakai agar kasir lebih cepat. Centang jenis layanan bila metode
+                ini hanya boleh dipakai pada layanan tertentu.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              {db.paymentMethods.map((m) => (
-                <div key={m.id} className="flex items-center gap-3 rounded-lg border p-3">
+              {db.paymentMethods.map((m) => {
+                const svcAll = getServiceTypes(db);
+                const picked = m.serviceIds ?? [];
+                return (
+                <div key={m.id} className="space-y-2 rounded-lg border p-3">
+                  <div className="flex items-center gap-3">
                   <Input
                     value={m.name}
                     onChange={(e) =>
@@ -609,8 +616,41 @@ function PengaturanPage() {
                       <Trash2 className="size-4" />
                     </Button>
                   )}
+                  </div>
+                  <div className="space-y-2 border-t pt-2">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Tersedia untuk jenis layanan{picked.length === 0 && " — semua layanan"}
+                    </p>
+                    <div className="flex flex-wrap gap-3">
+                      {svcAll.map((s) => (
+                        <label key={s.id} className="flex items-center gap-2 text-sm">
+                          <Switch
+                            checked={picked.length === 0 || picked.includes(s.id)}
+                            onCheckedChange={(v) =>
+                              update((current) => ({
+                                ...current,
+                                paymentMethods: current.paymentMethods.map((x) => {
+                                  if (x.id !== m.id) return x;
+                                  const base =
+                                    x.serviceIds && x.serviceIds.length
+                                      ? x.serviceIds
+                                      : svcAll.map((y) => y.id);
+                                  const next = v
+                                    ? [...new Set([...base, s.id])]
+                                    : base.filter((id) => id !== s.id);
+                                  return { ...x, serviceIds: next };
+                                }),
+                              }))
+                            }
+                          />
+                          {s.name}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              ))}
+                );
+              })}
               <div className="flex gap-2">
                 <Input
                   value={newMethod}
@@ -727,6 +767,12 @@ function PengaturanPage() {
                 desc="Tanpa pratinjau, langsung ke dialog cetak."
                 checked={db.printer.autoPrintOnPay}
                 onCheckedChange={(v) => setPrinter({ autoPrintOnPay: v })}
+              />
+              <ToggleRow
+                title="Cetak saat kirim ke dapur"
+                desc="Matikan bila ada pesanan yang tidak perlu dicetak ke dapur/bar. Pesanan tetap masuk antrean dapur."
+                checked={db.printer.autoPrintOnSend !== false}
+                onCheckedChange={(v) => setPrinter({ autoPrintOnSend: v })}
               />
               <div className="flex flex-wrap items-center gap-2">
                 <Button
