@@ -92,6 +92,7 @@ export function PosProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = useCallback((user: PosUser) => {
+    if (user.id.startsWith("dev:")) writeLocal("wo-pos-dev-name", user.name);
     writeLocal(SESSION_STORAGE_KEY, user.id);
     setUserId(user.id);
   }, []);
@@ -101,10 +102,13 @@ export function PosProvider({ children }: { children: ReactNode }) {
     setUserId(null);
   }, []);
 
-  const currentUser = useMemo(
-    () => db.users.find((u) => u.id === userId) ?? null,
-    [db.users, userId],
-  );
+  const currentUser = useMemo<PosUser | null>(() => {
+    if (userId?.startsWith("dev:")) {
+      // Akun developer: masuk sebagai Pemilik tanpa PIN, tidak disimpan di data store.
+      return { id: userId, name: readLocal<string>("wo-pos-dev-name") ?? "Developer", role: "owner", pin: "" };
+    }
+    return db.users.find((u) => u.id === userId) ?? null;
+  }, [db.users, userId]);
 
   const value = useMemo<PosContextValue>(
     () => ({ ready, db, update, replaceAll, currentUser, signIn, signOut }),
