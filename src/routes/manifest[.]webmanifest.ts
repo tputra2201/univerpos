@@ -17,7 +17,25 @@ export const Route = createFileRoute("/manifest.webmanifest")({
               { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
             ];
         return new Response(
-          JSON.stringify({ name: b.name, short_name: b.name.slice(0, 12), start_url: "/", scope: "/", display: "standalone", background_color: "#ffffff", theme_color: "#04585a", icons }),
+          JSON.stringify({
+            name: b.name,
+            short_name: b.name.slice(0, 12),
+            start_url: "/",
+            scope: "/",
+            display: "standalone",
+            background_color: "#ffffff",
+            theme_color: "#04585a",
+            icons,
+            shortcuts: [
+              {
+                name: "Portal Kontrol",
+                short_name: "Kontrol",
+                description: "Buka halaman Kontrol & Rilis",
+                url: "/kontrol",
+                icons: [{ src: icons[0]!.src, sizes: "192x192", type: "image/png" }],
+              },
+            ],
+          }),
           { headers: { "content-type": "application/manifest+json", "cache-control": "public, max-age=300" } },
         );
       },
