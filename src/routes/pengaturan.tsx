@@ -1110,6 +1110,13 @@ export function ServiceTypesCard() {
             >
               <Trash2 className="size-4" />
             </Button>
+            <label className="flex w-full items-center gap-2 border-t pt-2 text-sm">
+              <Switch
+                checked={svc.allowSplit !== false}
+                onCheckedChange={(v) => patch(svc.id, { allowSplit: v })}
+              />
+              Boleh bayar sebagian (split bill)
+            </label>
             <div className="flex w-full flex-wrap items-center gap-2 border-t pt-2">
               <span className="text-xs text-muted-foreground">Penyesuaian harga</span>
               <AdjustInput
