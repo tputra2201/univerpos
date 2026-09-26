@@ -147,7 +147,7 @@ export function useRangeSales(range: ReportRange): Sale[] {
 
 function Row({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
   return (
-    <div className={`flex flex-wrap justify-between gap-2 ${bold ? "font-bold" : ""}`}>
+    <div data-print-row className={`flex flex-wrap justify-between gap-2 ${bold ? "font-bold" : ""}`}>
       <span className={bold ? "" : "text-muted-foreground"}>{label}</span>
       <span className="tabular">{value}</span>
     </div>
@@ -158,7 +158,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">{title}</CardTitle>
+        <CardTitle data-print-title className="text-base">{title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-1.5 text-sm">{children}</CardContent>
     </Card>
@@ -306,7 +306,7 @@ export function StatsReport({ range }: { range: ReportRange }) {
     <div className="grid gap-4 lg:grid-cols-2">
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Produk Terlaku</CardTitle>
+          <CardTitle data-print-title className="text-base">Produk Terlaku</CardTitle>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           {data.products.length === 0 ? (
@@ -391,7 +391,7 @@ export function MethodReport({
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">
+        <CardTitle data-print-title className="text-base">
           {title} · {rows.length} transaksi · {rupiah(total)}
         </CardTitle>
       </CardHeader>
@@ -467,7 +467,7 @@ export function CashierReport({ range }: { range: ReportRange }) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">Transaksi per Kasir</CardTitle>
+        <CardTitle data-print-title className="text-base">Transaksi per Kasir</CardTitle>
       </CardHeader>
       <CardContent className="overflow-x-auto">
         {rows.length === 0 ? (
@@ -515,7 +515,7 @@ export function CloseOutReport({ range }: { range: ReportRange }) {
     <div className="space-y-4">
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Cash Close Out</CardTitle>
+          <CardTitle data-print-title className="text-base">Cash Close Out</CardTitle>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           {shifts.length === 0 ? (
@@ -637,7 +637,7 @@ export function VoidReport({ range }: { range: ReportRange }) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">
+        <CardTitle data-print-title className="text-base">
           Laporan VOID · {rows.length} kejadian · {rupiah(total)}
         </CardTitle>
       </CardHeader>

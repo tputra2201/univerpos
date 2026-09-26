@@ -21,7 +21,9 @@ import { usePos } from "@/lib/pos/store";
 import { hasPerm } from "@/lib/pos/permissions";
 import { FINANCE_KINDS } from "@/lib/pos/finance";
 import { dateTime, rupiah } from "@/lib/pos/format";
-import { buildReport } from "@/lib/pos/receipt";
+import { buildReport, buildTabReport } from "@/lib/pos/receipt";
+import { blocksFromElement } from "@/lib/pos/report-print";
+import { printerFor } from "@/lib/pos/printers";
 import { exportReportExcel } from "@/lib/pos/report-excel";
 import { defaultRange, inRange, rangeLabel, type ReportRange } from "@/lib/pos/report-range";
 import { activeShiftOf, salesOfShift, summarize, financeOfShift } from "@/lib/pos/shift";
@@ -62,6 +64,9 @@ function LaporanPage() {
   const [printTitle, setPrintTitle] = useState("Laporan");
   const [range, setRange] = useState<ReportRange>(() => defaultRange(db.settings));
 
+  const [tab, setTab] = useState("company");
+  const tabLabel =
+    TAB_LABEL[tab] ?? FINANCE_KINDS.find((k) => `fin-${k.kind}` === tab)?.label ?? "Laporan";
   const shift = activeShiftOf(db);
   const rangeSales = useMemo(
     () => db.sales.filter((s) => inRange(s.createdAt, range) && s.status === "paid"),
@@ -103,12 +108,12 @@ function LaporanPage() {
   }
 
   function printRange() {
+    const panel = document.querySelector('[role="tabpanel"][data-state="active"]');
+    if (!panel) return;
+    const width = printerFor(db, "report").paperWidth;
     show(
-      "Laporan Periode",
-      buildReport(
-        { title: "LAPORAN PERIODE", from: rangeLabel(range), to: "", sales: rangeSales },
-        db,
-      ),
+      `Cetak ${tabLabel}`,
+      buildTabReport(tabLabel, rangeLabel(range), blocksFromElement(panel), db, width),
     );
   }
 
@@ -123,7 +128,7 @@ function LaporanPage() {
               <Printer className="size-4" /> Laporan X
             </Button>
             <Button variant="secondary" className="gap-2" onClick={printRange}>
-              <Printer className="size-4" /> Cetak Periode
+              <Printer className="size-4" /> Cetak {tabLabel}
             </Button>
             <Button
               variant="secondary"
@@ -157,7 +162,7 @@ function LaporanPage() {
           />
         </div>
 
-        <Tabs defaultValue="company">
+        <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="h-auto flex-wrap justify-start">
             <TabsTrigger value="company">Company Report</TabsTrigger>
             <TabsTrigger value="closeout">Close Out</TabsTrigger>
@@ -232,10 +237,23 @@ function LaporanPage() {
         onOpenChange={(v) => !v && setPrintLines(null)}
         title={printTitle}
         lines={printLines ?? []}
+        role="report"
       />
     </div>
   );
 }
+
+const TAB_LABEL: Record<string, string> = {
+  company: "Company Report",
+  closeout: "Close Out",
+  statistik: "Statistik",
+  qris: "QRIS",
+  transfer: "Transfer & Kartu",
+  online: "Order Online",
+  kasir: "Per Kasir",
+  void: "VOID",
+  finance: "Finance",
+};
 
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string | undefined }) {
   return (
