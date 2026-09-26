@@ -35,7 +35,7 @@ const NAV: { to: string; label: string; icon: typeof ShoppingCart; perm: PermKey
   { to: "/transaksi", label: "Transaksi", icon: ReceiptText, perm: "transaction.view" },
 
   { to: "/laporan", label: "Laporan", icon: BarChart3, perm: "report.view" },
-  { to: "/pengaturan", label: "Pengaturan", icon: Settings, perm: "settings.manage" },
+  { to: "/pengaturan", label: "Setup", icon: Settings, perm: "settings.manage" },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -173,9 +173,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t bg-card/95 backdrop-blur md:hidden">
-        {items.map((item) => {
+        {items.filter((n) => n.to !== "/produk").map((item) => {
           const Icon = item.icon;
-          const active = pathname === item.to;
+          const active = pathname === item.to || (item.to === "/pengaturan" && pathname === "/produk");
           return (
             <Link
               key={item.to}
