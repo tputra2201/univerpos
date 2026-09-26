@@ -1090,9 +1090,19 @@ function ServicePicker({
 
       {mode === "" && (
         <div className="grid gap-3 sm:grid-cols-3">
-          {services.map((svc) => {
+          {services.flatMap((svc) => {
             const Icon = ICON[svc.kind];
-            return (
+            if (svc.kind === "online") {
+              // Aplikasi online tampil langsung sebagai jenis layanan (tanpa sub-menu).
+              return channels.map((c) => (
+                <button key={`${svc.id}-${c.id}`} type="button" className={big} onClick={() => onPick(c.name, "", svc.id)}>
+                  <Icon className="size-8 text-primary" />
+                  <span className="text-lg font-semibold">{c.name}</span>
+                  <span className="font-mono text-xs text-muted-foreground">{svc.code}</span>
+                </button>
+              ));
+            }
+            return [
               <button
                 key={svc.id}
                 type="button"
@@ -1102,8 +1112,8 @@ function ServicePicker({
                 <Icon className="size-8 text-primary" />
                 <span className="text-lg font-semibold">{svc.name}</span>
                 <span className="font-mono text-xs text-muted-foreground">{svc.code}</span>
-              </button>
-            );
+              </button>,
+            ];
           })}
           {services.length === 0 && (
             <p className="col-span-full text-sm text-muted-foreground">
