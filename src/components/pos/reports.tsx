@@ -1,4 +1,5 @@
 /** Kumpulan laporan berbasis rentang waktu (hari usaha). */
+import { getServiceTypes } from "@/lib/pos/seed";
 import { useMemo } from "react";
 import { usePos } from "@/lib/pos/store";
 import { dateTime, rupiah } from "@/lib/pos/format";
@@ -756,7 +757,10 @@ export function FinanceReport({ range, kind }: { range: ReportRange; kind?: Fina
 /** Laporan order online per aplikasi (Grab, Shopee, GoFood, dll). */
 export function OnlineOrderReport({ range }: { range: ReportRange }) {
   const { db } = usePos();
-  const names = new Set((db.onlineChannels ?? []).map((c) => c.name));
+  const names = new Set([
+    ...(db.onlineChannels ?? []).map((c) => c.name),
+    ...getServiceTypes(db).filter((s) => s.kind === "online").map((s) => s.name),
+  ]);
   const sales = useRangeSales(range).filter(
     (s) => s.status === "paid" && !!s.orderType && names.has(s.orderType),
   );

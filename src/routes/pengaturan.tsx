@@ -72,7 +72,6 @@ function PengaturanPage() {
 
   const [newUser, setNewUser] = useState({ name: "", email: "", whatsapp: "", role: "cashier" as UserRole });
   const [newMethod, setNewMethod] = useState("");
-  const [newChannel, setNewChannel] = useState("");
   const [newTable, setNewTable] = useState("");
   const [newStaff, setNewStaff] = useState("");
 
@@ -223,7 +222,6 @@ function PengaturanPage() {
           <TabsTrigger value="printer">Printer</TabsTrigger>
           <TabsTrigger value="operasional">Meja & Staf</TabsTrigger>
           <TabsTrigger value="perangkat">Perangkat</TabsTrigger>
-          <TabsTrigger value="online">Aplikasi Online</TabsTrigger>
           <TabsTrigger value="finance">Finance</TabsTrigger>
           <TabsTrigger value="member">Member</TabsTrigger>
 
@@ -917,109 +915,6 @@ function PengaturanPage() {
           <ServiceTypesCard />
         </TabsContent>
 
-        <TabsContent value="online" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Aplikasi Online Order</CardTitle>
-              <CardDescription>
-                Pilihan yang aktif tampil saat kasir memilih layanan "Online Order".
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {(db.onlineChannels ?? []).map((c) => (
-                <div key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2">
-                  <span className="font-medium">{c.name}</span>
-                  <div className="flex items-center gap-3">
-                    <Switch
-                      checked={c.active}
-                      onCheckedChange={(v) =>
-                        update((current) => ({
-                          ...current,
-                          onlineChannels: current.onlineChannels.map((x) =>
-                            x.id === c.id ? { ...x, active: v } : x,
-                          ),
-                        }))
-                      }
-                    />
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      aria-label={`Hapus ${c.name}`}
-                      onClick={() =>
-                        update((current) => ({
-                          ...current,
-                          onlineChannels: current.onlineChannels.filter((x) => x.id !== c.id),
-                        }))
-                      }
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </div>
-                  <div className="flex w-full flex-wrap items-center gap-2 border-t pt-2">
-                    <span className="text-xs text-muted-foreground">Penyesuaian harga</span>
-                    <AdjustInput
-                      label={`Penyesuaian harga ${c.name}`}
-                      value={c.priceAdjustValue ?? 0}
-                      onChange={(v) =>
-                        update((current) => ({
-                          ...current,
-                          onlineChannels: current.onlineChannels.map((x) =>
-                            x.id === c.id ? { ...x, priceAdjustValue: v } : x,
-                          ),
-                        }))
-                      }
-                    />
-                    <Select
-                      value={c.priceAdjustMode ?? "amount"}
-                      onValueChange={(v) =>
-                        update((current) => ({
-                          ...current,
-                          onlineChannels: current.onlineChannels.map((x) =>
-                            x.id === c.id ? { ...x, priceAdjustMode: v as "amount" | "percent" } : x,
-                          ),
-                        }))
-                      }
-                    >
-                      <SelectTrigger className="h-9 w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="amount">Rupiah</SelectItem>
-                        <SelectItem value="percent">Persen (%)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <span className="text-xs text-muted-foreground">
-                      Kosong = ikut jenis layanan. Minus untuk mengurangi.
-                    </span>
-                  </div>
-                </div>
-              ))}
-              <div className="flex gap-2">
-                <Input
-                  value={newChannel}
-                  onChange={(e) => setNewChannel(e.target.value)}
-                  placeholder="Nama aplikasi, mis. Maxim Food"
-                  className="h-10 max-w-64"
-                />
-                <Button
-                  onClick={() => {
-                    if (!newChannel.trim()) return;
-                    update((current) => ({
-                      ...current,
-                      onlineChannels: [
-                        ...(current.onlineChannels ?? []),
-                        { id: uid("oc"), name: newChannel.trim(), active: true },
-                      ],
-                    }));
-                    setNewChannel("");
-                  }}
-                >
-                  Tambah
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         <TabsContent value="finance" className="space-y-4">
           <FinanceSettings />
@@ -1161,7 +1056,8 @@ export function ServiceTypesCard() {
   const [draft, setDraft] = useState({ name: "", code: "", kind: "takeout" as ServiceKind });
 
   function save(next: ServiceType[]) {
-    update((current) => ({ ...current, serviceTypes: next }));
+    // Aplikasi online kini tersimpan langsung sebagai jenis layanan.
+    update((current) => ({ ...current, serviceTypes: next, onlineChannels: [] }));
   }
   function patch(id: string, values: Partial<ServiceType>) {
     save(services.map((x) => (x.id === id ? { ...x, ...values } : x)));

@@ -195,14 +195,8 @@ function KasirPage() {
 
 
   const activeService = useMemo(
-    () => {
-      const svc = getServiceTypes(db).find((s) => s.id === cart.serviceId);
-      if (!svc || svc.kind !== "online") return svc;
-      const ch = (db.onlineChannels ?? []).find((c) => c.name === cart.orderType);
-      if (!ch?.priceAdjustValue) return svc;
-      return { ...svc, priceAdjustMode: ch.priceAdjustMode ?? "amount", priceAdjustValue: ch.priceAdjustValue } as ServiceType;
-    },
-    [db, cart.serviceId, cart.orderType],
+    () => getServiceTypes(db).find((s) => s.id === cart.serviceId),
+    [db, cart.serviceId],
   );
 
   const visibleCategories = useMemo(
@@ -1064,9 +1058,8 @@ function ServicePicker({
 }) {
   const { db } = usePos();
   const [picked, setPicked] = useState<ServiceType | null>(null);
-  const mode = picked?.kind === "dinein" ? "dinein" : picked?.kind === "online" ? "online" : "";
+  const mode = picked?.kind === "dinein" ? "dinein" : "";
   const services = getServiceTypes(db).filter((x) => x.active);
-  const channels = (db.onlineChannels ?? []).filter((c) => c.active);
   const ICON = { takeout: ShoppingBag, dinein: Utensils, online: Bike } as const;
 
   const big =
@@ -1076,7 +1069,7 @@ function ServicePicker({
     <div className="flex w-full flex-col gap-5">
       <div>
         <h1 className="text-lg font-bold">
-          {mode === "dinein" ? `${picked?.name} — Pilih Meja / Room` : mode === "online" ? `${picked?.name} — Pilih Aplikasi` : "Pilih Jenis Layanan"}
+          {mode === "dinein" ? `${picked?.name} — Pilih Meja / Room` : "Pilih Jenis Layanan"}
         </h1>
         <p className="text-sm text-muted-foreground">
           {mode === "" ? "Tentukan layanan sebelum memilih menu." : "Ketuk salah satu untuk lanjut ke menu."}
@@ -1090,30 +1083,20 @@ function ServicePicker({
 
       {mode === "" && (
         <div className="grid gap-3 sm:grid-cols-3">
-          {services.flatMap((svc) => {
+          {services.map((svc) => {
             const Icon = ICON[svc.kind];
-            if (svc.kind === "online") {
-              // Aplikasi online tampil langsung sebagai jenis layanan (tanpa sub-menu).
-              return channels.map((c) => (
-                <button key={`${svc.id}-${c.id}`} type="button" className={big} onClick={() => onPick(c.name, "", svc.id)}>
-                  <Icon className="size-8 text-primary" />
-                  <span className="text-lg font-semibold">{c.name}</span>
-                  <span className="font-mono text-xs text-muted-foreground">{svc.code}</span>
-                </button>
-              ));
-            }
-            return [
+            return (
               <button
                 key={svc.id}
                 type="button"
                 className={big}
-                onClick={() => (svc.kind === "takeout" ? onPick(svc.name, "", svc.id) : setPicked(svc))}
+                onClick={() => (svc.kind === "dinein" ? setPicked(svc) : onPick(svc.name, "", svc.id))}
               >
                 <Icon className="size-8 text-primary" />
                 <span className="text-lg font-semibold">{svc.name}</span>
                 <span className="font-mono text-xs text-muted-foreground">{svc.code}</span>
-              </button>,
-            ];
+              </button>
+            );
           })}
           {services.length === 0 && (
             <p className="col-span-full text-sm text-muted-foreground">
@@ -1155,20 +1138,6 @@ function ServicePicker({
         </div>
       )}
 
-      {mode === "online" && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {channels.map((c) => (
-            <button key={c.id} type="button" className={big + " min-h-20"} onClick={() => onPick(c.name, "", picked!.id)}>
-              <span className="text-lg font-semibold">{c.name}</span>
-            </button>
-          ))}
-          {channels.length === 0 && (
-            <p className="col-span-full text-sm text-muted-foreground">
-              Belum ada aplikasi online aktif. Atur di Pengaturan → Online Order.
-            </p>
-          )}
-        </div>
-      )}
 
       {mode === "" && db.heldOrders.length > 0 && (
         <div className="space-y-2">

@@ -28,12 +28,33 @@ export function defaultServiceTypes(): ServiceType[] {
   return [
     { id: "svc_takeout", name: "Take Out", code: "TO", kind: "takeout", active: true },
     { id: "svc_dinein", name: "Dine In", code: "DI", kind: "dinein", active: true },
-    { id: "svc_online", name: "Online Order", code: "OL", kind: "online", active: true },
+    { id: "svc_grab", name: "GrabFood", code: "GF", kind: "online", active: true, priceAdjustMode: "percent", priceAdjustValue: 0 },
+    { id: "svc_gofood", name: "GoFood", code: "GO", kind: "online", active: true, priceAdjustMode: "percent", priceAdjustValue: 0 },
+    { id: "svc_shopee", name: "ShopeeFood", code: "SF", kind: "online", active: true, priceAdjustMode: "percent", priceAdjustValue: 0 },
   ];
 }
 
+/**
+ * Jenis layanan. Data lama (satu layanan "Online Order" + daftar aplikasi terpisah)
+ * otomatis dipecah: tiap aplikasi menjadi jenis layanan sendiri.
+ */
 export function getServiceTypes(db: PosDatabase): ServiceType[] {
-  return db.serviceTypes ?? defaultServiceTypes();
+  const base = db.serviceTypes ?? defaultServiceTypes();
+  const channels = db.onlineChannels ?? [];
+  if (!channels.length) return base;
+  return base.flatMap((svc) => {
+    if (svc.kind !== "online") return [svc];
+    return channels.map((c) => ({
+      ...svc,
+      id: `${svc.id}_${c.id}`,
+      name: c.name,
+      code: c.name.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 2) || svc.code,
+      active: svc.active && c.active,
+      ...(c.priceAdjustValue
+        ? { priceAdjustMode: c.priceAdjustMode ?? "amount", priceAdjustValue: c.priceAdjustValue }
+        : {}),
+    }));
+  });
 }
 
 export function emptyDatabase(): PosDatabase {
@@ -77,11 +98,7 @@ export function emptyDatabase(): PosDatabase {
     ],
     tables: [],
     staff: [],
-    onlineChannels: [
-      { id: "oc_grab", name: "GrabFood", active: true },
-      { id: "oc_gofood", name: "GoFood", active: true },
-      { id: "oc_shopee", name: "ShopeeFood", active: true },
-    ],
+    onlineChannels: [],
     serviceTypes: defaultServiceTypes(),
     sales: [],
     heldOrders: [],
