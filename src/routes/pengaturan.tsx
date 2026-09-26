@@ -6,7 +6,7 @@ import { deliverPin, pinMessage, randomPin } from "@/lib/pos/pin";
 import { EditUserForm } from "@/components/pos/edit-user";
 import { daysLeft, formatExpiry } from "@/lib/pos/expiry";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Bluetooth, Download, Plus, Trash2, Upload, Printer } from "lucide-react";
 import { toast } from "sonner";
