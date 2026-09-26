@@ -1138,20 +1138,6 @@ function ServicePicker({
         </div>
       )}
 
-      {mode === "online" && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {channels.map((c) => (
-            <button key={c.id} type="button" className={big + " min-h-20"} onClick={() => onPick(c.name, "", picked!.id)}>
-              <span className="text-lg font-semibold">{c.name}</span>
-            </button>
-          ))}
-          {channels.length === 0 && (
-            <p className="col-span-full text-sm text-muted-foreground">
-              Belum ada aplikasi online aktif. Atur di Pengaturan → Online Order.
-            </p>
-          )}
-        </div>
-      )}
 
       {mode === "" && db.heldOrders.length > 0 && (
         <div className="space-y-2">

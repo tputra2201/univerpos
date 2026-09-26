@@ -1,4 +1,5 @@
 /** Kumpulan laporan berbasis rentang waktu (hari usaha). */
+import { getServiceTypes } from "@/lib/pos/seed";
 import { useMemo } from "react";
 import { usePos } from "@/lib/pos/store";
 import { dateTime, rupiah } from "@/lib/pos/format";
