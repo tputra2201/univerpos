@@ -210,6 +210,13 @@ function KontrolPage() {
             </Button>
           )}
         </div>
+        {user && isDev && (
+          <div className="flex flex-wrap items-center gap-3 rounded-xl bg-card p-3 text-card-foreground">
+            <span className="text-sm font-semibold">Masuk ke store (online):</span>
+            <div className="min-w-48 flex-1"><DevStoreSwitcher /></div>
+            <a href="/" className="rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground">Buka Kasir</a>
+          </div>
+        )}
         {!user ? (
           <DevLogin />
         ) : !isDev ? (
