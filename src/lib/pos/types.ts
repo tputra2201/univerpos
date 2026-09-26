@@ -64,6 +64,8 @@ export interface PrinterSettings {
   marginTop: number;
   marginBottom: number;
   autoPrintOnPay: boolean;
+  /** Cetak tiket/label otomatis saat pesanan dikirim ke dapur. Kosong = ya. */
+  autoPrintOnSend?: boolean;
   deviceName: string;
   /** ID izin Web Bluetooth untuk menyambungkan kembali printer yang sama. */
   deviceId?: string;
@@ -163,6 +165,8 @@ export interface PaymentMethod {
   name: string;
   isCash: boolean;
   active: boolean;
+  /** Hanya tampil untuk jenis layanan ini. Kosong = semua layanan. */
+  serviceIds?: string[];
 }
 
 export interface TableRef {

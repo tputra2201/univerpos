@@ -426,7 +426,7 @@ function KasirPage() {
     if (cart.heldId) saveHeld({ lines, orderNo, sentToKitchen: true });
     setCart((prev) => ({ ...prev, lines, orderNo, sentToKitchen: true, kitchenId }));
     toast.success(`Pesanan ${orderNo} dikirim ke dapur.`);
-    printStations(sale);
+    if (db.printer.autoPrintOnSend !== false) printStations(sale);
   }
 
   /** Cetak label manual dari keranjang (satu menu atau semua), ke printer Kitchen/Bar sesuai menu. */
@@ -921,6 +921,7 @@ function KasirPage() {
         open={payOpen}
         onOpenChange={setPayOpen}
         total={totals.total}
+        serviceId={cart.serviceId}
         onComplete={completeSale}
       />
 
@@ -931,7 +932,14 @@ function KasirPage() {
           </DialogHeader>
           <ServicePicker
             onPick={(orderType, tableName, serviceId) => {
-              setCart((prev) => ({ ...EMPTY_CART, ...(prev.lines.length ? prev : {}), orderType, tableName, serviceId }));
+              setCart((prev) => ({
+                ...EMPTY_CART,
+                ...(prev.lines.length ? prev : {}),
+                orderType,
+                tableName,
+                serviceId,
+                customerName: prev.lines.length && prev.customerName ? prev.customerName : tableName ? "" : orderType,
+              }));
               setPickerOpen(false);
             }}
             onOpenHeld={(id) => {
@@ -1688,15 +1696,21 @@ function PaymentDialog({
   open,
   onOpenChange,
   total,
+  serviceId,
   onComplete,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   total: number;
+  serviceId?: string | undefined;
   onComplete: (payments: SalePayment[]) => void;
 }) {
   const { db } = usePos();
-  const methods = db.paymentMethods.filter((m) => m.active);
+  const methods = db.paymentMethods.filter(
+    (m) =>
+      m.active &&
+      (!m.serviceIds || m.serviceIds.length === 0 || !serviceId || m.serviceIds.includes(serviceId)),
+  );
   const [methodId, setMethodId] = useState(methods[0]?.id ?? "");
   const [amount, setAmount] = useState("");
   const [split, setSplit] = useState<SalePayment[]>([]);
