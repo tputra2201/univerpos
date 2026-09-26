@@ -147,7 +147,7 @@ export function useRangeSales(range: ReportRange): Sale[] {
 
 function Row({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
   return (
-    <div className={`flex flex-wrap justify-between gap-2 ${bold ? "font-bold" : ""}`}>
+    <div data-print-row className={`flex flex-wrap justify-between gap-2 ${bold ? "font-bold" : ""}`}>
       <span className={bold ? "" : "text-muted-foreground"}>{label}</span>
       <span className="tabular">{value}</span>
     </div>
@@ -158,7 +158,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">{title}</CardTitle>
+        <CardTitle data-print-title className="text-base">{title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-1.5 text-sm">{children}</CardContent>
     </Card>

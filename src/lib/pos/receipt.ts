@@ -265,3 +265,37 @@ export function buildReport(
 export function receiptTotalsPreview(sale: Sale): string {
   return rupiah(sale.total);
 }
+
+/** Satu baris isi laporan: judul bagian, dua kolom, atau teks bebas. */
+export type ReportBlock =
+  | { type: "title"; text: string }
+  | { type: "row"; label: string; value: string }
+  | { type: "text"; text: string };
+
+/** Cetak laporan sesuai isi tab yang sedang dibuka. */
+export function buildTabReport(
+  title: string,
+  period: string,
+  blocks: ReportBlock[],
+  db: PosDatabase,
+  width: number,
+): string[] {
+  const out = headerLines(db.settings, db.printer, width);
+  out.push(divider(width, "="));
+  out.push(center(title.toUpperCase(), width));
+  wrap(period, width).forEach((l) => out.push(center(l, width)));
+  for (const b of blocks) {
+    if (b.type === "title") {
+      out.push(divider(width));
+      out.push(b.text.toUpperCase().slice(0, width));
+    } else if (b.type === "row") {
+      out.push(twoCol(b.label, b.value, width));
+    } else {
+      wrap(b.text, width).forEach((l) => out.push(l));
+    }
+  }
+  out.push(divider(width, "="));
+  out.push(`Dicetak ${new Date().toLocaleString("id-ID")}`.slice(0, width));
+  out.push("", "", "");
+  return out;
+}
