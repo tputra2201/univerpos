@@ -1223,8 +1223,8 @@ function CartPanel({
 
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="space-y-2 border-b px-4 py-3">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="max-h-[32%] shrink-0 space-y-2 overflow-y-auto border-b px-4 py-3">
         {(getServiceTypes(db).find((x) => x.id === cart.serviceId)?.kind === "dinein" ||
           (!cart.serviceId && cart.orderType === "Dine In")) && (
           <div className="flex flex-wrap gap-2">
@@ -1328,7 +1328,7 @@ function CartPanel({
         />
       </div>
 
-      <div className="flex-1 overflow-auto px-2 py-2">
+      <div className="min-h-[35%] flex-1 overflow-auto px-2 py-2">
         {cart.lines.length === 0 ? (
           <p className="py-16 text-center text-sm text-muted-foreground">
             Keranjang kosong. Pilih produk untuk mulai transaksi.
@@ -1451,7 +1451,7 @@ function CartPanel({
         )}
       </div>
 
-      <div className="space-y-3 border-t px-4 py-3">
+      <div className="max-h-[45%] shrink-0 space-y-3 overflow-y-auto border-t px-4 py-3">
         <div className="space-y-1 text-sm">
           <Row label="Subtotal" value={rupiah(totals.subtotal)} />
           <div className="flex items-center justify-between">
