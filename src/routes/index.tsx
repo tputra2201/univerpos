@@ -989,6 +989,9 @@ function KasirPage() {
                     <X className="size-4" />
                   </Button>
                 </div>
+                {heldMeta(h) && (
+                  <p className="text-xs text-muted-foreground">{heldMeta(h)}</p>
+                )}
                 <p className="text-xs text-muted-foreground">
                   {h.items.reduce((s, i) => s + i.qty, 0)} item •{" "}
                   {new Date(h.createdAt).toLocaleTimeString("id-ID", {
