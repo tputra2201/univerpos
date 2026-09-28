@@ -915,6 +915,18 @@ function ProductDialog({
                 className="h-11 flex-1"
               />
             </div>}
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Durasi pengerjaan (menit, opsional)</p>
+              <Input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                value={draft.durationMinutes ?? ""}
+                onChange={(e) => setDraft({ ...draft, durationMinutes: e.target.value === "" ? undefined : Math.max(0, Number(e.target.value)) })}
+                placeholder="mis. 30"
+                className="h-11"
+              />
+            </div>
           </div>
 
 
