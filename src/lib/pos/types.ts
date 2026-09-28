@@ -162,6 +162,8 @@ export interface Product {
   commissionRule?: "staff" | "custom" | "none";
   commissionMode?: "percent" | "amount";
   commissionValue?: number;
+  /** Estimasi durasi pengerjaan dalam menit (opsional, untuk bisnis jasa). */
+  durationMinutes?: number;
 }
 
 
