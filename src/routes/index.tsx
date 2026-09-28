@@ -979,7 +979,7 @@ function KasirPage() {
             {db.heldOrders.map((h) => (
               <div key={h.id} className="rounded-lg border p-3">
                 <div className="flex items-center justify-between">
-                  <p className="font-semibold">{h.label}</p>
+                  <p className="font-semibold">{heldTitle(h)}</p>
                   <Button
                     size="icon"
                     variant="ghost"
