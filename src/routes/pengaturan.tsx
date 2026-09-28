@@ -18,6 +18,7 @@ import { uid } from "@/lib/pos/format";
 import { buildReceipt } from "@/lib/pos/receipt";
 import { bluetoothSupported, pickBluetoothPrinter } from "@/lib/pos/print";
 import { getServiceTypes, seedForBusiness } from "@/lib/pos/seed";
+import { SERVICE_ICONS, SERVICE_ICON_KEYS, serviceIcon, serviceIconKey, type ServiceIconKey } from "@/lib/pos/service-icons";
 import type { BusinessType, PosDatabase, Sale, ServiceKind, ServiceType, UserRole } from "@/lib/pos/types";
 import { emptyDatabase } from "@/lib/pos/seed";
 import { roleLabel } from "@/lib/pos/roles";
@@ -1072,7 +1073,7 @@ const KIND_LABEL: Record<ServiceKind, string> = {
 export function ServiceTypesCard() {
   const { db, update } = usePos();
   const services = getServiceTypes(db);
-  const [draft, setDraft] = useState({ name: "", code: "", kind: "takeout" as ServiceKind });
+  const [draft, setDraft] = useState({ name: "", code: "", kind: "takeout" as ServiceKind, icon: "bag" as ServiceIconKey });
 
   function save(next: ServiceType[]) {
     // Aplikasi online kini tersimpan langsung sebagai jenis layanan.
@@ -1087,12 +1088,16 @@ export function ServiceTypesCard() {
       <CardHeader>
         <CardTitle className="text-base">Jenis Layanan</CardTitle>
         <CardDescription>
-          Hanya layanan yang aktif yang muncul di halaman kasir. Kode dipakai di nomor order, mis. TO-000001.
+          Hanya layanan yang aktif yang muncul di halaman kasir. Kode dipakai di nomor order, mis. TO-000001. Ikon bisa dipilih sesuai jenis usaha.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {services.map((svc) => (
           <div key={svc.id} className="flex flex-wrap items-center gap-2 rounded-lg border p-3">
+            {(() => {
+              const Ico = serviceIcon(svc);
+              return <Ico className="size-5 shrink-0 text-primary" />;
+            })()}
             <Input
               aria-label="Nama layanan"
               value={svc.name}
@@ -1105,6 +1110,23 @@ export function ServiceTypesCard() {
               onChange={(e) => patch(svc.id, { code: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4) })}
               className="h-10 w-20 font-mono"
             />
+            <Select value={serviceIconKey(svc)} onValueChange={(v) => patch(svc.id, { icon: v })}>
+              <SelectTrigger className="h-10 w-52" aria-label={`Ikon ${svc.name}`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SERVICE_ICON_KEYS.map((k) => {
+                  const Ico = SERVICE_ICONS[k].Icon;
+                  return (
+                    <SelectItem key={k} value={k}>
+                      <span className="flex items-center gap-2">
+                        <Ico className="size-4" /> {SERVICE_ICONS[k].label}
+                      </span>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
             <Select value={svc.kind} onValueChange={(v) => patch(svc.id, { kind: v as ServiceKind })}>
               <SelectTrigger className="h-10 w-72">
                 <SelectValue />
@@ -1175,6 +1197,23 @@ export function ServiceTypesCard() {
             onChange={(e) => setDraft({ ...draft, code: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4) })}
             className="h-10 w-20 font-mono"
           />
+          <Select value={draft.icon} onValueChange={(v) => setDraft({ ...draft, icon: v as ServiceIconKey })}>
+            <SelectTrigger className="h-10 w-52" aria-label="Ikon layanan baru">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SERVICE_ICON_KEYS.map((k) => {
+                const Ico = SERVICE_ICONS[k].Icon;
+                return (
+                  <SelectItem key={k} value={k}>
+                    <span className="flex items-center gap-2">
+                      <Ico className="size-4" /> {SERVICE_ICONS[k].label}
+                    </span>
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
           <Select value={draft.kind} onValueChange={(v) => setDraft({ ...draft, kind: v as ServiceKind })}>
             <SelectTrigger className="h-10 w-72">
               <SelectValue />
@@ -1194,8 +1233,8 @@ export function ServiceTypesCard() {
                 toast.error("Nama dan kode layanan wajib diisi.");
                 return;
               }
-              save([...services, { id: uid("svc"), name: draft.name.trim(), code: draft.code, kind: draft.kind, active: true }]);
-              setDraft({ name: "", code: "", kind: "takeout" });
+              save([...services, { id: uid("svc"), name: draft.name.trim(), code: draft.code, kind: draft.kind, icon: draft.icon, active: true }]);
+              setDraft({ name: "", code: "", kind: "takeout", icon: "bag" });
             }}
           >
             <Plus className="size-4" /> Tambah
