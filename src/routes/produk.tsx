@@ -250,7 +250,7 @@ function ProdukPage() {
                       )}
                       {!product.active && <Badge variant="outline">Nonaktif</Badge>}
                       <Badge variant="outline">
-                        {product.printLabel === false ? "Tanpa cetak" : product.labelStation === "bar" ? "Bar" : "Kitchen"}
+                        {product.printLabel === false ? "Tanpa tiket" : product.labelStation === "bar" ? "Tiket Stasiun 2" : "Tiket Stasiun 1"}
                       </Badge>
                     </div>
                   </div>
@@ -857,7 +857,7 @@ function ProductDialog({
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium">Cetak tiket / label</p>
-                <p className="text-xs text-muted-foreground">Dicetak saat pesanan dikirim ke dapur.</p>
+                <p className="text-xs text-muted-foreground">Dicetak saat pesanan dikirim ke stasiun kerja.</p>
               </div>
               <Switch
                 checked={draft.printLabel !== false}
@@ -871,8 +871,8 @@ function ProductDialog({
               >
                 <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="kitchen">Printer Kitchen (dapur / makanan)</SelectItem>
-                  <SelectItem value="bar">Printer Bar (minuman)</SelectItem>
+                  <SelectItem value="kitchen">Tiket Stasiun 1 (mis. dapur)</SelectItem>
+                  <SelectItem value="bar">Tiket Stasiun 2 (mis. bar)</SelectItem>
                 </SelectContent>
               </Select>
             )}

@@ -15,8 +15,8 @@ import type { PrinterConfig, PrinterRole } from "@/lib/pos/types";
 const AUTO_LABEL: Record<PrinterRole, string> = {
   receipt: "Cetak otomatis setelah pembayaran",
   bill: "Langsung cetak tanpa pratinjau",
-  kitchen: "Cetak otomatis saat Kirim ke Dapur",
-  bar: "Cetak otomatis saat Kirim ke Dapur",
+  kitchen: "Cetak otomatis saat pesanan dikirim",
+  bar: "Cetak otomatis saat pesanan dikirim",
   report: "Langsung cetak tanpa pratinjau",
 };
 
@@ -41,10 +41,10 @@ export function PrintersSettings() {
       <CardHeader>
         <CardTitle className="text-base">Printer per Dokumen</CardTitle>
         <CardDescription>
-          Atur printer untuk Receipt, Bill, Kitchen, Bar, dan Report. Item menu yang dicetak ke
-          Kitchen atau Bar diatur di halaman Produk. Pengaturan ini khusus perangkat ini. Bila
-          jenis dokumen belum punya printer, Bill &amp; Report memakai printer Receipt dan Bar
-          memakai printer Kitchen.
+          Atur printer untuk Struk, Tagihan, Tiket Stasiun 1, Tiket Stasiun 2, dan Laporan.
+          Tujuan tiket tiap item diatur di halaman Produk. Pengaturan ini khusus perangkat ini.
+          Bila jenis dokumen belum punya printer, Tagihan &amp; Laporan memakai printer Struk dan
+          Tiket Stasiun 2 memakai printer Tiket Stasiun 1.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">

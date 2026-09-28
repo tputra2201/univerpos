@@ -32,6 +32,7 @@ import { buildReceipt } from "@/lib/pos/receipt";
 import { layoutFor, printerFor, printersFor, productStation, sendToPrinter, splitByStation } from "@/lib/pos/printers";
 import type { PrinterRole } from "@/lib/pos/types";
 import { getServiceTypes } from "@/lib/pos/seed";
+import { serviceIcon } from "@/lib/pos/service-icons";
 import { categoryAllowed, servicePrice } from "@/lib/pos/pricing";
 import { MemberPicker } from "@/components/pos/member-picker";
 import {
