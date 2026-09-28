@@ -1084,7 +1084,7 @@ function ServicePicker({
       {mode === "" && (
         <div className="grid gap-3 sm:grid-cols-3">
           {services.map((svc) => {
-            const Icon = ICON[svc.kind];
+            const Icon = serviceIcon(svc);
             return (
               <button
                 key={svc.id}
