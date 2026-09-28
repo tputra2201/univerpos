@@ -1,3 +1,4 @@
+import { productRule, type CommissionRule } from "@/lib/pos/commission";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { Plus, Pencil, Trash2, Download, Upload, Search, Copy } from "lucide-react";
