@@ -882,13 +882,27 @@ function PengaturanPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Staf Pelaksana</CardTitle>
-              <CardDescription>Untuk usaha jasa: siapa yang mengerjakan layanan.</CardDescription>
+              <CardDescription>
+                Untuk usaha jasa: siapa yang mengerjakan layanan. Matikan "Komisi" untuk staf yang bonusnya sudah termasuk gaji.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex flex-wrap gap-2">
+              <div className="divide-y rounded-lg border">
                 {db.staff.map((s) => (
-                  <Badge key={s.id} variant="secondary" className="gap-2 py-1.5">
-                    {s.name}
+                  <div key={s.id} className="flex items-center gap-3 px-3 py-2">
+                    <span className="flex-1 text-sm font-medium">{s.name}</span>
+                    <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                      Komisi
+                      <Switch
+                        checked={s.commissionEnabled !== false}
+                        onCheckedChange={(v) =>
+                          update((current) => ({
+                            ...current,
+                            staff: current.staff.map((x) => (x.id === s.id ? { ...x, commissionEnabled: v } : x)),
+                          }))
+                        }
+                      />
+                    </label>
                     <button
                       type="button"
                       aria-label={`Hapus ${s.name}`}
@@ -899,12 +913,12 @@ function PengaturanPage() {
                         }))
                       }
                     >
-                      <Trash2 className="size-3" />
+                      <Trash2 className="size-4 text-muted-foreground" />
                     </button>
-                  </Badge>
+                  </div>
                 ))}
                 {db.staff.length === 0 && (
-                  <p className="text-sm text-muted-foreground">Belum ada staf.</p>
+                  <p className="px-3 py-2 text-sm text-muted-foreground">Belum ada staf.</p>
                 )}
               </div>
               <div className="flex gap-2">

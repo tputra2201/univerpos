@@ -157,6 +157,9 @@ export interface Product {
   printLabel?: boolean;
   /** Tujuan cetak: printer Kitchen atau Bar. Kosong = kitchen. */
   labelStation?: "kitchen" | "bar";
+  /** Komisi staf pelaksana per pekerjaan: persen dari harga atau nominal rupiah per item. */
+  commissionMode?: "percent" | "amount";
+  commissionValue?: number;
 }
 
 
@@ -207,6 +210,8 @@ export interface ServiceType {
 export interface Staff {
   id: string;
   name: string;
+  /** Ikut skema komisi per pekerjaan. Kosong = ya. */
+  commissionEnabled?: boolean;
 }
 
 export interface CartLine {
