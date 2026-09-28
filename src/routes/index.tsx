@@ -117,6 +117,27 @@ interface CartState {
   redeemPoints?: number | undefined;
 }
 
+/** Judul utama kartu pesanan tertahan: nama pelanggan lebih diutamakan */
+function heldTitle(h: HeldOrder) {
+  const name = (h.customerName || "").trim();
+  if (name) return name;
+  const table = (h.tableName || "").trim();
+  if (table) return table;
+  return h.orderNo || h.orderType || h.label || "Pesanan";
+}
+
+/** Keterangan kecil: nomor order, layanan, dan meja */
+function heldMeta(h: HeldOrder) {
+  const name = (h.customerName || "").trim();
+  const table = (h.tableName || "").trim();
+  return [h.orderNo, h.orderType, name && table ? table : ""]
+    .map((x) => (x || "").trim())
+    .filter(Boolean)
+    .join(" • ");
+}
+
+
+
 const EMPTY_CART: CartState = {
   lines: [],
   tableName: "",
