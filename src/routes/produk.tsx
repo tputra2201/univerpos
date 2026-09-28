@@ -913,7 +913,7 @@ function ProductDialog({
                 placeholder="0"
                 className="h-11 flex-1"
               />
-            </div>
+            </div>}
           </div>
 
 
