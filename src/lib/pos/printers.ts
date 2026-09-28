@@ -1,6 +1,6 @@
 /**
- * Printer per jenis dokumen (Receipt, Bill, Kitchen, Bar, Report) dan
- * pengarahan item menu ke printer Kitchen/Bar.
+ * Printer per jenis dokumen (Struk, Tagihan, Tiket Stasiun 1/2, Laporan) dan
+ * pengarahan item pesanan ke printer tiket.
  */
 import { printViaBluetooth, printViaDialog } from "./print";
 import type { CartLine, PosDatabase, PrinterConfig, PrinterRole, PrinterSettings, Product } from "./types";
@@ -8,11 +8,11 @@ import type { CartLine, PosDatabase, PrinterConfig, PrinterRole, PrinterSettings
 export const PRINTER_ROLES: PrinterRole[] = ["receipt", "bill", "kitchen", "bar", "report"];
 
 export const PRINTER_ROLE_LABEL: Record<PrinterRole, string> = {
-  receipt: "Receipt (struk bayar)",
-  bill: "Bill (tagihan sementara)",
-  kitchen: "Kitchen (dapur / makanan)",
-  bar: "Bar (minuman)",
-  report: "Report (laporan & shift)",
+  receipt: "Struk (nota pembayaran)",
+  bill: "Tagihan sementara (bill)",
+  kitchen: "Tiket Stasiun 1 (mis. dapur)",
+  bar: "Tiket Stasiun 2 (mis. bar)",
+  report: "Laporan & shift",
 };
 
 /** Urutan cadangan bila printer untuk jenis dokumen belum diatur. */

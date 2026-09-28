@@ -32,6 +32,7 @@ import { buildReceipt } from "@/lib/pos/receipt";
 import { layoutFor, printerFor, printersFor, productStation, sendToPrinter, splitByStation } from "@/lib/pos/printers";
 import type { PrinterRole } from "@/lib/pos/types";
 import { getServiceTypes } from "@/lib/pos/seed";
+import { serviceIcon } from "@/lib/pos/service-icons";
 import { categoryAllowed, servicePrice } from "@/lib/pos/pricing";
 import { MemberPicker } from "@/components/pos/member-picker";
 import {
@@ -1061,7 +1062,6 @@ function ServicePicker({
   const [picked, setPicked] = useState<ServiceType | null>(null);
   const mode = picked?.kind === "dinein" ? "dinein" : "";
   const services = getServiceTypes(db).filter((x) => x.active);
-  const ICON = { takeout: ShoppingBag, dinein: Utensils, online: Bike } as const;
 
   const big =
     "flex min-h-28 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-border bg-card p-5 text-center transition-colors hover:border-primary hover:bg-primary/5";
@@ -1085,7 +1085,7 @@ function ServicePicker({
       {mode === "" && (
         <div className="grid gap-3 sm:grid-cols-3">
           {services.map((svc) => {
-            const Icon = ICON[svc.kind];
+            const Icon = serviceIcon(svc);
             return (
               <button
                 key={svc.id}
