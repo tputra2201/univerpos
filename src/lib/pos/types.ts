@@ -192,6 +192,8 @@ export interface ServiceType {
   code: string;
   kind: ServiceKind;
   active: boolean;
+  /** Kunci ikon pilihan (lihat service-icons.ts). Kosong = ikon bawaan per kind. */
+  icon?: string;
   /** Penyesuaian harga global: nominal rupiah atau persen (boleh negatif). */
   priceAdjustMode?: "amount" | "percent";
   priceAdjustValue?: number;
