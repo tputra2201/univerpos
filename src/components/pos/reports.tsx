@@ -810,43 +810,131 @@ export function OnlineOrderReport({ range }: { range: ReportRange }) {
   );
 }
 
+type CommissionJob = {
+  key: string;
+  createdAt: string;
+  code: string;
+  customer: string;
+  name: string;
+  amount: number;
+  commission: number;
+  duration?: number | undefined;
+};
+
 /** Komisi staf pelaksana: dihitung dari setelan komisi produk, hanya untuk staf yang komisinya aktif. */
 export function CommissionReport({ range }: { range: ReportRange }) {
   const { db } = usePos();
   const sales = useRangeSales(range).filter((s) => s.status === "paid");
+  const [detail, setDetail] = useState<string | null>(null);
   const off = new Set(db.staff.filter((s) => s.commissionEnabled === false).map((s) => s.name));
   const staffBy = new Map(db.staff.map((s) => [s.name, s]));
   const products = new Map(db.products.map((p) => [p.id, p]));
-  const byStaff = new Map<string, { jobs: number; sales: number; commission: number }>();
+  const byStaff = new Map<string, { jobs: number; sales: number; commission: number; list: CommissionJob[] }>();
   for (const s of sales) {
     for (const l of s.items) {
       if (!l.staffName || l.voided || off.has(l.staffName)) continue;
       const p = products.get(l.productId);
       const net = Math.max(0, l.unitPrice * l.qty - (l.discount || 0));
       const c = lineCommission(l, p, staffBy.get(l.staffName));
-      const cur = byStaff.get(l.staffName) ?? { jobs: 0, sales: 0, commission: 0 };
+      const cur = byStaff.get(l.staffName) ?? { jobs: 0, sales: 0, commission: 0, list: [] };
       cur.jobs += l.qty;
       cur.sales += net;
       cur.commission += c;
+      cur.list.push({
+        key: `${s.id}-${l.lineId}`,
+        createdAt: s.createdAt,
+        code: s.orderNo || s.code,
+        customer: s.customerName || s.tableName || "-",
+        name: `${l.name}${l.variantName ? ` (${l.variantName})` : ""}${l.qty > 1 ? ` ×${l.qty}` : ""}`,
+        amount: net,
+        commission: c,
+        duration: p?.durationMinutes ? p.durationMinutes * l.qty : undefined,
+      });
       byStaff.set(l.staffName, cur);
     }
   }
   const rows = [...byStaff.entries()].sort((a, b) => b[1].commission - a[1].commission);
   const total = rows.reduce((a, [, v]) => a + v.commission, 0);
+  const active = detail ? byStaff.get(detail) : undefined;
+  const jobs = [...(active?.list ?? [])].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   return (
     <div className="space-y-4">
       <Section title={`Komisi Staf · ${rupiah(total)}`}>
         {rows.length === 0 && <p className="text-muted-foreground">Belum ada pekerjaan berkomisi pada periode ini.</p>}
         {rows.map(([name, v]) => (
-          <div key={name} className="space-y-1 border-b pb-2 last:border-0">
+          <button
+            key={name}
+            type="button"
+            onClick={() => setDetail(name)}
+            className="w-full space-y-1 border-b pb-2 text-left last:border-0 hover:opacity-80"
+          >
             <Row label={name} value={rupiah(v.commission)} bold />
             <Row label={`${v.jobs} pekerjaan · nilai layanan`} value={rupiah(v.sales)} />
-          </div>
+            <p className="text-xs text-primary">Lihat rincian pekerjaan</p>
+          </button>
         ))}
         {off.size > 0 && (
           <p className="pt-1 text-xs text-muted-foreground">Tanpa komisi: {[...off].join(", ")}</p>
         )}
       </Section>
+      <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
+        <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Rincian Pekerjaan · {detail}</DialogTitle>
+          </DialogHeader>
+          {active && (
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-lg border p-3">
+                <p className="text-xs text-muted-foreground">Pekerjaan</p>
+                <p className="tabular font-bold">{active.jobs}</p>
+              </div>
+              <div className="rounded-lg border p-3">
+                <p className="text-xs text-muted-foreground">Nilai layanan</p>
+                <p className="tabular font-bold">{rupiah(active.sales)}</p>
+              </div>
+              <div className="rounded-lg border p-3">
+                <p className="text-xs text-muted-foreground">Total komisi</p>
+                <p className="tabular font-bold text-primary">{rupiah(active.commission)}</p>
+              </div>
+            </div>
+          )}
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Tanggal/Jam</TableHead>
+                  <TableHead>Nota</TableHead>
+                  <TableHead>Pelanggan</TableHead>
+                  <TableHead>Layanan / Produk</TableHead>
+                  <TableHead className="text-right">Harga</TableHead>
+                  <TableHead className="text-right">Komisi</TableHead>
+                  <TableHead className="text-right">Durasi</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {jobs.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center text-muted-foreground">
+                      Belum ada pekerjaan.
+                    </TableCell>
+                  </TableRow>
+                )}
+                {jobs.map((j) => (
+                  <TableRow key={j.key}>
+                    <TableCell className="whitespace-nowrap">{dateTime(j.createdAt)}</TableCell>
+                    <TableCell className="whitespace-nowrap">{j.code}</TableCell>
+                    <TableCell>{j.customer}</TableCell>
+                    <TableCell>{j.name}</TableCell>
+                    <TableCell className="tabular text-right">{rupiah(j.amount)}</TableCell>
+                    <TableCell className="tabular text-right font-semibold">{rupiah(j.commission)}</TableCell>
+                    <TableCell className="tabular text-right">{j.duration ? `${j.duration} mnt` : "-"}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
