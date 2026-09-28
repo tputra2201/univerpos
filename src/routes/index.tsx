@@ -1175,7 +1175,10 @@ function ServicePicker({
                 className="rounded-lg border-2 border-accent bg-accent/10 p-3 text-left hover:bg-accent/20"
                 onClick={() => onOpenHeld(h.id)}
               >
-                <p className="font-semibold">{h.label}</p>
+                <p className="font-semibold">{heldTitle(h)}</p>
+                {heldMeta(h) && (
+                  <p className="text-xs text-muted-foreground">{heldMeta(h)}</p>
+                )}
                 <p className="text-xs text-muted-foreground">
                   {h.items.filter((i) => !i.voided).reduce((s, i) => s + i.qty, 0)} item • Buka pesanan
                 </p>
