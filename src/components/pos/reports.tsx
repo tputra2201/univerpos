@@ -1,7 +1,13 @@
 import { lineCommission } from "@/lib/pos/commission";
 /** Kumpulan laporan berbasis rentang waktu (hari usaha). */
 import { getServiceTypes } from "@/lib/pos/seed";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { usePos } from "@/lib/pos/store";
 import { dateTime, rupiah } from "@/lib/pos/format";
 import {
