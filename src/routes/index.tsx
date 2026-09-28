@@ -1061,7 +1061,6 @@ function ServicePicker({
   const [picked, setPicked] = useState<ServiceType | null>(null);
   const mode = picked?.kind === "dinein" ? "dinein" : "";
   const services = getServiceTypes(db).filter((x) => x.active);
-  const ICON = { takeout: ShoppingBag, dinein: Utensils, online: Bike } as const;
 
   const big =
     "flex min-h-28 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-border bg-card p-5 text-center transition-colors hover:border-primary hover:bg-primary/5";
