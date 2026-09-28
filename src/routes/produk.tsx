@@ -1,3 +1,4 @@
+import { productRule, type CommissionRule } from "@/lib/pos/commission";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { Plus, Pencil, Trash2, Download, Upload, Search, Copy } from "lucide-react";
@@ -880,9 +881,20 @@ function ProductDialog({
           <div className="space-y-2 rounded-lg border p-3">
             <div>
               <p className="text-sm font-medium">Komisi staf pelaksana</p>
-              <p className="text-xs text-muted-foreground">Dihitung per pekerjaan untuk staf yang skema komisinya aktif. Isi 0 bila tanpa komisi.</p>
+              <p className="text-xs text-muted-foreground">Aturan produk kustom/tanpa komisi menang atas skema staf. Staf yang komisinya nonaktif selalu 0.</p>
             </div>
-            <div className="flex gap-2">
+            <Select
+              value={productRule(draft)}
+              onValueChange={(v) => setDraft({ ...draft, commissionRule: v as CommissionRule })}
+            >
+              <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="staff">Ikuti skema masing-masing staf</SelectItem>
+                <SelectItem value="custom">Kustom untuk produk ini</SelectItem>
+                <SelectItem value="none">Tanpa komisi</SelectItem>
+              </SelectContent>
+            </Select>
+            {productRule(draft) === "custom" && <div className="flex gap-2">
               <Select
                 value={draft.commissionMode ?? "percent"}
                 onValueChange={(v) => setDraft({ ...draft, commissionMode: v === "amount" ? "amount" : "percent" })}
@@ -902,7 +914,7 @@ function ProductDialog({
                 placeholder="0"
                 className="h-11 flex-1"
               />
-            </div>
+            </div>}
           </div>
 
 

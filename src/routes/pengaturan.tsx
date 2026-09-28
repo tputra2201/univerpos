@@ -903,6 +903,35 @@ function PengaturanPage() {
                         }
                       />
                     </label>
+                    {s.commissionEnabled !== false && (
+                      <>
+                        <select
+                          aria-label={`Tipe komisi ${s.name}`}
+                          value={s.commissionMode ?? "percent"}
+                          onChange={(e) => {
+                            const m = e.target.value === "amount" ? "amount" : "percent";
+                            update((c) => ({ ...c, staff: c.staff.map((x) => (x.id === s.id ? { ...x, commissionMode: m } : x)) }));
+                          }}
+                          className="h-9 rounded-md border bg-background px-2 text-xs"
+                        >
+                          <option value="percent">%</option>
+                          <option value="amount">Rp</option>
+                        </select>
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          min={0}
+                          aria-label={`Nilai komisi ${s.name}`}
+                          value={s.commissionValue ?? ""}
+                          placeholder="0"
+                          onChange={(e) => {
+                            const v = e.target.value === "" ? 0 : Math.max(0, Number(e.target.value));
+                            update((c) => ({ ...c, staff: c.staff.map((x) => (x.id === s.id ? { ...x, commissionValue: v } : x)) }));
+                          }}
+                          className="h-9 w-24 rounded-md border bg-background px-2 text-sm"
+                        />
+                      </>
+                    )}
                     <button
                       type="button"
                       aria-label={`Hapus ${s.name}`}
