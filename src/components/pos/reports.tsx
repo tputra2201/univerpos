@@ -814,6 +814,7 @@ export function CommissionReport({ range }: { range: ReportRange }) {
   const { db } = usePos();
   const sales = useRangeSales(range).filter((s) => s.status === "paid");
   const off = new Set(db.staff.filter((s) => s.commissionEnabled === false).map((s) => s.name));
+  const staffBy = new Map(db.staff.map((s) => [s.name, s]));
   const products = new Map(db.products.map((p) => [p.id, p]));
   const byStaff = new Map<string, { jobs: number; sales: number; commission: number }>();
   for (const s of sales) {
@@ -821,8 +822,7 @@ export function CommissionReport({ range }: { range: ReportRange }) {
       if (!l.staffName || l.voided || off.has(l.staffName)) continue;
       const p = products.get(l.productId);
       const net = Math.max(0, l.unitPrice * l.qty - (l.discount || 0));
-      const val = p?.commissionValue ?? 0;
-      const c = p?.commissionMode === "amount" ? val * l.qty : Math.round((net * val) / 100);
+      const c = lineCommission(l, p, staffBy.get(l.staffName));
       const cur = byStaff.get(l.staffName) ?? { jobs: 0, sales: 0, commission: 0 };
       cur.jobs += l.qty;
       cur.sales += net;
