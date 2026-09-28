@@ -117,6 +117,27 @@ interface CartState {
   redeemPoints?: number | undefined;
 }
 
+/** Judul utama kartu pesanan tertahan: nama pelanggan lebih diutamakan */
+function heldTitle(h: HeldOrder) {
+  const name = (h.customerName || "").trim();
+  if (name) return name;
+  const table = (h.tableName || "").trim();
+  if (table) return table;
+  return h.orderNo || h.orderType || h.label || "Pesanan";
+}
+
+/** Keterangan kecil: nomor order, layanan, dan meja */
+function heldMeta(h: HeldOrder) {
+  const name = (h.customerName || "").trim();
+  const table = (h.tableName || "").trim();
+  return [h.orderNo, h.orderType, name && table ? table : ""]
+    .map((x) => (x || "").trim())
+    .filter(Boolean)
+    .join(" • ");
+}
+
+
+
 const EMPTY_CART: CartState = {
   lines: [],
   tableName: "",
@@ -958,7 +979,7 @@ function KasirPage() {
             {db.heldOrders.map((h) => (
               <div key={h.id} className="rounded-lg border p-3">
                 <div className="flex items-center justify-between">
-                  <p className="font-semibold">{h.label}</p>
+                  <p className="font-semibold">{heldTitle(h)}</p>
                   <Button
                     size="icon"
                     variant="ghost"
@@ -968,6 +989,9 @@ function KasirPage() {
                     <X className="size-4" />
                   </Button>
                 </div>
+                {heldMeta(h) && (
+                  <p className="text-xs text-muted-foreground">{heldMeta(h)}</p>
+                )}
                 <p className="text-xs text-muted-foreground">
                   {h.items.reduce((s, i) => s + i.qty, 0)} item •{" "}
                   {new Date(h.createdAt).toLocaleTimeString("id-ID", {
@@ -1151,7 +1175,10 @@ function ServicePicker({
                 className="rounded-lg border-2 border-accent bg-accent/10 p-3 text-left hover:bg-accent/20"
                 onClick={() => onOpenHeld(h.id)}
               >
-                <p className="font-semibold">{h.label}</p>
+                <p className="font-semibold">{heldTitle(h)}</p>
+                {heldMeta(h) && (
+                  <p className="text-xs text-muted-foreground">{heldMeta(h)}</p>
+                )}
                 <p className="text-xs text-muted-foreground">
                   {h.items.filter((i) => !i.voided).reduce((s, i) => s + i.qty, 0)} item • Buka pesanan
                 </p>
