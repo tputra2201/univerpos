@@ -877,6 +877,34 @@ function ProductDialog({
               </Select>
             )}
           </div>
+          <div className="space-y-2 rounded-lg border p-3">
+            <div>
+              <p className="text-sm font-medium">Komisi staf pelaksana</p>
+              <p className="text-xs text-muted-foreground">Dihitung per pekerjaan untuk staf yang skema komisinya aktif. Isi 0 bila tanpa komisi.</p>
+            </div>
+            <div className="flex gap-2">
+              <Select
+                value={draft.commissionMode ?? "percent"}
+                onValueChange={(v) => setDraft({ ...draft, commissionMode: v === "amount" ? "amount" : "percent" })}
+              >
+                <SelectTrigger className="h-11 w-32"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="percent">Persen %</SelectItem>
+                  <SelectItem value="amount">Rupiah</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                type="number"
+                inputMode="decimal"
+                min={0}
+                value={draft.commissionValue ?? ""}
+                onChange={(e) => setDraft({ ...draft, commissionValue: e.target.value === "" ? 0 : Math.max(0, Number(e.target.value)) })}
+                placeholder="0"
+                className="h-11 flex-1"
+              />
+            </div>
+          </div>
+
 
           <ListEditor
             title="Varian"

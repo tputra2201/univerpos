@@ -809,6 +809,47 @@ export function OnlineOrderReport({ range }: { range: ReportRange }) {
   );
 }
 
+/** Komisi staf pelaksana: dihitung dari setelan komisi produk, hanya untuk staf yang komisinya aktif. */
+export function CommissionReport({ range }: { range: ReportRange }) {
+  const { db } = usePos();
+  const sales = useRangeSales(range).filter((s) => s.status === "paid");
+  const off = new Set(db.staff.filter((s) => s.commissionEnabled === false).map((s) => s.name));
+  const products = new Map(db.products.map((p) => [p.id, p]));
+  const byStaff = new Map<string, { jobs: number; sales: number; commission: number }>();
+  for (const s of sales) {
+    for (const l of s.items) {
+      if (!l.staffName || l.voided || off.has(l.staffName)) continue;
+      const p = products.get(l.productId);
+      const net = Math.max(0, l.unitPrice * l.qty - (l.discount || 0));
+      const val = p?.commissionValue ?? 0;
+      const c = p?.commissionMode === "amount" ? val * l.qty : Math.round((net * val) / 100);
+      const cur = byStaff.get(l.staffName) ?? { jobs: 0, sales: 0, commission: 0 };
+      cur.jobs += l.qty;
+      cur.sales += net;
+      cur.commission += c;
+      byStaff.set(l.staffName, cur);
+    }
+  }
+  const rows = [...byStaff.entries()].sort((a, b) => b[1].commission - a[1].commission);
+  const total = rows.reduce((a, [, v]) => a + v.commission, 0);
+  return (
+    <div className="space-y-4">
+      <Section title={`Komisi Staf · ${rupiah(total)}`}>
+        {rows.length === 0 && <p className="text-muted-foreground">Belum ada pekerjaan berkomisi pada periode ini.</p>}
+        {rows.map(([name, v]) => (
+          <div key={name} className="space-y-1 border-b pb-2 last:border-0">
+            <Row label={name} value={rupiah(v.commission)} bold />
+            <Row label={`${v.jobs} pekerjaan · nilai layanan`} value={rupiah(v.sales)} />
+          </div>
+        ))}
+        {off.size > 0 && (
+          <p className="pt-1 text-xs text-muted-foreground">Tanpa komisi: {[...off].join(", ")}</p>
+        )}
+      </Section>
+    </div>
+  );
+}
+
 /** Item expense diurutkan dari nominal terbesar. */
 export function ExpenseItemReport({ range }: { range: ReportRange }) {
   const { db } = usePos();

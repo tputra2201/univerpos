@@ -12,6 +12,7 @@ import {
   FinanceReport,
   MethodReport,
   OnlineOrderReport,
+  CommissionReport,
   ExpenseItemReport,
   RangePicker,
   StatsReport,
@@ -171,6 +172,7 @@ function LaporanPage() {
             <TabsTrigger value="transfer">Transfer & Kartu</TabsTrigger>
             <TabsTrigger value="online">Order Online</TabsTrigger>
             <TabsTrigger value="kasir">Per Kasir</TabsTrigger>
+            {db.staff.length > 0 && <TabsTrigger value="komisi">Komisi Staf</TabsTrigger>}
             <TabsTrigger value="void">VOID</TabsTrigger>
             {canFinance && <TabsTrigger value="finance">Finance</TabsTrigger>}
             {canFinance &&
@@ -216,6 +218,9 @@ function LaporanPage() {
           </TabsContent>
           <TabsContent value="kasir" className="mt-4">
             <CashierReport range={range} />
+          </TabsContent>
+          <TabsContent value="komisi" className="mt-4">
+            <CommissionReport range={range} />
           </TabsContent>
           <TabsContent value="void" className="mt-4">
             <VoidReport range={range} />
