@@ -163,7 +163,7 @@ export interface Product {
   commissionMode?: "percent" | "amount";
   commissionValue?: number;
   /** Estimasi durasi pengerjaan dalam menit (opsional, untuk bisnis jasa). */
-  durationMinutes?: number;
+  durationMinutes?: number | undefined;
 }
 
 
