@@ -140,12 +140,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col pb-20 md:pb-0">
-        <header className="flex items-center justify-between border-b bg-card px-4 py-3 md:hidden">
+        <header className="flex items-center justify-between border-b border-sidebar-border bg-sidebar px-4 py-3 text-sidebar-foreground md:hidden">
           <div className="flex min-w-0 items-center gap-2">
           <BrandIcon className="size-8 shrink-0 rounded-lg object-cover" />
           <div className="min-w-0">
             <p className="truncate font-bold leading-tight">{db.settings.name}</p>
-            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <p className="flex items-center gap-1.5 text-xs text-sidebar-foreground/70">
               <span
                 className={`inline-block size-2 rounded-full ${online ? "bg-primary" : "bg-destructive"}`}
                 aria-hidden
