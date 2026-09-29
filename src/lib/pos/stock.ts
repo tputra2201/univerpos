@@ -19,9 +19,9 @@ export function applyStock(
   lines: CartLine[],
   sign: 1 | -1,
   info: { note: string; saleCode?: string; userName: string },
-): Pick<PosDatabase, "stockItems" | "stockMoves"> {
+): Partial<Pick<PosDatabase, "stockItems" | "stockMoves">> {
   const items = stockItemsOf(db);
-  if (!items.length) return { stockItems: db.stockItems, stockMoves: db.stockMoves };
+  if (!items.length) return {};
   const byId = new Map(db.products.map((p) => [p.id, p]));
   const now = new Date().toISOString();
   const moves: StockMove[] = [];
