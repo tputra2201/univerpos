@@ -72,6 +72,8 @@ function dominantColor(src: string): Promise<[number, number, number] | null> {
 const THEME_VARS = ["--primary", "--primary-foreground", "--ring", "--chart-1", "--sidebar", "--sidebar-accent", "--sidebar-border"];
 
 function applyTheme(rgb: [number, number, number] | null) {
+  // Tema store dipilih manual: jangan ditimpa warna logo.
+  if (document.documentElement.dataset.storeTheme) return;
   const root = document.documentElement.style;
   const meta = document.querySelector<HTMLMetaElement>("meta[name='theme-color']");
   if (!rgb) { THEME_VARS.forEach((v) => root.removeProperty(v)); meta?.setAttribute("content", "#04585a"); return; }
@@ -91,6 +93,12 @@ function applyTheme(rgb: [number, number, number] | null) {
 /** Terapkan nama, ikon & warna tema dari logo. */
 export function useApplyBranding() {
   const b = useBranding();
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const on = () => setTick((t) => t + 1);
+    window.addEventListener("pos-theme-reset", on);
+    return () => window.removeEventListener("pos-theme-reset", on);
+  }, []);
   useEffect(() => {
     document.title = b.name;
     const href = b.icon || "/favicon.png";
@@ -100,7 +108,7 @@ export function useApplyBranding() {
     if (b.icon) void dominantColor(b.icon).then((c) => { if (alive) applyTheme(c); });
     else applyTheme(null);
     return () => { alive = false; };
-  }, [b]);
+  }, [b, tick]);
 }
 
 export function BrandIcon({ className }: { className?: string }) {
