@@ -1,3 +1,4 @@
+import { THEME_PRESETS } from "@/lib/pos/theme";
 import { FinanceSettings } from "@/components/pos/finance-settings";
 import { MemberSettings } from "@/components/pos/member-settings";
 

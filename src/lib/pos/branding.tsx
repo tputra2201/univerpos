@@ -73,7 +73,7 @@ const THEME_VARS = ["--primary", "--primary-foreground", "--ring", "--chart-1", 
 
 function applyTheme(rgb: [number, number, number] | null) {
   // Tema store dipilih manual: jangan ditimpa warna logo.
-  if (document.documentElement.dataset.storeTheme) return;
+  if (document.documentElement.dataset["storeTheme"]) return;
   const root = document.documentElement.style;
   const meta = document.querySelector<HTMLMetaElement>("meta[name='theme-color']");
   if (!rgb) { THEME_VARS.forEach((v) => root.removeProperty(v)); meta?.setAttribute("content", "#04585a"); return; }

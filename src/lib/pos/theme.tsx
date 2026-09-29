@@ -41,10 +41,10 @@ export function useStoreTheme() {
       el.classList.toggle("dark", dark);
       const p = THEME_PRESETS.find((t) => t.id === id);
       if (!p || p.id === "logo") {
-        if (el.dataset.storeTheme) { VARS.forEach((v) => el.style.removeProperty(v)); delete el.dataset.storeTheme; window.dispatchEvent(new Event("pos-theme-reset")); }
+        if (el.dataset["storeTheme"]) { VARS.forEach((v) => el.style.removeProperty(v)); delete el.dataset["storeTheme"]; window.dispatchEvent(new Event("pos-theme-reset")); }
         return;
       }
-      el.dataset.storeTheme = p.id;
+      el.dataset["storeTheme"] = p.id;
       const col = dark ? p.dark : p.light;
       const s = el.style;
       s.setProperty("--primary", col);
