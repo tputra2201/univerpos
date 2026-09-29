@@ -119,19 +119,28 @@ export function StockSettings() {
                   <div className="text-xs text-muted-foreground">{it.unit}</div>
                 </div>
                 <div className="flex gap-1">
-                  <Button size="icon" variant="outline" title="Barang masuk" onClick={() => { setAdjust({ item: it, mode: "in" }); setAdjQty(""); setAdjNote(""); }}>
-                    <PackagePlus className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="outline" title="Stok opname" onClick={() => { setAdjust({ item: it, mode: "opname" }); setAdjQty(String(it.qty)); setAdjNote(""); }}>
-                    <ClipboardCheck className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="outline" onClick={() => setEditing(structuredClone(it))}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="outline" onClick={() => remove(it.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {canIn && (
+                    <Button size="icon" variant="outline" title="Barang masuk" onClick={() => { setAdjust({ item: it, mode: "in" }); setAdjQty(""); setAdjNote(""); }}>
+                      <PackagePlus className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {canAdjust && (
+                    <Button size="icon" variant="outline" title="Stok opname" onClick={() => { setAdjust({ item: it, mode: "opname" }); setAdjQty(String(it.qty)); setAdjNote(""); }}>
+                      <ClipboardCheck className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {canManage && (
+                    <>
+                      <Button size="icon" variant="outline" title="Ubah" onClick={() => setEditing(structuredClone(it))}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button size="icon" variant="outline" title="Hapus" onClick={() => remove(it.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
                 </div>
+
               </div>
             );
           })}
