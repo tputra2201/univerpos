@@ -74,6 +74,7 @@ export function StockSettings() {
       qty: delta,
       note: adjNote.trim() || (mode === "in" ? "Barang masuk" : "Stok opname"),
       userName: currentUser?.name ?? "",
+      balanceAfter: Math.round((item.qty + delta) * 1000) / 1000,
     };
     update((cur) => ({
       ...cur,
