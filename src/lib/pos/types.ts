@@ -147,6 +147,8 @@ export interface Product {
   name: string;
   categoryId: string;
   price: number;
+  /** Harga diisi kasir saat dipilih (Open Price). */
+  openPrice?: boolean;
   unit: string;
   barcode: string;
   stock: number | null;

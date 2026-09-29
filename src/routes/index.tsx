@@ -163,6 +163,8 @@ function KasirPage() {
   const [query, setQuery] = useState("");
   const [categoryId, setCategoryId] = useState<string>("all");
   const [variantProduct, setVariantProduct] = useState<Product | null>(null);
+  const [openPriceProduct, setOpenPriceProduct] = useState<Product | null>(null);
+  const [openPriceValue, setOpenPriceValue] = useState("");
   const [optionLine, setOptionLine] = useState<CartLine | null>(null);
   const [editLine, setEditLine] = useState<CartLine | null>(null);
   const [voidTarget, setVoidTarget] = useState<CartLine | null>(null);
@@ -255,7 +257,7 @@ function KasirPage() {
     return false;
   }
 
-  function addProduct(product: Product, variantName = "", priceDelta = 0) {
+  function addProduct(product: Product, variantName = "", priceDelta = 0, fixedPrice?: number) {
     if (!requireShift()) return;
     if (!cart.orderType) {
       toast.error("Pilih jenis layanan dulu.");
@@ -263,7 +265,7 @@ function KasirPage() {
       return;
     }
     setCart((prev) => {
-      const existing = prev.lines.find(
+      const existing = fixedPrice != null ? undefined : prev.lines.find(
         (l) => l.productId === product.id && l.variantName === variantName && !l.note,
       );
       if (existing) {
@@ -279,7 +281,7 @@ function KasirPage() {
         productId: product.id,
         name: product.name,
         variantName,
-        unitPrice: servicePrice(product, activeService) + priceDelta,
+        unitPrice: (fixedPrice ?? servicePrice(product, activeService)) + priceDelta,
         qty: 1,
         note: "",
         discount: 0,
@@ -294,6 +296,11 @@ function KasirPage() {
     if (!cart.orderType) {
       toast.error("Pilih jenis layanan dulu.");
       setPickerOpen(true);
+      return;
+    }
+    if (product.openPrice) {
+      setOpenPriceProduct(product);
+      setOpenPriceValue("");
       return;
     }
     if (productHasOptions(product, db.modifiers ?? [])) {
@@ -792,7 +799,7 @@ function KasirPage() {
                   <span className="line-clamp-2 text-sm font-semibold">{product.name}</span>
                   <span className="mt-2 block">
                     <span className="tabular block font-bold text-primary">
-                      {rupiah(servicePrice(product, activeService))}
+                      {product.openPrice ? "Harga bebas" : rupiah(servicePrice(product, activeService))}
                     </span>
                     {product.stock != null && (
                       <span
@@ -875,6 +882,48 @@ function KasirPage() {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Open Price */}
+      <Dialog open={!!openPriceProduct} onOpenChange={(v) => !v && setOpenPriceProduct(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{openPriceProduct?.name}</DialogTitle>
+            <DialogDescription>Masukkan harga untuk item ini.</DialogDescription>
+          </DialogHeader>
+          <form
+            className="space-y-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const val = Math.round(Number(openPriceValue));
+              if (!openPriceProduct || !(val > 0)) {
+                toast.error("Isi harga lebih dari 0.");
+                return;
+              }
+              addProduct(openPriceProduct, "", 0, val);
+              setOpenPriceProduct(null);
+            }}
+          >
+            <Input
+              autoFocus
+              inputMode="numeric"
+              className="tabular h-14 text-center text-2xl font-bold"
+              placeholder="0"
+              value={openPriceValue ? Number(openPriceValue).toLocaleString("id-ID") : ""}
+              onChange={(e) => setOpenPriceValue(e.target.value.replace(/\D/g, "").slice(0, 12))}
+            />
+            <div className="grid grid-cols-3 gap-2">
+              {[10000, 20000, 50000, 100000, 150000, 200000].map((n) => (
+                <Button key={n} type="button" variant="outline" onClick={() => setOpenPriceValue(String(n))}>
+                  {n.toLocaleString("id-ID")}
+                </Button>
+              ))}
+            </div>
+            <DialogFooter>
+              <Button type="submit" className="h-12 w-full">Tambah ke keranjang</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Pilih varian / ukuran / topping / modifier */}
       <OptionPicker
