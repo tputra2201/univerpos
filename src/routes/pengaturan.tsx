@@ -1066,7 +1066,7 @@ function PengaturanPage() {
             </CardContent>
           </Card>
 
-          {currentUser?.role === "owner" || currentUser?.role === "manager" ? (
+          {hasPerm(db.settings, currentUser?.role, "data.reset") ? (
             <Card className="border-destructive/40">
               <CardHeader>
                 <CardTitle className="text-base text-destructive">Reset Data</CardTitle>
