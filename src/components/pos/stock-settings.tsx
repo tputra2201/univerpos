@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { usePos } from "@/lib/pos/store";
 import { uid } from "@/lib/pos/format";
 import { stockItemsOf } from "@/lib/pos/stock";
+import { hasPerm } from "@/lib/pos/permissions";
+
 import type { StockItem, StockMove } from "@/lib/pos/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
