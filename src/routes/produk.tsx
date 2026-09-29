@@ -743,6 +743,16 @@ function ProductDialog({
               className="h-11"
             />
           </div>
+          <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
+            <div>
+              <p className="text-sm font-medium">Harga bebas (Open Price)</p>
+              <p className="text-xs text-muted-foreground">Kasir mengisi harga setiap kali produk ini dipilih.</p>
+            </div>
+            <Switch
+              checked={!!draft.openPrice}
+              onCheckedChange={(v) => setDraft({ ...draft, openPrice: v })}
+            />
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Harga</Label>
