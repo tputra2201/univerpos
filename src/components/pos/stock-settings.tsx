@@ -22,12 +22,20 @@ function blank(): StockItem {
 
 export function StockSettings() {
   const { db, update, currentUser } = usePos();
+  const can = (k: Parameters<typeof hasPerm>[2]) => hasPerm(db.settings, currentUser?.role, k);
+  const canManage = can("stock.manage");
+  const canIn = can("stock.in");
+  const canAdjust = can("stock.adjust");
   const items = stockItemsOf(db);
   const [editing, setEditing] = useState<StockItem | null>(null);
   const [adjust, setAdjust] = useState<{ item: StockItem; mode: "in" | "opname" } | null>(null);
   const [adjQty, setAdjQty] = useState("");
   const [adjNote, setAdjNote] = useState("");
   const moves = (db.stockMoves ?? []).slice(0, 30);
+
+  if (!can("stock.view"))
+    return <p className="text-sm text-muted-foreground">Akun Anda tidak berhak melihat data stok.</p>;
+
 
   function save(item: StockItem) {
     if (!item.name.trim()) { toast.error("Nama bahan wajib diisi."); return; }
