@@ -76,7 +76,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col justify-between bg-sidebar p-4 text-sidebar-foreground md:flex">
+      <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col justify-between gap-4 overflow-y-auto overscroll-contain bg-sidebar p-4 text-sidebar-foreground md:flex">
         <div>
           <div className="mb-6 px-2">
             <div className="mb-3 flex items-center gap-2">

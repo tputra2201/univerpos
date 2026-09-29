@@ -842,7 +842,7 @@ function KasirPage() {
       </aside>
 
       {/* Bar keranjang mobile */}
-      <div className="fixed inset-x-0 bottom-16 z-30 border-t bg-card p-3 lg:hidden">
+      <div className={`fixed inset-x-0 bottom-16 z-30 border-t bg-card p-3 md:bottom-0 md:left-60 lg:hidden ${cart.lines.length === 0 ? "hidden" : ""}`}>
         <Button
           className="h-12 w-full justify-between text-base"
           disabled={cart.lines.length === 0}
