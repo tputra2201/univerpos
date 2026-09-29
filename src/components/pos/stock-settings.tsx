@@ -90,9 +90,12 @@ export function StockSettings() {
               Stok berkurang otomatis setiap penjualan produk yang memakai bahan ini, dan kembali saat nota di-void/refund.
             </CardDescription>
           </div>
-          <Button onClick={() => setEditing(blank())}>
-            <Plus className="mr-1 h-4 w-4" /> Tambah
-          </Button>
+          {canManage && (
+            <Button onClick={() => setEditing(blank())}>
+              <Plus className="mr-1 h-4 w-4" /> Tambah
+            </Button>
+          )}
+
         </CardHeader>
         <CardContent className="space-y-2">
           {!items.length && <p className="text-sm text-muted-foreground">Belum ada bahan. Contoh: Cup 16oz, Sedotan, Air Mineral Botol.</p>}
