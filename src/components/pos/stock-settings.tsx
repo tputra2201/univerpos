@@ -30,7 +30,7 @@ export function StockSettings() {
   const moves = (db.stockMoves ?? []).slice(0, 30);
 
   function save(item: StockItem) {
-    if (!item.name.trim()) return toast.error("Nama bahan wajib diisi.");
+    if (!item.name.trim()) { toast.error("Nama bahan wajib diisi."); return; }
     update((cur) => {
       const list = cur.stockItems ?? [];
       const exists = list.some((x) => x.id === item.id);
@@ -50,7 +50,7 @@ export function StockSettings() {
     const v = num(adjQty);
     const { item, mode } = adjust;
     const delta = mode === "in" ? v : v - item.qty;
-    if (mode === "in" && v <= 0) return toast.error("Isi jumlah barang masuk.");
+    if (mode === "in" && v <= 0) { toast.error("Isi jumlah barang masuk."); return; }
     const move: StockMove = {
       id: uid("stm"),
       stockId: item.id,
