@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { PosProvider } from "@/lib/pos/store";
 import { Toaster } from "@/components/ui/sonner";
 import { useApplyBranding } from "@/lib/pos/branding";
+import { StoreThemeApplier } from "@/lib/pos/theme";
 
 function NotFoundComponent() {
   return (
@@ -146,6 +147,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <PosProvider>
+        <StoreThemeApplier />
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
         <Toaster position="top-center" />

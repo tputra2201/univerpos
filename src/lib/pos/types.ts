@@ -39,6 +39,10 @@ export interface StoreSettings {
   rolePermissions?: Partial<Record<"manager" | "supervisor" | "cashier", string[]>>;
   /** Program membership / loyalitas pelanggan. */
   loyalty?: LoyaltySettings;
+  /** Preset tema warna store ("logo" = ikuti ikon aplikasi). */
+  themeId?: string;
+  /** Mode tampilan: terang, gelap, atau ikut perangkat. */
+  themeMode?: "light" | "dark" | "system";
 }
 
 export interface LoyaltySettings {

@@ -1,3 +1,4 @@
+import { THEME_PRESETS } from "@/lib/pos/theme";
 import { FinanceSettings } from "@/components/pos/finance-settings";
 import { MemberSettings } from "@/components/pos/member-settings";
 
@@ -339,6 +340,35 @@ function PengaturanPage() {
                   />
                 </div>
               </Field>
+              <div className="sm:col-span-2 space-y-2">
+                <p className="text-sm font-medium">Tema tampilan</p>
+                <div className="flex flex-wrap gap-2">
+                  {(["light", "dark", "system"] as const).map((m) => (
+                    <Button key={m} type="button" size="sm" variant={(db.settings.themeMode ?? "light") === m ? "default" : "outline"} onClick={() => setSettings({ themeMode: m })}>
+                      {m === "light" ? "Terang" : m === "dark" ? "Gelap" : "Ikut perangkat"}
+                    </Button>
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {THEME_PRESETS.map((t) => {
+                    const on = (db.settings.themeId ?? "logo") === t.id;
+                    return (
+                      <button key={t.id} type="button" onClick={() => setSettings({ themeId: t.id })}
+                        className={`flex items-center gap-2 rounded-lg border p-2 text-left ${on ? "border-primary ring-2 ring-primary" : ""}`}>
+                        <span className="flex shrink-0 overflow-hidden rounded-md border">
+                          {t.id === "logo"
+                            ? <span className="size-8 bg-gradient-to-br from-primary to-accent" />
+                            : <><span className="size-8" style={{ background: t.light }} /><span className="size-8" style={{ background: t.accent }} /></>}
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block text-sm font-medium">{t.name}</span>
+                          <span className="block truncate text-xs text-muted-foreground">{t.hint}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               <Field label="Masa berlaku sampai">
                 <Input
                   value={(() => {
