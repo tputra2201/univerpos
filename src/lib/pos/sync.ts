@@ -30,6 +30,8 @@ const COLLECTIONS = [
   "memberPoints",
   "financeCategories",
   "financeEntries",
+  "stockItems",
+  "stockMoves",
 
 ] as const;
 type Col = (typeof COLLECTIONS)[number];

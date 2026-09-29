@@ -1,3 +1,4 @@
+import { applyStock } from "@/lib/pos/stock";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Printer, Ban, Undo2, Search } from "lucide-react";
@@ -86,6 +87,9 @@ function TransaksiPage() {
         const qty = sale.items.filter((i) => i.productId === p.id).reduce((a, i) => a + i.qty, 0);
         return qty > 0 && p.stock != null ? { ...p, stock: p.stock + qty } : p;
       }),
+      ...(sale.status === "paid"
+        ? applyStock(current, sale.items, 1, { note: `${type === "void" ? "Void" : "Refund"} ${sale.code}`, saleCode: sale.code, userName: currentUser?.name ?? "" })
+        : {}),
     }));
     setAction(null);
     setReason("");
