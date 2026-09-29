@@ -1,3 +1,4 @@
+import { applyStock } from "@/lib/pos/stock";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { activeShiftOf } from "@/lib/pos/shift";
 import { OptionPicker, productHasOptions } from "@/components/pos/option-picker";
@@ -656,6 +657,7 @@ function KasirPage() {
 
     update((current) => ({
       ...current,
+      ...applyStock(current, sale.items, -1, { note: `Penjualan ${sale.code}`, saleCode: sale.code, userName: sale.userName }),
       sales: [sale, ...current.sales],
       heldOrders: cart.heldId
         ? current.heldOrders.filter((h) => h.id !== cart.heldId)

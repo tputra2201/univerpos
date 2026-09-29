@@ -1,6 +1,7 @@
 import { THEME_PRESETS } from "@/lib/pos/theme";
 import { FinanceSettings } from "@/components/pos/finance-settings";
 import { MemberSettings } from "@/components/pos/member-settings";
+import { StockSettings } from "@/components/pos/stock-settings";
 
 import { PrintersSettings } from "@/components/pos/printers-settings";
 import { deliverPin, pinMessage, randomPin } from "@/lib/pos/pin";
@@ -147,6 +148,7 @@ function PengaturanPage() {
       shifts: [],
       businessDays: [],
       financeEntries: [],
+      stockMoves: [],
       memberPoints: [],
       members: (cur.members ?? []).map((m) => ({ ...m, points: 0, totalSpend: 0, visits: 0 })),
       settings: { ...cur.settings, orderSeq: 1 },
@@ -240,6 +242,7 @@ function PengaturanPage() {
           <TabsTrigger value="perangkat">Perangkat</TabsTrigger>
           <TabsTrigger value="finance">Finance</TabsTrigger>
           <TabsTrigger value="member">Member</TabsTrigger>
+          <TabsTrigger value="stok">Stok</TabsTrigger>
 
           <TabsTrigger value="data">Data</TabsTrigger>
         </TabsList>
@@ -1011,6 +1014,10 @@ function PengaturanPage() {
 
         <TabsContent value="finance" className="space-y-4">
           <FinanceSettings />
+        </TabsContent>
+
+        <TabsContent value="stok" className="space-y-4">
+          <StockSettings />
         </TabsContent>
 
         <TabsContent value="member" className="space-y-4">

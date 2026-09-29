@@ -417,6 +417,33 @@ export interface MemberPoint {
   userName: string;
 }
 
+export interface StockItem {
+  id: string;
+  name: string;
+  unit: string;
+  qty: number;
+  /** Batas peringatan stok menipis. */
+  minQty: number;
+  /** Kategori yang otomatis memakai bahan ini. */
+  categoryIds: string[];
+  /** Pemakaian per 1 produk dari kategori tersebut. */
+  categoryQty: number;
+  /** Aturan khusus produk (menang atas kategori). qty 0 = tidak memakai. */
+  productUses: { productId: string; qty: number }[];
+}
+
+export interface StockMove {
+  id: string;
+  stockId: string;
+  stockName: string;
+  createdAt: string;
+  type: "sale" | "return" | "in" | "opname";
+  qty: number;
+  note: string;
+  saleCode?: string;
+  userName: string;
+}
+
 export interface PosDatabase {
 
   version: number;
@@ -441,4 +468,6 @@ export interface PosDatabase {
   financeCategories?: FinanceCategory[];
 
   financeEntries?: FinanceEntry[];
+  stockItems?: StockItem[];
+  stockMoves?: StockMove[];
 }
