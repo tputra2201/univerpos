@@ -19,6 +19,7 @@ import { Route as MemberRouteImport } from './routes/member'
 import { Route as PengaturanRouteImport } from './routes/pengaturan'
 import { Route as ProdukRouteImport } from './routes/produk'
 import { Route as ShiftRouteImport } from './routes/shift'
+import { Route as StokRouteImport } from './routes/stok'
 import { Route as TransaksiRouteImport } from './routes/transaksi'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 
@@ -72,6 +73,11 @@ const ShiftRoute = ShiftRouteImport.update({
   path: '/shift',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StokRoute = StokRouteImport.update({
+  id: '/stok',
+  path: '/stok',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TransaksiRoute = TransaksiRouteImport.update({
   id: '/transaksi',
   path: '/transaksi',
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/pengaturan': typeof PengaturanRoute
   '/produk': typeof ProdukRoute
   '/shift': typeof ShiftRoute
+  '/stok': typeof StokRoute
   '/transaksi': typeof TransaksiRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/pengaturan': typeof PengaturanRoute
   '/produk': typeof ProdukRoute
   '/shift': typeof ShiftRoute
+  '/stok': typeof StokRoute
   '/transaksi': typeof TransaksiRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/pengaturan': typeof PengaturanRoute
   '/produk': typeof ProdukRoute
   '/shift': typeof ShiftRoute
+  '/stok': typeof StokRoute
   '/transaksi': typeof TransaksiRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
@@ -140,6 +149,7 @@ export interface FileRouteTypes {
     | '/pengaturan'
     | '/produk'
     | '/shift'
+    | '/stok'
     | '/transaksi'
     | '/lovable/email/transactional/preview'
   fileRoutesByTo: FileRoutesByTo
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
     | '/pengaturan'
     | '/produk'
     | '/shift'
+    | '/stok'
     | '/transaksi'
     | '/lovable/email/transactional/preview'
   id:
@@ -168,6 +179,7 @@ export interface FileRouteTypes {
     | '/pengaturan'
     | '/produk'
     | '/shift'
+    | '/stok'
     | '/transaksi'
     | '/lovable/email/transactional/preview'
   fileRoutesById: FileRoutesById
@@ -183,6 +195,7 @@ export interface RootRouteChildren {
   PengaturanRoute: typeof PengaturanRoute
   ProdukRoute: typeof ProdukRoute
   ShiftRoute: typeof ShiftRoute
+  StokRoute: typeof StokRoute
   TransaksiRoute: typeof TransaksiRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
@@ -259,6 +272,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShiftRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/stok': {
+      id: '/stok'
+      path: '/stok'
+      fullPath: '/stok'
+      preLoaderRoute: typeof StokRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/transaksi': {
       id: '/transaksi'
       path: '/transaksi'
@@ -287,6 +307,7 @@ const rootRouteChildren: RootRouteChildren = {
   PengaturanRoute: PengaturanRoute,
   ProdukRoute: ProdukRoute,
   ShiftRoute: ShiftRoute,
+  StokRoute: StokRoute,
   TransaksiRoute: TransaksiRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }
