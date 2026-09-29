@@ -3,6 +3,7 @@ import type { PosDatabase, Sale } from "./types";
 import { dateTime } from "./format";
 import { kindLabel } from "./finance";
 import { DAY_NAMES, businessDate, inRange, rangeLabel, type ReportRange } from "./report-range";
+import { stockSummary } from "@/components/pos/stock-report";
 import { salesOfShift, summarize, financeOfShift } from "./shift";
 
 const isCash = (name: string) => /tunai|cash/i.test(name);
@@ -158,6 +159,31 @@ export async function exportReportExcel(db: PosDatabase, range: ReportRange) {
         Metode: f.methodName,
         Keterangan: f.note,
         Nominal: f.amount,
+      })),
+  );
+
+  const stockMoves = db.stockMoves ?? [];
+  add(
+    "Stok",
+    stockSummary(db.stockItems ?? [], stockMoves, range).map((r) => ({
+      Bahan: r.name, Satuan: r.unit, Awal: r.awal, Masuk: r.masuk, Terpakai: r.terpakai,
+      Kembali: r.kembali, Opname: r.opname, Akhir: r.akhir,
+    })),
+  );
+  add(
+    "Mutasi Stok",
+    stockMoves
+      .filter((m) => inRange(m.createdAt, range))
+      .map((m) => ({
+        Waktu: dateTime(m.createdAt),
+        Bahan: m.stockName,
+        Jenis: m.type,
+        Nota: m.saleCode ?? "",
+        Produk: (m.products ?? []).map((p) => `${p.qty}x ${p.name} (${p.used})`).join("; "),
+        Keterangan: m.note,
+        Pelaku: m.userName,
+        Jumlah: m.qty,
+        Saldo: m.balanceAfter ?? "",
       })),
   );
 

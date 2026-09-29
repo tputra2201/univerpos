@@ -19,6 +19,7 @@ import {
   VoidReport,
 } from "@/components/pos/reports";
 import { usePos } from "@/lib/pos/store";
+import { StockReport } from "@/components/pos/stock-report";
 import { hasPerm } from "@/lib/pos/permissions";
 import { FINANCE_KINDS } from "@/lib/pos/finance";
 import { dateTime, rupiah } from "@/lib/pos/format";
@@ -176,6 +177,7 @@ function LaporanPage() {
               <TabsTrigger value="komisi">Komisi Staf</TabsTrigger>
             )}
 
+            {hasPerm(db.settings, currentUser?.role, "stock.view") && <TabsTrigger value="stok">Stok</TabsTrigger>}
             <TabsTrigger value="void">VOID</TabsTrigger>
             {canFinance && <TabsTrigger value="finance">Finance</TabsTrigger>}
             {canFinance &&
@@ -225,6 +227,9 @@ function LaporanPage() {
           <TabsContent value="komisi" className="mt-4">
             <CommissionReport range={range} />
           </TabsContent>
+          <TabsContent value="stok" className="mt-4">
+            <StockReport range={range} />
+          </TabsContent>
           <TabsContent value="void" className="mt-4">
             <VoidReport range={range} />
           </TabsContent>
@@ -259,6 +264,7 @@ const TAB_LABEL: Record<string, string> = {
   transfer: "Transfer & Kartu",
   online: "Order Online",
   kasir: "Per Kasir",
+  stok: "Stok",
   void: "VOID",
   finance: "Finance",
 };
