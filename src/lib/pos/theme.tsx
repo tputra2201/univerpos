@@ -54,6 +54,16 @@ export function useStoreTheme() {
       s.setProperty("--accent", p.accent);
       s.setProperty("--sidebar-primary", p.accent);
       s.setProperty("--sidebar-ring", p.accent);
+      if (p.id === "cherry" || p.id === "sunset") {
+        // Merah & oranye: sidebar pakai warna asli, bukan dicampur gelap.
+        const base = p.light;
+        s.setProperty("--sidebar", base);
+        s.setProperty("--sidebar-accent", `color-mix(in oklab, ${base} 85%, black)`);
+        s.setProperty("--sidebar-border", `color-mix(in oklab, ${base} 80%, white)`);
+        s.setProperty("--sidebar-primary", "oklch(0.985 0.01 95)");
+        s.setProperty("--sidebar-ring", "oklch(0.985 0.01 95)");
+        return;
+      }
       const deep = dark ? "oklch(0.18 0.02 250)" : "oklch(0.24 0.03 250)";
       s.setProperty("--sidebar", `color-mix(in oklab, ${col} 55%, ${deep})`);
       s.setProperty("--sidebar-accent", `color-mix(in oklab, ${col} 55%, ${dark ? "oklch(0.28 0.02 250)" : "oklch(0.34 0.03 250)"})`);
