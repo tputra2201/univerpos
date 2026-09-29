@@ -172,7 +172,10 @@ function LaporanPage() {
             <TabsTrigger value="transfer">Transfer & Kartu</TabsTrigger>
             <TabsTrigger value="online">Order Online</TabsTrigger>
             <TabsTrigger value="kasir">Per Kasir</TabsTrigger>
-            {db.staff.length > 0 && <TabsTrigger value="komisi">Komisi Staf</TabsTrigger>}
+            {db.staff.length > 0 && hasPerm(db.settings, currentUser?.role, "report.commission") && (
+              <TabsTrigger value="komisi">Komisi Staf</TabsTrigger>
+            )}
+
             <TabsTrigger value="void">VOID</TabsTrigger>
             {canFinance && <TabsTrigger value="finance">Finance</TabsTrigger>}
             {canFinance &&

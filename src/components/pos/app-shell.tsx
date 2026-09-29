@@ -33,6 +33,8 @@ const NAV: { to: string; label: string; icon: typeof ShoppingCart; perm: PermKey
   { to: "/keuangan", label: "Finance", icon: Wallet, perm: "finance.manage" },
   { to: "/produk", label: "Produk", icon: Package, perm: "product.manage" },
   { to: "/member", label: "Member", icon: Users, perm: "member.manage" },
+  { to: "/stok", label: "Stok", icon: Package, perm: "stock.view" },
+
   { to: "/transaksi", label: "Transaksi", icon: ReceiptText, perm: "transaction.view" },
 
   { to: "/laporan", label: "Laporan", icon: BarChart3, perm: "report.view" },

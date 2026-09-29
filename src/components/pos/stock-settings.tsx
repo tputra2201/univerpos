@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { usePos } from "@/lib/pos/store";
 import { uid } from "@/lib/pos/format";
 import { stockItemsOf } from "@/lib/pos/stock";
+import { hasPerm } from "@/lib/pos/permissions";
+
 import type { StockItem, StockMove } from "@/lib/pos/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +24,10 @@ function blank(): StockItem {
 
 export function StockSettings() {
   const { db, update, currentUser } = usePos();
+  const can = (k: Parameters<typeof hasPerm>[2]) => hasPerm(db.settings, currentUser?.role, k);
+  const canManage = can("stock.manage");
+  const canIn = can("stock.in");
+  const canAdjust = can("stock.adjust");
   const items = stockItemsOf(db);
   const [editing, setEditing] = useState<StockItem | null>(null);
   const [adjust, setAdjust] = useState<{ item: StockItem; mode: "in" | "opname" } | null>(null);
@@ -29,7 +35,12 @@ export function StockSettings() {
   const [adjNote, setAdjNote] = useState("");
   const moves = (db.stockMoves ?? []).slice(0, 30);
 
+  if (!can("stock.view"))
+    return <p className="text-sm text-muted-foreground">Akun Anda tidak berhak melihat data stok.</p>;
+
+
   function save(item: StockItem) {
+    if (!canManage) { toast.error("Akun Anda tidak berhak mengubah data bahan."); return; }
     if (!item.name.trim()) { toast.error("Nama bahan wajib diisi."); return; }
     update((cur) => {
       const list = cur.stockItems ?? [];
@@ -41,15 +52,18 @@ export function StockSettings() {
   }
 
   function remove(id: string) {
+    if (!canManage) { toast.error("Akun Anda tidak berhak menghapus data bahan."); return; }
     if (!window.confirm("Hapus bahan stok ini?")) return;
     update((cur) => ({ ...cur, stockItems: (cur.stockItems ?? []).filter((x) => x.id !== id) }));
   }
 
   function applyAdjust() {
     if (!adjust) return;
+    if (adjust.mode === "in" ? !canIn : !canAdjust) { toast.error("Akun Anda tidak berhak melakukan ini."); return; }
     const v = num(adjQty);
     const { item, mode } = adjust;
     const delta = mode === "in" ? v : v - item.qty;
+
     if (mode === "in" && v <= 0) { toast.error("Isi jumlah barang masuk."); return; }
     const move: StockMove = {
       id: uid("stm"),
@@ -80,9 +94,12 @@ export function StockSettings() {
               Stok berkurang otomatis setiap penjualan produk yang memakai bahan ini, dan kembali saat nota di-void/refund.
             </CardDescription>
           </div>
-          <Button onClick={() => setEditing(blank())}>
-            <Plus className="mr-1 h-4 w-4" /> Tambah
-          </Button>
+          {canManage && (
+            <Button onClick={() => setEditing(blank())}>
+              <Plus className="mr-1 h-4 w-4" /> Tambah
+            </Button>
+          )}
+
         </CardHeader>
         <CardContent className="space-y-2">
           {!items.length && <p className="text-sm text-muted-foreground">Belum ada bahan. Contoh: Cup 16oz, Sedotan, Air Mineral Botol.</p>}
@@ -106,19 +123,28 @@ export function StockSettings() {
                   <div className="text-xs text-muted-foreground">{it.unit}</div>
                 </div>
                 <div className="flex gap-1">
-                  <Button size="icon" variant="outline" title="Barang masuk" onClick={() => { setAdjust({ item: it, mode: "in" }); setAdjQty(""); setAdjNote(""); }}>
-                    <PackagePlus className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="outline" title="Stok opname" onClick={() => { setAdjust({ item: it, mode: "opname" }); setAdjQty(String(it.qty)); setAdjNote(""); }}>
-                    <ClipboardCheck className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="outline" onClick={() => setEditing(structuredClone(it))}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="outline" onClick={() => remove(it.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {canIn && (
+                    <Button size="icon" variant="outline" title="Barang masuk" onClick={() => { setAdjust({ item: it, mode: "in" }); setAdjQty(""); setAdjNote(""); }}>
+                      <PackagePlus className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {canAdjust && (
+                    <Button size="icon" variant="outline" title="Stok opname" onClick={() => { setAdjust({ item: it, mode: "opname" }); setAdjQty(String(it.qty)); setAdjNote(""); }}>
+                      <ClipboardCheck className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {canManage && (
+                    <>
+                      <Button size="icon" variant="outline" title="Ubah" onClick={() => setEditing(structuredClone(it))}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button size="icon" variant="outline" title="Hapus" onClick={() => remove(it.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
                 </div>
+
               </div>
             );
           })}

@@ -242,7 +242,7 @@ function PengaturanPage() {
           <TabsTrigger value="perangkat">Perangkat</TabsTrigger>
           <TabsTrigger value="finance">Finance</TabsTrigger>
           <TabsTrigger value="member">Member</TabsTrigger>
-          <TabsTrigger value="stok">Stok</TabsTrigger>
+          {hasPerm(db.settings, currentUser?.role, "stock.view") && <TabsTrigger value="stok">Stok</TabsTrigger>}
 
           <TabsTrigger value="data">Data</TabsTrigger>
         </TabsList>
@@ -1066,7 +1066,7 @@ function PengaturanPage() {
             </CardContent>
           </Card>
 
-          {currentUser?.role === "owner" || currentUser?.role === "manager" ? (
+          {hasPerm(db.settings, currentUser?.role, "data.reset") ? (
             <Card className="border-destructive/40">
               <CardHeader>
                 <CardTitle className="text-base text-destructive">Reset Data</CardTitle>

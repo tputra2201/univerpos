@@ -7,12 +7,17 @@ export type PermKey =
   | "transaction.view"
   | "transaction.void"
   | "report.view"
+  | "report.commission"
   | "shift.manage"
   | "eod.close"
   | "finance.manage"
   | "finance.view"
   | "member.manage"
-
+  | "stock.view"
+  | "stock.in"
+  | "stock.adjust"
+  | "stock.manage"
+  | "data.reset"
   | "settings.manage"
   | "users.manage";
 
@@ -36,6 +41,16 @@ export const PERM_GROUPS: { title: string; items: { key: PermKey; label: string 
       { key: "transaction.view", label: "Melihat riwayat transaksi" },
       { key: "transaction.void", label: "Void / refund transaksi lunas" },
       { key: "report.view", label: "Melihat laporan" },
+      { key: "report.commission", label: "Melihat laporan komisi staf" },
+    ],
+  },
+  {
+    title: "Stok",
+    items: [
+      { key: "stock.view", label: "Melihat stok & riwayat mutasi" },
+      { key: "stock.in", label: "Mencatat barang masuk" },
+      { key: "stock.adjust", label: "Stok opname / penyesuaian" },
+      { key: "stock.manage", label: "Tambah, ubah & hapus data bahan" },
     ],
   },
   {
@@ -55,9 +70,11 @@ export const PERM_GROUPS: { title: string; items: { key: PermKey; label: string 
     items: [
       { key: "settings.manage", label: "Membuka pengaturan store" },
       { key: "users.manage", label: "Kelola pengguna & hak akses" },
+      { key: "data.reset", label: "Reset transaksi & reset sistem" },
     ],
   },
 ];
+
 
 export const ALL_PERMS: PermKey[] = PERM_GROUPS.flatMap((g) => g.items.map((i) => i.key));
 
@@ -72,12 +89,25 @@ export const DEFAULT_PERMS: Record<LimitedRole, PermKey[]> = {
     "transaction.view",
     "transaction.void",
     "report.view",
+    "report.commission",
     "shift.manage",
     "finance.manage",
     "finance.view",
     "member.manage",
+    "stock.view",
+    "stock.in",
+    "stock.adjust",
   ],
-  cashier: ["pos.access", "transaction.view", "shift.manage", "finance.manage", "member.manage"],
+  cashier: [
+    "pos.access",
+    "transaction.view",
+    "shift.manage",
+    "finance.manage",
+    "member.manage",
+    "stock.view",
+    "stock.in",
+  ],
+
 
 };
 
