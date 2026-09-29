@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { Plus, Pencil, Trash2, Download, Upload, Search, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { PosGate } from "@/components/pos/pos-gate";
+import { SortableList, SortableItem, applyOrder } from "@/components/pos/sortable";
 import { AppShell, PageHeader } from "@/components/pos/app-shell";
 import { usePos } from "@/lib/pos/store";
 import { rupiah, uid } from "@/lib/pos/format";
@@ -229,9 +230,15 @@ function ProdukPage() {
                     )}
                   </div>
                 </div>
+          <SortableList
+            ids={items.map((p) => p.id)}
+            onReorder={(ids) =>
+              update((current) => ({ ...current, products: applyOrder(current.products, ids) }))
+            }
+          >
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
             {items.map((product) => (
-              <div key={product.id} className="rounded-xl border bg-card p-3">
+              <SortableItem key={product.id} id={product.id} className="rounded-xl border bg-card p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="truncate font-semibold">{product.name}</p>
@@ -256,27 +263,18 @@ function ProdukPage() {
                     </div>
                   </div>
                   <div className="flex gap-1">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      aria-label="Ubah"
-                      onClick={() => setEditing(product)}
-                    >
+                    <Button size="icon" variant="ghost" aria-label="Ubah" onClick={() => setEditing(product)}>
                       <Pencil className="size-4" />
                     </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      aria-label="Hapus"
-                      onClick={() => removeProduct(product.id)}
-                    >
+                    <Button size="icon" variant="ghost" aria-label="Hapus" onClick={() => removeProduct(product.id)}>
                       <Trash2 className="size-4" />
                     </Button>
                   </div>
                 </div>
-              </div>
+              </SortableItem>
             ))}
           </div>
+          </SortableList>
               </section>
             );
           })}
@@ -303,11 +301,19 @@ function ProdukPage() {
               Tambah
             </Button>
           </div>
+          <p className="text-xs text-muted-foreground">Tahan & geser ikon ⋮⋮ untuk mengatur urutan kategori di layar kasir.</p>
+          <SortableList
+            ids={db.categories.map((c) => c.id)}
+            onReorder={(ids) =>
+              update((current) => ({ ...current, categories: applyOrder(current.categories, ids) }))
+            }
+          >
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
             {db.categories.map((c) => {
               const picked = c.serviceIds ?? [];
               return (
-                <div key={c.id} className="space-y-3 rounded-xl border bg-card p-3">
+                <SortableItem key={c.id} id={c.id}>
+                <div className="space-y-3 rounded-xl border bg-card p-3">
                   <div className="flex items-center gap-2">
                     <Input
                       value={c.name}
@@ -368,9 +374,11 @@ function ProdukPage() {
                     </div>
                   </div>
                 </div>
+                </SortableItem>
               );
             })}
           </div>
+          </SortableList>
 
         </TabsContent>
       </Tabs>
