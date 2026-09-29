@@ -442,6 +442,10 @@ export interface StockMove {
   note: string;
   saleCode?: string;
   userName: string;
+  /** Saldo setelah mutasi. */
+  balanceAfter?: number;
+  /** Rincian produk penyebab pemakaian. */
+  products?: { name: string; qty: number; used: number }[];
 }
 
 export interface PosDatabase {

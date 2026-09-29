@@ -27,9 +27,21 @@ export function applyStock(
   const moves: StockMove[] = [];
   const next = items.map((it) => {
     let used = 0;
-    for (const l of lines) if (!l.voided) used += usagePerUnit(it, byId.get(l.productId)) * l.qty;
+    const products: { name: string; qty: number; used: number }[] = [];
+    for (const l of lines) {
+      if (l.voided) continue;
+      const u = usagePerUnit(it, byId.get(l.productId)) * l.qty;
+      if (!u) continue;
+      used += u;
+      const ex = products.find((p) => p.name === l.name);
+      if (ex) {
+        ex.qty += l.qty;
+        ex.used += u;
+      } else products.push({ name: l.name, qty: l.qty, used: u });
+    }
     if (!used) return it;
     const qty = sign * used;
+    const balanceAfter = Math.round((it.qty + qty) * 1000) / 1000;
     moves.push({
       id: uid("stm"),
       stockId: it.id,
@@ -40,8 +52,10 @@ export function applyStock(
       note: info.note,
       ...(info.saleCode ? { saleCode: info.saleCode } : {}),
       userName: info.userName,
+      balanceAfter,
+      products,
     });
-    return { ...it, qty: Math.round((it.qty + qty) * 1000) / 1000 };
+    return { ...it, qty: balanceAfter };
   });
   return { stockItems: next, stockMoves: [...moves, ...(db.stockMoves ?? [])].slice(0, 5000) };
 }
