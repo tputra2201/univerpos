@@ -89,12 +89,25 @@ export const DEFAULT_PERMS: Record<LimitedRole, PermKey[]> = {
     "transaction.view",
     "transaction.void",
     "report.view",
+    "report.commission",
     "shift.manage",
     "finance.manage",
     "finance.view",
     "member.manage",
+    "stock.view",
+    "stock.in",
+    "stock.adjust",
   ],
-  cashier: ["pos.access", "transaction.view", "shift.manage", "finance.manage", "member.manage"],
+  cashier: [
+    "pos.access",
+    "transaction.view",
+    "shift.manage",
+    "finance.manage",
+    "member.manage",
+    "stock.view",
+    "stock.in",
+  ],
+
 
 };
 
