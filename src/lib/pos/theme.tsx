@@ -54,9 +54,10 @@ export function useStoreTheme() {
       s.setProperty("--accent", p.accent);
       s.setProperty("--sidebar-primary", p.accent);
       s.setProperty("--sidebar-ring", p.accent);
-      s.setProperty("--sidebar", `oklch(${dark ? 0.22 : 0.28} 0.04 ${p.hue})`);
-      s.setProperty("--sidebar-accent", `oklch(${dark ? 0.3 : 0.35} 0.05 ${p.hue})`);
-      s.setProperty("--sidebar-border", `oklch(${dark ? 0.32 : 0.38} 0.045 ${p.hue})`);
+      const deep = dark ? "oklch(0.18 0.02 250)" : "oklch(0.24 0.03 250)";
+      s.setProperty("--sidebar", `color-mix(in oklab, ${col} 55%, ${deep})`);
+      s.setProperty("--sidebar-accent", `color-mix(in oklab, ${col} 55%, ${dark ? "oklch(0.28 0.02 250)" : "oklch(0.34 0.03 250)"})`);
+      s.setProperty("--sidebar-border", `color-mix(in oklab, ${col} 45%, ${dark ? "oklch(0.32 0.02 250)" : "oklch(0.4 0.03 250)"})`);
     };
     apply();
     mq.addEventListener("change", apply);
