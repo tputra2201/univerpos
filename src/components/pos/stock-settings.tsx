@@ -40,6 +40,7 @@ export function StockSettings() {
 
 
   function save(item: StockItem) {
+    if (!canManage) { toast.error("Akun Anda tidak berhak mengubah data bahan."); return; }
     if (!item.name.trim()) { toast.error("Nama bahan wajib diisi."); return; }
     update((cur) => {
       const list = cur.stockItems ?? [];
@@ -51,15 +52,18 @@ export function StockSettings() {
   }
 
   function remove(id: string) {
+    if (!canManage) { toast.error("Akun Anda tidak berhak menghapus data bahan."); return; }
     if (!window.confirm("Hapus bahan stok ini?")) return;
     update((cur) => ({ ...cur, stockItems: (cur.stockItems ?? []).filter((x) => x.id !== id) }));
   }
 
   function applyAdjust() {
     if (!adjust) return;
+    if (adjust.mode === "in" ? !canIn : !canAdjust) { toast.error("Akun Anda tidak berhak melakukan ini."); return; }
     const v = num(adjQty);
     const { item, mode } = adjust;
     const delta = mode === "in" ? v : v - item.qty;
+
     if (mode === "in" && v <= 0) { toast.error("Isi jumlah barang masuk."); return; }
     const move: StockMove = {
       id: uid("stm"),
