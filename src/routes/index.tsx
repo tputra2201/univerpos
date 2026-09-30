@@ -812,11 +812,6 @@ function KasirPage() {
             </Button>
           </div>
           <div className="flex w-full min-w-0 flex-wrap gap-2 pb-1">
-              <CategoryChip
-                active={categoryId === "all"}
-                label="Semua"
-                onClick={() => setCategoryId("all")}
-              />
               {visibleCategories.map((c) => (
                 <CategoryChip
                   key={c.id}
@@ -825,6 +820,11 @@ function KasirPage() {
                   onClick={() => setCategoryId(c.id)}
                 />
               ))}
+              <CategoryChip
+                active={categoryId === "all"}
+                label="Semua"
+                onClick={() => setCategoryId("all")}
+              />
           </div>
         </div>
 
@@ -834,29 +834,29 @@ function KasirPage() {
               Belum ada produk yang cocok. Tambahkan di halaman Produk.
             </p>
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
               {products.map((product) => (
                 <button
                   key={product.id}
                   type="button"
                   onClick={() => onProductClick(product)}
                   aria-disabled={!shiftOpen || (!cart.orderType && !defaultService)}
-                  className="flex min-h-24 aria-disabled:opacity-50 flex-col justify-between rounded-xl border bg-card p-3 text-left shadow-sm transition-all hover:border-primary hover:shadow-md active:scale-[0.98]"
+                  className="flex min-h-16 aria-disabled:opacity-50 flex-col justify-between rounded-lg border bg-card p-2 text-left shadow-sm transition-all hover:border-primary hover:shadow-md active:scale-[0.98]"
                 >
-                  <span className="line-clamp-2 text-sm font-semibold">{product.name}</span>
-                  <span className="mt-2 block">
-                    <span className="tabular block font-bold text-primary">
+                  <span className="line-clamp-2 text-xs font-semibold leading-tight sm:text-sm">{product.name}</span>
+                  <span className="mt-1 block">
+                    <span className="tabular block text-xs font-bold text-primary sm:text-sm">
                       {product.openPrice ? "Harga bebas" : rupiah(servicePrice(product, priceService))}
                     </span>
                     {product.stock != null && (
                       <span
-                        className={`text-xs ${product.stock <= 0 ? "text-destructive" : "text-muted-foreground"}`}
+                        className={`block text-[10px] ${product.stock <= 0 ? "text-destructive" : "text-muted-foreground"}`}
                       >
                         Stok {product.stock}
                       </span>
                     )}
                     {productHasOptions(product, db.modifiers ?? []) && (
-                      <span className="text-xs text-muted-foreground">Ada pilihan</span>
+                      <span className="block text-[10px] text-muted-foreground">Ada pilihan</span>
                     )}
                   </span>
                 </button>
