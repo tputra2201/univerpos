@@ -20,6 +20,7 @@ import {
   Printer,
   Tags,
   Users,
+  ChevronDown,
 } from "lucide-react";
 
 import { toast } from "sonner";
@@ -34,7 +35,7 @@ import { layoutFor, printerFor, printersFor, productStation, sendToPrinter, spli
 import type { PrinterRole } from "@/lib/pos/types";
 import { getServiceTypes } from "@/lib/pos/seed";
 import { serviceIcon } from "@/lib/pos/service-icons";
-import { categoryAllowed, servicePrice } from "@/lib/pos/pricing";
+import { categoryAllowed, servicePrice, serviceOptionPrice } from "@/lib/pos/pricing";
 import { MemberPicker } from "@/components/pos/member-picker";
 import {
   loyaltyOf,
@@ -759,12 +760,20 @@ function KasirPage() {
             </div>
           )}
           <div className="flex items-center justify-between gap-2 rounded-lg bg-primary/10 px-3 py-2">
-            <span className="text-sm font-semibold text-primary">
-              {cart.orderNo && <span className="tabular mr-2 font-mono">{cart.orderNo}</span>}
-              {cart.orderType || defaultService?.name || "Belum pilih layanan"}
-              {cart.tableName && ` • ${cart.tableName}`}
-              {cart.sentToKitchen && <span className="ml-2 text-xs">• sudah di dapur</span>}
-            </span>
+            <button
+              type="button"
+              onClick={() => setPickerOpen(true)}
+              title="Ganti jenis layanan"
+              className="flex min-w-0 items-center gap-1 rounded-md text-left text-sm font-semibold text-primary underline-offset-4 hover:underline"
+            >
+              {cart.orderNo && <span className="tabular mr-1 font-mono">{cart.orderNo}</span>}
+              <span className="truncate">
+                {cart.orderType || defaultService?.name || "Belum pilih layanan"}
+                {cart.tableName && ` • ${cart.tableName}`}
+              </span>
+              <ChevronDown className="size-4 shrink-0" />
+              {cart.sentToKitchen && <span className="ml-1 text-xs">• sudah di dapur</span>}
+            </button>
             <div className="flex gap-2">
               <Button size="sm" className="h-8 gap-1" onClick={newOrder}>
                 <Plus className="size-4" /> New Order
@@ -1033,14 +1042,32 @@ function KasirPage() {
           </DialogHeader>
           <ServicePicker
             onPick={(orderType, tableName, serviceId) => {
-              setCart((prev) => ({
-                ...EMPTY_CART,
-                ...(prev.lines.length ? prev : {}),
-                orderType,
-                tableName,
-                serviceId,
-                customerName: prev.lines.length && prev.customerName ? prev.customerName : tableName ? "" : orderType,
-              }));
+              const services = getServiceTypes(db);
+              setCart((prev) => {
+                const oldSvc = services.find((s) => s.id === prev.serviceId);
+                const newSvc = services.find((s) => s.id === serviceId);
+                const lines =
+                  prev.serviceId === serviceId
+                    ? prev.lines
+                    : prev.lines.map((l) => {
+                        const p = db.products.find((x) => x.id === l.productId);
+                        if (!p || p.openPrice) return l;
+                        let extra = l.unitPrice - servicePrice(p, oldSvc);
+                        const ov = oldSvc?.priceAdjustMode === "percent" ? oldSvc.priceAdjustValue ?? 0 : 0;
+                        if (ov) extra = Math.round(extra / (1 + ov / 100));
+                        return { ...l, unitPrice: servicePrice(p, newSvc) + serviceOptionPrice(extra, newSvc) };
+                      });
+                const autoName = !prev.customerName || prev.customerName === prev.orderType;
+                return {
+                  ...EMPTY_CART,
+                  ...(prev.lines.length ? prev : {}),
+                  lines: prev.lines.length ? lines : [],
+                  orderType,
+                  tableName,
+                  serviceId,
+                  customerName: prev.lines.length && !autoName ? prev.customerName : tableName ? "" : orderType,
+                };
+              });
               setPickerOpen(false);
             }}
             onOpenHeld={(id) => {
