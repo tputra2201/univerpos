@@ -68,6 +68,9 @@ interface DeviceRow {
   device_name: string;
   last_seen_at: string;
   device_model?: string;
+  current_user_name?: string;
+  current_user_role?: string;
+  shift_open?: boolean;
 }
 
 /** Kode perangkat singkat dari ID, mis. DEV-3F9A2C. */
@@ -144,6 +147,11 @@ function StoreDevices({ store, onChange }: { store: StoreRow; onChange: () => vo
           <span className="min-w-0 flex-1 truncate font-medium">
             {d.device_name}
             {d.device_model && <span className="font-normal text-muted-foreground"> · {d.device_model}</span>}
+            <span className="block font-normal text-muted-foreground">
+              {d.current_user_name
+                ? `${isOn(d) ? "Pengguna" : "Terakhir"}: ${d.current_user_name}${d.current_user_role ? ` (${d.current_user_role})` : ""}${d.shift_open ? " • shift dibuka" : ""}`
+                : "Tidak ada yang login"}
+            </span>
           </span>
           <span className="text-muted-foreground">
             {isOn(d) ? "online" : "terakhir aktif"} {new Date(d.last_seen_at).toLocaleString("id-ID")}

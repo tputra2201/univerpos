@@ -10,6 +10,7 @@ import { uid } from "@/lib/pos/format";
 import { clearDatabase } from "@/lib/pos/storage";
 import type { BusinessType } from "@/lib/pos/types";
 import { roleLabel } from "@/lib/pos/roles";
+import { activeShiftOf } from "@/lib/pos/shift";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -115,6 +116,18 @@ export function PosGate({ children }: { children: ReactNode }) {
     );
   }, [ready, activated, online, code, update]);
 
+  const beatInfo = {
+    name: currentUser?.name ?? "",
+    role: currentUser ? roleLabel(currentUser.role) : "",
+    shift: !!activeShiftOf(db),
+  };
+  const beatRef = (globalThis as { __posBeat?: { cur: typeof beatInfo; fire?: () => void } }).__posBeat ??= { cur: beatInfo };
+  beatRef.cur = beatInfo;
+  const beatSig = `${beatInfo.name}|${beatInfo.role}|${beatInfo.shift}`;
+  useEffect(() => {
+    beatRef.fire?.();
+  }, [beatSig]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Detak perangkat: laporkan "masih aktif" tiap 2 menit saat online.
   useEffect(() => {
     if (!ready || !activated || !code || typeof window === "undefined") return;
@@ -132,6 +145,9 @@ export function PosGate({ children }: { children: ReactNode }) {
         _code: code,
         _token: token,
         _model: model,
+        _user_name: beatRef.cur.name,
+        _user_role: beatRef.cur.role,
+        _shift_open: beatRef.cur.shift,
       });
       if (result.error) console.warn("Status perangkat gagal diperbarui", result.error.message);
     };
@@ -139,6 +155,7 @@ export function PosGate({ children }: { children: ReactNode }) {
       model = m;
       void beat();
     });
+    beatRef.fire = () => void beat();
     const onOnline = () => void beat();
     const onVisible = () => {
       if (document.visibilityState === "visible") void beat();
