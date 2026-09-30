@@ -1238,6 +1238,26 @@ export function ServiceTypesCard() {
               />
               Boleh bayar sebagian (split bill)
             </label>
+            <label className="flex w-full items-center gap-2 border-t pt-2 text-sm">
+              <Switch
+                checked={svc.isDefault === true}
+                onCheckedChange={(v) =>
+                  save(
+                    services.map((x) =>
+                      x.id === svc.id ? { ...x, isDefault: v } : { ...x, isDefault: false },
+                    ),
+                  )
+                }
+              />
+              Jadikan layanan bawaan (kasir bisa langsung pilih menu)
+            </label>
+            <label className="flex w-full items-center gap-2 border-t pt-2 text-sm">
+              <Switch
+                checked={svc.autoPrintReceipt === true}
+                onCheckedChange={(v) => patch(svc.id, { autoPrintReceipt: v })}
+              />
+              Langsung cetak struk setelah pembayaran
+            </label>
             <div className="flex w-full flex-wrap items-center gap-2 border-t pt-2">
               <span className="text-xs text-muted-foreground">Penyesuaian harga</span>
               <AdjustInput
