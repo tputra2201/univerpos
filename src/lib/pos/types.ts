@@ -212,6 +212,10 @@ export interface ServiceType {
   priceAdjustValue?: number;
   /** Boleh bayar sebagian (split bill). Kosong = boleh. */
   allowSplit?: boolean;
+  /** Layanan bawaan: kasir bisa langsung pilih menu tanpa memilih layanan. */
+  isDefault?: boolean;
+  /** Langsung cetak struk setelah konfirmasi pembayaran. */
+  autoPrintReceipt?: boolean;
 }
 
 
