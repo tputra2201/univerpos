@@ -163,7 +163,7 @@ function KasirPage() {
   const [hydrated, setHydrated] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [categoryId, setCategoryId] = useState<string>("all");
+  const [categoryId, setCategoryId] = useState<string>("");
   const [variantProduct, setVariantProduct] = useState<Product | null>(null);
   const [openPriceProduct, setOpenPriceProduct] = useState<Product | null>(null);
   const [openPriceValue, setOpenPriceValue] = useState("");
@@ -240,8 +240,8 @@ function KasirPage() {
 
   // Kategori yang dipilih bisa tidak tersedia lagi setelah layanan berganti.
   useEffect(() => {
-    if (categoryId !== "all" && !visibleCategories.some((c) => c.id === categoryId))
-      setCategoryId("all");
+    if (categoryId === "" || (categoryId !== "all" && !visibleCategories.some((c) => c.id === categoryId)))
+      setCategoryId(visibleCategories[0]?.id ?? "all");
   }, [categoryId, visibleCategories]);
 
 
