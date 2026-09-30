@@ -35,7 +35,7 @@ import { layoutFor, printerFor, printersFor, productStation, sendToPrinter, spli
 import type { PrinterRole } from "@/lib/pos/types";
 import { getServiceTypes } from "@/lib/pos/seed";
 import { serviceIcon } from "@/lib/pos/service-icons";
-import { categoryAllowed, servicePrice } from "@/lib/pos/pricing";
+import { categoryAllowed, servicePrice, serviceOptionPrice } from "@/lib/pos/pricing";
 import { MemberPicker } from "@/components/pos/member-picker";
 import {
   loyaltyOf,
