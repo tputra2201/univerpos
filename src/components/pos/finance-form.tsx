@@ -78,17 +78,16 @@ export function FinanceForm({
     update((cur) => ({ ...cur, financeEntries: [entry, ...(cur.financeEntries ?? [])] }));
     toast.success(`${meta.label} tercatat.`);
     onOpenChange(false);
-    onPrint?.(meta.label, buildFinanceSlip(entry, db));
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
+      <DialogContent className="max-h-[96dvh] gap-3 overflow-y-auto p-4 sm:max-w-md md:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Catat Finance</DialogTitle>
         </DialogHeader>
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-1.5">
+        <div className="grid gap-x-4 gap-y-2 md:grid-cols-2">
+          <div className="grid grid-cols-4 gap-1.5 md:col-span-2">
             {FINANCE_KINDS.map((k) => (
               <Button
                 key={k.kind}
