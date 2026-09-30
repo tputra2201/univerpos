@@ -1240,6 +1240,13 @@ export function ServiceTypesCard() {
             </label>
             <label className="flex w-full items-center gap-2 border-t pt-2 text-sm">
               <Switch
+                checked={svc.sendToKitchen !== false}
+                onCheckedChange={(v) => patch(svc.id, { sendToKitchen: v })}
+              />
+              Aktifkan "Sent to Kitchen" (bisa ditimpa per kategori produk)
+            </label>
+            <label className="flex w-full items-center gap-2 border-t pt-2 text-sm">
+              <Switch
                 checked={svc.isDefault === true}
                 onCheckedChange={(v) =>
                   save(

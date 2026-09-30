@@ -373,6 +373,28 @@ function ProdukPage() {
                       ))}
                     </div>
                   </div>
+                  <label className="flex items-center justify-between gap-2 border-t pt-2 text-sm">
+                    <span>Sent to Kitchen</span>
+                    <select
+                      className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                      value={c.sendToKitchen == null ? "" : c.sendToKitchen ? "yes" : "no"}
+                      onChange={(e) =>
+                        update((current) => ({
+                          ...current,
+                          categories: current.categories.map((x) => {
+                            if (x.id !== c.id) return x;
+                            const { sendToKitchen: _omit, ...rest } = x;
+                            const v = e.target.value;
+                            return v === "" ? rest : { ...rest, sendToKitchen: v === "yes" };
+                          }),
+                        }))
+                      }
+                    >
+                      <option value="">Ikuti jenis layanan</option>
+                      <option value="yes">Aktif</option>
+                      <option value="no">Tidak aktif</option>
+                    </select>
+                  </label>
                 </div>
                 </SortableItem>
               );

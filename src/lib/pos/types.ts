@@ -115,6 +115,8 @@ export interface Category {
   name: string;
   /** Layanan yang boleh menampilkan kategori ini. Kosong/undefined = semua layanan. */
   serviceIds?: string[];
+  /** Kirim ke dapur: true/false menang atas jenis layanan; kosong = ikut layanan. */
+  sendToKitchen?: boolean;
 }
 
 
@@ -216,6 +218,8 @@ export interface ServiceType {
   isDefault?: boolean;
   /** Langsung cetak struk setelah konfirmasi pembayaran. */
   autoPrintReceipt?: boolean;
+  /** Pesanan layanan ini dikirim ke dapur. Kosong = ya. */
+  sendToKitchen?: boolean;
 }
 
 
