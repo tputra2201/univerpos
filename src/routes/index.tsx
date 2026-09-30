@@ -317,7 +317,7 @@ function KasirPage() {
 
   function onProductClick(product: Product) {
     if (!requireShift()) return;
-    if (!cart.orderType) {
+    if (ensureService() === undefined) {
       toast.error("Pilih jenis layanan dulu.");
       setPickerOpen(true);
       return;
