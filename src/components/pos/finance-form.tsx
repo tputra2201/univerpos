@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { usePos } from "@/lib/pos/store";
 import { uid } from "@/lib/pos/format";
-import { FINANCE_KINDS, buildFinanceSlip, financeCategoriesOf } from "@/lib/pos/finance";
+import { FINANCE_KINDS, financeCategoriesOf } from "@/lib/pos/finance";
 import { activeShiftOf } from "@/lib/pos/shift";
 import type { FinanceEntry, FinanceKind } from "@/lib/pos/types";
 import { Button } from "@/components/ui/button";
@@ -12,13 +12,12 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const sel =
-  "h-11 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring";
+  "h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring";
 
 export function FinanceForm({
   open,
   kind: initialKind,
   onOpenChange,
-  onPrint,
 }: {
   open: boolean;
   kind: FinanceKind;
@@ -103,10 +102,10 @@ export function FinanceForm({
               </Button>
             ))}
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground md:col-span-2">
             {FINANCE_KINDS.find((k) => k.kind === kind)?.hint}
           </p>
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <Label htmlFor="fin-cat">Kategori</Label>
             <select
               id="fin-cat"
@@ -130,7 +129,7 @@ export function FinanceForm({
               </p>
             )}
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <Label htmlFor="fin-item">Item</Label>
             <select
               id="fin-item"
@@ -147,7 +146,7 @@ export function FinanceForm({
               ))}
             </select>
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <Label htmlFor="fin-method">Metode pembayaran</Label>
             <select
               id="fin-method"
@@ -162,18 +161,18 @@ export function FinanceForm({
               ))}
             </select>
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <Label htmlFor="fin-amount">Nominal</Label>
             <Input
               id="fin-amount"
               inputMode="numeric"
               placeholder="0"
-              className="tabular h-11 text-right text-lg font-bold"
+              className="tabular h-10 text-right text-lg font-bold"
               value={amount ? Number(amount).toLocaleString("id-ID") : ""}
               onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ""))}
             />
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <Label htmlFor="fin-note">Keterangan</Label>
             <Input
               id="fin-note"
@@ -182,8 +181,8 @@ export function FinanceForm({
               onChange={(e) => setNote(e.target.value)}
             />
           </div>
-          <Button className="h-11 w-full" onClick={submit}>
-            Simpan & Cetak
+          <Button className="h-11 w-full md:col-span-2" onClick={submit}>
+            Simpan
           </Button>
         </div>
       </DialogContent>
