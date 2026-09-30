@@ -305,7 +305,7 @@ function KasirPage() {
         productId: product.id,
         name: product.name,
         variantName,
-        unitPrice: (fixedPrice ?? servicePrice(product, activeService)) + priceDelta,
+        unitPrice: (fixedPrice ?? servicePrice(product, svc ?? activeService)) + priceDelta,
         qty: 1,
         note: "",
         discount: 0,
