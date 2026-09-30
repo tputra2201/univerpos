@@ -759,7 +759,7 @@ function KasirPage() {
           <div className="flex items-center justify-between gap-2 rounded-lg bg-primary/10 px-3 py-2">
             <span className="text-sm font-semibold text-primary">
               {cart.orderNo && <span className="tabular mr-2 font-mono">{cart.orderNo}</span>}
-              {cart.orderType || "Belum pilih layanan"}
+              {cart.orderType || defaultService?.name || "Belum pilih layanan"}
               {cart.tableName && ` • ${cart.tableName}`}
               {cart.sentToKitchen && <span className="ml-2 text-xs">• sudah di dapur</span>}
             </span>
@@ -832,7 +832,7 @@ function KasirPage() {
                   <span className="line-clamp-2 text-sm font-semibold">{product.name}</span>
                   <span className="mt-2 block">
                     <span className="tabular block font-bold text-primary">
-                      {product.openPrice ? "Harga bebas" : rupiah(servicePrice(product, activeService))}
+                      {product.openPrice ? "Harga bebas" : rupiah(servicePrice(product, priceService))}
                     </span>
                     {product.stock != null && (
                       <span
