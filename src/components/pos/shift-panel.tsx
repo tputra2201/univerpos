@@ -1,5 +1,6 @@
 /** Prosedur check-in kasir, cash close out, dan End of Day (tutup hari usaha). */
 import { useMemo, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { ClipboardCheck, LogIn, Wallet, CalendarCheck2, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { usePos } from "@/lib/pos/store";
@@ -86,6 +87,7 @@ export function ShiftPanel({
   onPrint: (title: string, lines: string[]) => void;
 }) {
   const { db, update, currentUser } = usePos();
+  const navigate = useNavigate();
   const shift = activeShiftOf(db);
   const day = activeBusinessDayOf(db);
   const canShift = hasPerm(db.settings, currentUser?.role, "shift.manage");
@@ -135,6 +137,7 @@ export function ShiftPanel({
     });
     setStartCash("");
     toast.success(`Shift ${who} dimulai.`);
+    navigate({ to: "/" });
   }
 
   function closeOut() {
