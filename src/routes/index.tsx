@@ -224,6 +224,14 @@ function KasirPage() {
     [db, cart.serviceId],
   );
 
+  /** Layanan bawaan (Express Service): dipakai otomatis bila kasir belum memilih layanan. */
+  const defaultService = useMemo(
+    () => getServiceTypes(db).find((s) => s.active && s.isDefault),
+    [db],
+  );
+  /** Layanan yang dipakai untuk menghitung harga di katalog. */
+  const priceService = activeService ?? defaultService;
+
   const visibleCategories = useMemo(
     () => db.categories.filter((c) => categoryAllowed(c, cart.serviceId)),
     [db.categories, cart.serviceId],
