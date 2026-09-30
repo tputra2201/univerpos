@@ -84,7 +84,7 @@ function TransaksiPage() {
         s.id === sale.id ? { ...s, status: type, reason: reason.trim() } : s,
       ),
       products: current.products.map((p) => {
-        const qty = sale.items.filter((i) => i.productId === p.id).reduce((a, i) => a + i.qty, 0);
+        const qty = sale.items.filter((i) => i.productId === p.id && !i.voided).reduce((a, i) => a + i.qty, 0);
         return qty > 0 && p.stock != null ? { ...p, stock: p.stock + qty } : p;
       }),
       ...(sale.status === "paid"

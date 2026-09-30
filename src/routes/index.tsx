@@ -708,7 +708,7 @@ function KasirPage() {
       memberPoints: ledger.length ? [...memberPointsOf(current), ...ledger] : memberPointsOf(current),
       products: current.products.map((p) => {
         const sold = sale.items
-          .filter((i) => i.productId === p.id)
+          .filter((i) => i.productId === p.id && !i.voided)
           .reduce((sum, i) => sum + i.qty, 0);
         return sold > 0 && p.stock != null ? { ...p, stock: p.stock - sold } : p;
       }),
