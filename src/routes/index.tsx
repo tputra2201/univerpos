@@ -1907,7 +1907,7 @@ function PaymentDialog({
                 type="button"
                 onClick={() => {
                   setMethodId(m.id);
-                  setAmount("");
+                  setAmount(m.isCash ? String(remaining) : "");
                 }}
               >
                 {m.name}
