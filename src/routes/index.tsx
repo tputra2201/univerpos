@@ -258,9 +258,32 @@ function KasirPage() {
     return false;
   }
 
+  /**
+   * Pastikan ada jenis layanan aktif di keranjang. Kalau belum, pakai layanan
+   * bawaan (Express Service) supaya kasir bisa langsung memilih menu.
+   * Mengembalikan undefined bila kasir masih harus memilih layanan.
+   */
+  function ensureService() {
+    if (cart.orderType) return activeService ?? null;
+    const svc = getServiceTypes(db).find((s) => s.active && s.isDefault);
+    if (!svc) return undefined;
+    setCart((prev) =>
+      prev.orderType
+        ? prev
+        : {
+            ...prev,
+            orderType: svc.name,
+            serviceId: svc.id,
+            customerName: prev.customerName || (svc.kind === "dinein" ? "" : svc.name),
+          },
+    );
+    return svc;
+  }
+
   function addProduct(product: Product, variantName = "", priceDelta = 0, fixedPrice?: number) {
     if (!requireShift()) return;
-    if (!cart.orderType) {
+    const svc = ensureService();
+    if (svc === undefined) {
       toast.error("Pilih jenis layanan dulu.");
       setPickerOpen(true);
       return;
