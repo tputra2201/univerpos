@@ -1949,7 +1949,7 @@ function PaymentDialog({
           )}
 
           {split.length > 0 && (
-            <ul className="space-y-1 rounded-lg border p-2 text-sm">
+            <ul className="space-y-1 rounded-lg border p-2 text-sm md:col-span-2">
               {split.map((p, i) => (
                 <li key={i} className="flex justify-between">
                   <span>{p.methodName}</span>
