@@ -717,17 +717,19 @@ function KasirPage() {
     setCart(EMPTY_CART);
     setPayOpen(false);
     setCartOpen(false);
-    const receiptPrinter = printerFor(db, "receipt");
-    const lines = buildReceipt("receipt", sale, settings, layoutFor(db, receiptPrinter));
-    if (receiptPrinter.autoPrint) {
+    // Tanpa dialog pratinjau: kasir langsung kembali ke layar utama.
+    // Struk hanya dicetak bila jenis layanan mengaktifkan cetak otomatis.
+    const autoReceipt = (activeService ?? defaultService)?.autoPrintReceipt === true;
+    if (autoReceipt) {
+      const receiptPrinter = printerFor(db, "receipt");
+      const lines = buildReceipt("receipt", sale, settings, layoutFor(db, receiptPrinter));
       sendToPrinter(receiptPrinter, lines)
         .then(() => toast.success(`Pembayaran ${rupiah(sale.total)} tersimpan. Struk dicetak.`))
         .catch((error: unknown) =>
           toast.error(error instanceof Error ? error.message : "Struk gagal dicetak."),
         );
     } else {
-      showPrint("Struk Penjualan", lines, "receipt");
-      toast.success(`Pembayaran ${rupiah(sale.total)} tersimpan.`);
+      toast.success(`Pembayaran ${rupiah(sale.total)} tersimpan. Struk bisa dicetak di menu Transaksi.`);
     }
   }
 
