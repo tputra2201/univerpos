@@ -16,6 +16,9 @@ interface DeviceRow {
   last_seen_at: string;
   created_at: string;
   max_devices: number;
+  current_user_name?: string;
+  current_user_role?: string;
+  shift_open?: boolean;
 }
 
 export function DevicesCard() {
@@ -40,6 +43,8 @@ export function DevicesCard() {
 
   useEffect(() => {
     void load();
+    const t = setInterval(() => void load(), 60_000);
+    return () => clearInterval(t);
   }, [load]);
 
   async function release(d: DeviceRow) {
@@ -87,6 +92,12 @@ export function DevicesCard() {
           <div key={d.id} className="flex flex-wrap items-center gap-2 rounded-lg border p-3">
             <div className="min-w-0 flex-1 break-words">
               <p className="font-semibold">{d.device_name}</p>
+              <p className="text-sm">
+                <span className={`mr-1 inline-block size-2 rounded-full ${Date.now() - new Date(d.last_seen_at).getTime() < 5 * 60_000 ? "bg-primary" : "bg-muted-foreground/40"}`} />
+                {d.current_user_name
+                  ? `${d.current_user_name}${d.current_user_role ? ` (${d.current_user_role})` : ""}${d.shift_open ? " • shift dibuka" : ""}`
+                  : "Tidak ada yang login"}
+              </p>
               <p className="text-xs text-muted-foreground">
                 aktif terakhir {new Date(d.last_seen_at).toLocaleString("id-ID")}
               </p>

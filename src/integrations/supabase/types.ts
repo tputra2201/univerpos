@@ -89,6 +89,8 @@ export type Database = {
       store_devices: {
         Row: {
           created_at: string
+          current_user_name: string
+          current_user_role: string
           device_model: string
           device_name: string
           device_token: string
@@ -96,10 +98,13 @@ export type Database = {
           is_active: boolean
           is_developer: boolean
           last_seen_at: string
+          shift_open: boolean
           store_id: string
         }
         Insert: {
           created_at?: string
+          current_user_name?: string
+          current_user_role?: string
           device_model?: string
           device_name?: string
           device_token: string
@@ -107,10 +112,13 @@ export type Database = {
           is_active?: boolean
           is_developer?: boolean
           last_seen_at?: string
+          shift_open?: boolean
           store_id: string
         }
         Update: {
           created_at?: string
+          current_user_name?: string
+          current_user_role?: string
           device_model?: string
           device_name?: string
           device_token?: string
@@ -118,6 +126,7 @@ export type Database = {
           is_active?: boolean
           is_developer?: boolean
           last_seen_at?: string
+          shift_open?: boolean
           store_id?: string
         }
         Relationships: [
@@ -382,7 +391,14 @@ export type Database = {
       }
       developer_exists: { Args: never; Returns: boolean }
       device_heartbeat: {
-        Args: { _code: string; _model?: string; _token: string }
+        Args: {
+          _code: string
+          _model?: string
+          _shift_open?: boolean
+          _token: string
+          _user_name?: string
+          _user_role?: string
+        }
         Returns: undefined
       }
       has_role: {
@@ -415,12 +431,15 @@ export type Database = {
         Args: { _code: string; _key: string }
         Returns: {
           created_at: string
+          current_user_name: string
+          current_user_role: string
           device_model: string
           device_name: string
           id: string
           is_active: boolean
           last_seen_at: string
           max_devices: number
+          shift_open: boolean
         }[]
       }
       sync_pull: {
