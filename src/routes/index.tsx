@@ -458,7 +458,10 @@ function KasirPage() {
     if (cart.lines.filter((l) => !l.voided).length === 0) return;
     const orderNo = ensureOrderNo();
     const lines = cart.lines.map((l) => ({ ...l, sentToKitchen: true }));
-    const sale = draftSale("paid", { lines, orderNo });
+    const sale = draftSale("paid", {
+      lines: lines.filter((l) => lineNeedsKitchen(db, l, activeService)),
+      orderNo,
+    });
     const kitchenId = cart.kitchenId ?? uid("kit");
     const kEntry = {
       id: kitchenId,
