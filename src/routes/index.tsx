@@ -826,7 +826,7 @@ function KasirPage() {
                   key={product.id}
                   type="button"
                   onClick={() => onProductClick(product)}
-                  aria-disabled={!shiftOpen || !cart.orderType}
+                  aria-disabled={!shiftOpen || (!cart.orderType && !defaultService)}
                   className="flex min-h-24 aria-disabled:opacity-50 flex-col justify-between rounded-xl border bg-card p-3 text-left shadow-sm transition-all hover:border-primary hover:shadow-md active:scale-[0.98]"
                 >
                   <span className="line-clamp-2 text-sm font-semibold">{product.name}</span>
