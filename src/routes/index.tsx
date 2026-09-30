@@ -891,7 +891,7 @@ function KasirPage() {
       <Sheet open={cartOpen} onOpenChange={setCartOpen}>
         <SheetContent
           side="bottom"
-          className="flex h-[88dvh] max-h-[88dvh] flex-col gap-0 overflow-hidden p-0 pt-12 [&>button]:z-10 [&>button]:rounded-full [&>button]:bg-muted [&>button]:p-1.5 [&>button]:opacity-100"
+          className="flex h-[94dvh] max-h-[94dvh] flex-col gap-0 overflow-hidden p-0 pt-12 [&>button]:z-10 [&>button]:rounded-full [&>button]:bg-muted [&>button]:p-1.5 [&>button]:opacity-100"
         >
           <SheetHeader className="absolute left-4 top-3.5 p-0">
             <SheetTitle className="text-base">Keranjang</SheetTitle>
@@ -1459,7 +1459,7 @@ function CartPanel({
       </div>
 
       <div className={"flex min-h-0 flex-1 flex-col " + (split ? "md:border-l" : "")}>
-      <div className="min-h-[35%] flex-1 overflow-auto px-2 py-2">
+      <div className="min-h-24 flex-1 overflow-auto px-2 py-2">
         {cart.lines.length === 0 ? (
           <p className="py-16 text-center text-sm text-muted-foreground">
             Keranjang kosong. Pilih produk untuk mulai transaksi.
@@ -1582,8 +1582,8 @@ function CartPanel({
         )}
       </div>
 
-      <div className={"shrink-0 space-y-3 overflow-y-auto border-t px-4 py-3 " + (split ? "max-h-[45%] md:max-h-[55%]" : "max-h-[45%]")}>
-        <div className="space-y-1 text-sm">
+      <div className="shrink-0 space-y-2 border-t px-4 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+        <div className="max-h-[22dvh] space-y-1 overflow-y-auto text-sm">
           <Row label="Subtotal" value={rupiah(totals.subtotal)} />
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Diskon transaksi</span>
@@ -1888,7 +1888,7 @@ function PaymentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[94dvh] overflow-y-auto sm:max-w-md md:max-w-3xl">
         <DialogHeader>
           <DialogTitle>Pembayaran</DialogTitle>
           <DialogDescription className="tabular">
@@ -1897,8 +1897,8 @@ function PaymentDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-2">
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-2 content-start gap-2">
             {methods.map((m) => (
               <Button
                 key={m.id}
@@ -1949,7 +1949,7 @@ function PaymentDialog({
           )}
 
           {split.length > 0 && (
-            <ul className="space-y-1 rounded-lg border p-2 text-sm">
+            <ul className="space-y-1 rounded-lg border p-2 text-sm md:col-span-2">
               {split.map((p, i) => (
                 <li key={i} className="flex justify-between">
                   <span>{p.methodName}</span>
