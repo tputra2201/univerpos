@@ -35,7 +35,7 @@ import { layoutFor, printerFor, printersFor, productStation, sendToPrinter, spli
 import type { PrinterRole } from "@/lib/pos/types";
 import { getServiceTypes } from "@/lib/pos/seed";
 import { serviceIcon } from "@/lib/pos/service-icons";
-import { categoryAllowed, servicePrice, serviceOptionPrice } from "@/lib/pos/pricing";
+import { categoryAllowed, lineNeedsKitchen, servicePrice, serviceOptionPrice } from "@/lib/pos/pricing";
 import { MemberPicker } from "@/components/pos/member-picker";
 import {
   loyaltyOf,
@@ -458,14 +458,17 @@ function KasirPage() {
     if (cart.lines.filter((l) => !l.voided).length === 0) return;
     const orderNo = ensureOrderNo();
     const lines = cart.lines.map((l) => ({ ...l, sentToKitchen: true }));
-    const sale = draftSale("paid", { lines, orderNo });
+    const sale = draftSale("paid", {
+      lines: lines.filter((l) => lineNeedsKitchen(db, l, activeService)),
+      orderNo,
+    });
     const kitchenId = cart.kitchenId ?? uid("kit");
     const kEntry = {
       id: kitchenId,
       orderNo,
       label: [orderNo, cart.orderType, cart.tableName || cart.customerName].filter(Boolean).join(" • "),
       createdAt: new Date().toISOString(),
-      items: lines.filter((l) => !l.voided),
+      items: lines.filter((l) => !l.voided && lineNeedsKitchen(db, l, activeService)),
       note: cart.note,
       status: "processing" as const,
     };
@@ -1361,6 +1364,7 @@ function CartPanel({
   const loyalty = loyaltyOf(db.settings);
   const member = membersOf(db).find((m) => m.id === cart.memberId) ?? null;
   const [memberOpen, setMemberOpen] = useState(false);
+  const cartService = getServiceTypes(db).find((s) => s.id === cart.serviceId);
 
 
   return (
@@ -1687,7 +1691,7 @@ function CartPanel({
           >
             <ReceiptText className="size-4" /> Bill
           </Button>
-          {type === "kuliner" && cart.lines.some((l) => !l.sentToKitchen && !l.voided) ? (
+          {type === "kuliner" && cart.lines.some((l) => !l.sentToKitchen && !l.voided && lineNeedsKitchen(db, l, cartService)) ? (
             <Button
               variant="secondary"
               className="h-11 gap-2"

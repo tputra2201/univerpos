@@ -1,4 +1,4 @@
-import type { Category, Product, ServiceType } from "./types";
+import type { CartLine, Category, PosDatabase, Product, ServiceType } from "./types";
 
 /** Harga produk untuk layanan tertentu: harga khusus layanan, atau harga standar + penyesuaian global layanan. */
 export function servicePrice(product: Product, service?: ServiceType | undefined): number {
@@ -38,4 +38,12 @@ export function serviceOptionPrice(price: number, service?: ServiceType | undefi
   const value = service.priceAdjustValue ?? 0;
   if (!value) return price;
   return Math.max(0, price + Math.round((price * value) / 100));
+}
+
+/** Item perlu dikirim ke dapur? Setelan kategori menang atas setelan jenis layanan. */
+export function lineNeedsKitchen(db: PosDatabase, line: CartLine, service?: ServiceType | undefined): boolean {
+  const product = db.products.find((p) => p.id === line.productId);
+  const cat = product ? db.categories.find((c) => c.id === product.categoryId) : undefined;
+  if (cat?.sendToKitchen != null) return cat.sendToKitchen;
+  return service?.sendToKitchen !== false;
 }
