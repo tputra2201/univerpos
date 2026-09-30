@@ -224,6 +224,14 @@ function KasirPage() {
     [db, cart.serviceId],
   );
 
+  /** Layanan bawaan (Express Service): dipakai otomatis bila kasir belum memilih layanan. */
+  const defaultService = useMemo(
+    () => getServiceTypes(db).find((s) => s.active && s.isDefault),
+    [db],
+  );
+  /** Layanan yang dipakai untuk menghitung harga di katalog. */
+  const priceService = activeService ?? defaultService;
+
   const visibleCategories = useMemo(
     () => db.categories.filter((c) => categoryAllowed(c, cart.serviceId)),
     [db.categories, cart.serviceId],
@@ -258,9 +266,32 @@ function KasirPage() {
     return false;
   }
 
+  /**
+   * Pastikan ada jenis layanan aktif di keranjang. Kalau belum, pakai layanan
+   * bawaan (Express Service) supaya kasir bisa langsung memilih menu.
+   * Mengembalikan undefined bila kasir masih harus memilih layanan.
+   */
+  function ensureService() {
+    if (cart.orderType) return activeService ?? null;
+    const svc = getServiceTypes(db).find((s) => s.active && s.isDefault);
+    if (!svc) return undefined;
+    setCart((prev) =>
+      prev.orderType
+        ? prev
+        : {
+            ...prev,
+            orderType: svc.name,
+            serviceId: svc.id,
+            customerName: prev.customerName || (svc.kind === "dinein" ? "" : svc.name),
+          },
+    );
+    return svc;
+  }
+
   function addProduct(product: Product, variantName = "", priceDelta = 0, fixedPrice?: number) {
     if (!requireShift()) return;
-    if (!cart.orderType) {
+    const svc = ensureService();
+    if (svc === undefined) {
       toast.error("Pilih jenis layanan dulu.");
       setPickerOpen(true);
       return;
@@ -282,7 +313,7 @@ function KasirPage() {
         productId: product.id,
         name: product.name,
         variantName,
-        unitPrice: (fixedPrice ?? servicePrice(product, activeService)) + priceDelta,
+        unitPrice: (fixedPrice ?? servicePrice(product, svc ?? activeService)) + priceDelta,
         qty: 1,
         note: "",
         discount: 0,
@@ -294,7 +325,7 @@ function KasirPage() {
 
   function onProductClick(product: Product) {
     if (!requireShift()) return;
-    if (!cart.orderType) {
+    if (ensureService() === undefined) {
       toast.error("Pilih jenis layanan dulu.");
       setPickerOpen(true);
       return;
@@ -686,17 +717,19 @@ function KasirPage() {
     setCart(EMPTY_CART);
     setPayOpen(false);
     setCartOpen(false);
-    const receiptPrinter = printerFor(db, "receipt");
-    const lines = buildReceipt("receipt", sale, settings, layoutFor(db, receiptPrinter));
-    if (receiptPrinter.autoPrint) {
+    // Tanpa dialog pratinjau: kasir langsung kembali ke layar utama.
+    // Struk hanya dicetak bila jenis layanan mengaktifkan cetak otomatis.
+    const autoReceipt = (activeService ?? defaultService)?.autoPrintReceipt === true;
+    if (autoReceipt) {
+      const receiptPrinter = printerFor(db, "receipt");
+      const lines = buildReceipt("receipt", sale, settings, layoutFor(db, receiptPrinter));
       sendToPrinter(receiptPrinter, lines)
         .then(() => toast.success(`Pembayaran ${rupiah(sale.total)} tersimpan. Struk dicetak.`))
         .catch((error: unknown) =>
           toast.error(error instanceof Error ? error.message : "Struk gagal dicetak."),
         );
     } else {
-      showPrint("Struk Penjualan", lines, "receipt");
-      toast.success(`Pembayaran ${rupiah(sale.total)} tersimpan.`);
+      toast.success(`Pembayaran ${rupiah(sale.total)} tersimpan. Struk bisa dicetak di menu Transaksi.`);
     }
   }
 
@@ -728,7 +761,7 @@ function KasirPage() {
           <div className="flex items-center justify-between gap-2 rounded-lg bg-primary/10 px-3 py-2">
             <span className="text-sm font-semibold text-primary">
               {cart.orderNo && <span className="tabular mr-2 font-mono">{cart.orderNo}</span>}
-              {cart.orderType || "Belum pilih layanan"}
+              {cart.orderType || defaultService?.name || "Belum pilih layanan"}
               {cart.tableName && ` • ${cart.tableName}`}
               {cart.sentToKitchen && <span className="ml-2 text-xs">• sudah di dapur</span>}
             </span>
@@ -795,13 +828,13 @@ function KasirPage() {
                   key={product.id}
                   type="button"
                   onClick={() => onProductClick(product)}
-                  aria-disabled={!shiftOpen || !cart.orderType}
+                  aria-disabled={!shiftOpen || (!cart.orderType && !defaultService)}
                   className="flex min-h-24 aria-disabled:opacity-50 flex-col justify-between rounded-xl border bg-card p-3 text-left shadow-sm transition-all hover:border-primary hover:shadow-md active:scale-[0.98]"
                 >
                   <span className="line-clamp-2 text-sm font-semibold">{product.name}</span>
                   <span className="mt-2 block">
                     <span className="tabular block font-bold text-primary">
-                      {product.openPrice ? "Harga bebas" : rupiah(servicePrice(product, activeService))}
+                      {product.openPrice ? "Harga bebas" : rupiah(servicePrice(product, priceService))}
                     </span>
                     {product.stock != null && (
                       <span
@@ -1796,8 +1829,10 @@ function PaymentDialog({
 
   useEffect(() => {
     if (open) {
-      setMethodId(methods[0]?.id ?? "");
-      setAmount("");
+      const first = methods[0];
+      setMethodId(first?.id ?? "");
+      // Tunai: langsung terisi uang pas sesuai tagihan supaya kasir cepat.
+      setAmount(first?.isCash ? String(total) : "");
       setSplit([]);
     }
   }, [open]);
@@ -1872,7 +1907,7 @@ function PaymentDialog({
                 type="button"
                 onClick={() => {
                   setMethodId(m.id);
-                  setAmount("");
+                  setAmount(m.isCash ? String(remaining) : "");
                 }}
               >
                 {m.name}
