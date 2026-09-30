@@ -1829,8 +1829,10 @@ function PaymentDialog({
 
   useEffect(() => {
     if (open) {
-      setMethodId(methods[0]?.id ?? "");
-      setAmount("");
+      const first = methods[0];
+      setMethodId(first?.id ?? "");
+      // Tunai: langsung terisi uang pas sesuai tagihan supaya kasir cepat.
+      setAmount(first?.isCash ? String(total) : "");
       setSplit([]);
     }
   }, [open]);
