@@ -60,19 +60,31 @@ export function applyStock(
   return { stockItems: next, stockMoves: [...moves, ...(db.stockMoves ?? [])] };
 }
 
-/** Hitung ulang saldo setiap bahan dari mutasi (agar data antar perangkat tidak saling menimpa). */
+/**
+ * Hitung ulang saldo setiap bahan dari riwayat mutasi, supaya perangkat lain tidak menimpa saldo.
+ * Opname = saldo fisik mutlak (reset); mutasi lain ditambahkan berurutan waktu.
+ */
 export function recomputeStock(db: PosDatabase): PosDatabase {
   const items = db.stockItems ?? [];
   if (!items.length) return db;
-  const sum = new Map<string, number>();
-  for (const m of db.stockMoves ?? []) sum.set(m.stockId, (sum.get(m.stockId) ?? 0) + m.qty);
+  const by = new Map<string, StockMove[]>();
+  for (const m of db.stockMoves ?? []) {
+    const a = by.get(m.stockId) ?? [];
+    a.push(m);
+    by.set(m.stockId, a);
+  }
   let changed = false;
+  const r = (n: number) => Math.round(n * 1000) / 1000;
   const next = items.map((it) => {
-    if (it.baseQty === undefined && !sum.has(it.id)) return it;
-    const qty = Math.round(((it.baseQty ?? 0) + (sum.get(it.id) ?? 0)) * 1000) / 1000;
-    if (qty === it.qty && it.baseQty !== undefined) return it;
+    const ms = (by.get(it.id) ?? []).slice().sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    if (!ms.length) return it;
+    const base = it.baseQty ?? r(ms[0]!.balanceAfter - ms[0]!.qty);
+    let run = base;
+    for (const m of ms) run = m.type === "opname" ? m.balanceAfter : run + m.qty;
+    run = r(run);
+    if (run === it.qty && it.baseQty !== undefined) return it;
     changed = true;
-    return { ...it, baseQty: it.baseQty ?? Math.round((it.qty - (sum.get(it.id) ?? 0)) * 1000) / 1000, qty: it.baseQty === undefined ? it.qty : qty };
+    return { ...it, baseQty: base, qty: run };
   });
   return changed ? { ...db, stockItems: next } : db;
 }
