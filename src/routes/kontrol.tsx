@@ -78,6 +78,107 @@ function deviceCode(id: string) {
   return `DEV-${id.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
 }
 
+interface SlotRow {
+  id: string;
+  slot_code: string;
+  one_time_key: string;
+  label: string;
+  used_at: string | null;
+  device_id: string | null;
+}
+
+function newKey() {
+  return String(Math.floor(Math.random() * 100_000_000)).padStart(8, "0");
+}
+
+/** Slot perangkat: kode perangkat + kunci aktivasi sekali pakai per perangkat. */
+function StoreSlots({ store }: { store: StoreRow }) {
+  const [rows, setRows] = useState<SlotRow[]>([]);
+  const sb = supabase as any;
+  const load = useCallback(async () => {
+    const { data, error } = await sb.from("device_slots").select("*").eq("store_id", store.id).order("slot_code");
+    if (error) return void toast.error(error.message);
+    setRows(data ?? []);
+  }, [store.id]);
+  useEffect(() => void load(), [load]);
+
+  async function add() {
+    if (store.max_devices > 0 && rows.length >= store.max_devices) {
+      return void toast.error(`Slot sudah mencapai batas ${store.max_devices} perangkat. Naikkan maks perangkat dulu.`);
+    }
+    const label = window.prompt("Nama slot (mis. Kasir Depan)", `Kasir ${rows.length + 1}`);
+    if (label === null) return;
+    let n = rows.length + 1;
+    const codes = new Set(rows.map((r) => r.slot_code));
+    while (codes.has(`KSR-${String(n).padStart(2, "0")}`)) n++;
+    const { error } = await sb.from("device_slots").insert({
+      store_id: store.id, slot_code: `KSR-${String(n).padStart(2, "0")}`, label: label.trim(), one_time_key: newKey(),
+    });
+    if (error) return void toast.error(error.message);
+    void load();
+  }
+  async function regen(r: SlotRow) {
+    if (r.used_at && !confirm(`Slot ${r.slot_code} sedang dipakai. Buat kunci baru? Perangkat lama tetap jalan sampai dilepas.`)) return;
+    const { error } = await sb.from("device_slots").update({ one_time_key: newKey(), used_at: null }).eq("id", r.id);
+    if (error) return void toast.error(error.message);
+    toast.success("Kunci baru dibuat.");
+    void load();
+  }
+  async function remove(r: SlotRow) {
+    if (!confirm(`Hapus slot ${r.slot_code}?`)) return;
+    const { error } = await sb.from("device_slots").delete().eq("id", r.id);
+    if (error) return void toast.error(error.message);
+    void load();
+  }
+
+  return (
+    <div className="w-full space-y-1 rounded-lg border p-2">
+      <div className="flex items-center gap-2 text-xs">
+        <span className="font-semibold">Slot perangkat</span>
+        <span className="text-muted-foreground">
+          {rows.length} / {store.max_devices > 0 ? store.max_devices : "∞"}
+        </span>
+        <Button size="sm" variant="outline" className="ml-auto h-7" onClick={add}>
+          + Slot
+        </Button>
+      </div>
+      {rows.length === 0 && <p className="text-xs text-muted-foreground">Belum ada slot. Tambahkan slot untuk setiap perangkat.</p>}
+      {rows.map((r) => (
+        <div key={r.id} className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="rounded bg-muted px-1.5 py-0.5 font-mono font-semibold">{r.slot_code}</span>
+          <span className="min-w-0 flex-1 truncate">{r.label}</span>
+          {r.used_at ? (
+            <span className="text-muted-foreground">terpakai {new Date(r.used_at).toLocaleDateString("id-ID")}</span>
+          ) : (
+            <>
+              <span className="font-mono tracking-widest">{r.one_time_key}</span>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7"
+                onClick={() => {
+                  void navigator.clipboard.writeText(
+                    `Kode Store: ${store.code}\nKode Perangkat: ${r.slot_code}\nKunci Aktivasi: ${r.one_time_key}`,
+                  );
+                  toast.success("Disalin.");
+                }}
+              >
+                Salin
+              </Button>
+            </>
+          )}
+          <Button size="sm" variant="ghost" className="h-7" onClick={() => regen(r)}>
+            Kunci baru
+          </Button>
+          <Button size="sm" variant="ghost" className="h-7 text-destructive" onClick={() => remove(r)}>
+            Hapus
+          </Button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function StoreDevices({ store, onChange }: { store: StoreRow; onChange: () => void }) {
   const [rows, setRows] = useState<DeviceRow[] | null>(null);
 
@@ -677,6 +778,7 @@ function StoresPanel() {
               <Button size="icon" variant="ghost" aria-label={`Hapus ${s.name}`} onClick={() => remove(s)}>
                 <Trash2 className="size-4" />
               </Button>
+              <StoreSlots store={s} />
               <StoreDevices store={s} onChange={load} />
               {s.mode === "online" && <SyncStats storeId={s.id} />}
             </div>
