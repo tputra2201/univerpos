@@ -23,6 +23,9 @@ import { salesOfShift, summarize, financeOfShift } from "@/lib/pos/shift";
 import type { FinanceKind, Sale } from "@/lib/pos/types";
 import { FINANCE_KINDS, kindLabel } from "@/lib/pos/finance";
 import { Button } from "@/components/ui/button";
+import { FinanceForm } from "@/components/pos/finance-form";
+import { hasPerm as canDo } from "@/lib/pos/permissions";
+import type { FinanceEntry } from "@/lib/pos/types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -687,7 +690,9 @@ export function VoidReport({ range }: { range: ReportRange }) {
 
 /** Laporan Finance: ringkasan 4 jenis + detail per jenis. */
 export function FinanceReport({ range, kind }: { range: ReportRange; kind?: FinanceKind }) {
-  const { db } = usePos();
+  const { db, currentUser } = usePos();
+  const canEdit = canDo(db.settings, currentUser?.role, "finance.manage");
+  const [editing, setEditing] = useState<FinanceEntry | null>(null);
   const all = (db.financeEntries ?? []).filter((f) => inRange(f.createdAt, range)).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const rows = kind ? all.filter((f) => f.kind === kind) : all;
   const total = (k: FinanceKind) => all.filter((f) => f.kind === k).reduce((a, f) => a + f.amount, 0);
@@ -730,6 +735,7 @@ export function FinanceReport({ range, kind }: { range: ReportRange; kind?: Fina
                 <TableHead>Metode</TableHead>
                 <TableHead>Keterangan</TableHead>
                 <TableHead className="text-right">Nominal</TableHead>
+                {canEdit && <TableHead data-noprint />}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -751,12 +757,20 @@ export function FinanceReport({ range, kind }: { range: ReportRange; kind?: Fina
                   <TableCell>{f.methodName}</TableCell>
                   <TableCell>{f.note}</TableCell>
                   <TableCell className="tabular text-right font-semibold">{rupiah(f.amount)}</TableCell>
+                  {canEdit && (
+                    <TableCell data-noprint>
+                      <Button size="sm" variant="secondary" onClick={() => setEditing(f)}>Ubah</Button>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+      {canEdit && (
+        <FinanceForm open={editing !== null} kind={editing?.kind ?? "expense"} entry={editing} onOpenChange={(v) => !v && setEditing(null)} />
+      )}
     </div>
   );
 }
