@@ -212,10 +212,23 @@ function ProdukPage() {
                 : p.categoryId === cat.id,
             );
             if (!items.length) return null;
+            const isOpen = !!query.trim() || openCats.has(cat.id);
             return (
               <section key={cat.id} className="space-y-2">
                 <div className="flex items-center justify-between gap-2 border-b pb-1">
-                  <h3 className="font-semibold">{cat.name}</h3>
+                  <button
+                    type="button"
+                    className="flex min-w-0 flex-1 items-center gap-1.5 py-1 text-left"
+                    onClick={() => toggleCat(cat.id)}
+                    aria-expanded={isOpen}
+                  >
+                    {isOpen ? (
+                      <ChevronDown className="size-4 shrink-0" />
+                    ) : (
+                      <ChevronRight className="size-4 shrink-0" />
+                    )}
+                    <h3 className="truncate font-semibold">{cat.name}</h3>
+                  </button>
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary">{items.length} produk</Badge>
                     {cat.id !== "__none" && (
@@ -230,6 +243,7 @@ function ProdukPage() {
                     )}
                   </div>
                 </div>
+                {isOpen && (<>
           <SortableList
             ids={items.map((p) => p.id)}
             onReorder={(ids) =>
