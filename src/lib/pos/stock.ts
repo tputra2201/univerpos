@@ -78,9 +78,9 @@ export function recomputeStock(db: PosDatabase): PosDatabase {
   const next = items.map((it) => {
     const ms = (by.get(it.id) ?? []).slice().sort((a, b) => a.createdAt.localeCompare(b.createdAt));
     if (!ms.length) return it;
-    const base = it.baseQty ?? r(ms[0]!.balanceAfter - ms[0]!.qty);
+    const base = it.baseQty ?? r((ms[0]!.balanceAfter ?? 0) - ms[0]!.qty);
     let run = base;
-    for (const m of ms) run = m.type === "opname" ? m.balanceAfter : run + m.qty;
+    for (const m of ms) run = m.type === "opname" && m.balanceAfter !== undefined ? m.balanceAfter : run + m.qty;
     run = r(run);
     if (run === it.qty && it.baseQty !== undefined) return it;
     changed = true;
