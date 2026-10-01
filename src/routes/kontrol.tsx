@@ -251,7 +251,7 @@ function StoreDevices({ store, onChange }: { store: StoreRow; onChange: () => vo
           <span className="text-muted-foreground">Sedang online: </span>
           {rows
             .filter(isOn)
-            .map((d) => `${d.device_name}${d.device_model ? ` – ${d.device_model}` : ""} (${deviceCode(d.id)})`)
+            .map((d) => devLabel(d))
             .join(", ")}
         </p>
       )}
