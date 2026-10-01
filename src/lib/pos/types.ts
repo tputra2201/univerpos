@@ -43,6 +43,8 @@ export interface StoreSettings {
   themeId?: string;
   /** Mode tampilan: terang, gelap, atau ikut perangkat. */
   themeMode?: "light" | "dark" | "system";
+  /** Master kategori stok (bahan & kemasan). */
+  stockGroups?: string[];
 }
 
 export interface LoyaltySettings {
