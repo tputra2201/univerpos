@@ -73,7 +73,7 @@ async function detectDeviceModel(): Promise<string> {
 }
 
 export function PosGate({ children }: { children: ReactNode }) {
-  const { ready, db, currentUser, update } = usePos();
+  const { ready, db, currentUser, update, signOut } = usePos();
   const [blocked, setBlocked] = useState(false);
   const code = db.settings.storeCode;
   const activated = db.settings.activated;
@@ -138,6 +138,8 @@ export function PosGate({ children }: { children: ReactNode }) {
   };
   const beatRef = (globalThis as { __posBeat?: { cur: typeof beatInfo; fire?: () => void } }).__posBeat ??= { cur: beatInfo };
   beatRef.cur = beatInfo;
+  const signOutRef = (globalThis as { __posSignOut?: { cur?: () => void } }).__posSignOut ??= {};
+  signOutRef.cur = signOut;
   const beatSig = `${beatInfo.name}|${beatInfo.role}|${beatInfo.shift}`;
   useEffect(() => {
     beatRef.fire?.();
@@ -156,7 +158,7 @@ export function PosGate({ children }: { children: ReactNode }) {
       const result = await (supabase.rpc as unknown as (
         n: string,
         a: object,
-      ) => Promise<{ error?: { message?: string } | null }>)("device_heartbeat", {
+      ) => Promise<{ data?: unknown; error?: { message?: string } | null }>)("device_heartbeat", {
         _code: code,
         _token: token,
         _model: model,
@@ -165,6 +167,10 @@ export function PosGate({ children }: { children: ReactNode }) {
         _shift_open: beatRef.cur.shift,
       });
       if (result.error) console.warn("Status perangkat gagal diperbarui", result.error.message);
+      else if (result.data === true && beatRef.cur.name) {
+        signOutRef.cur?.();
+        toast.info("Sesi Anda telah diakhiri dari Portal Kontrol.");
+      }
     };
     void detectDeviceModel().then((m) => {
       model = m;

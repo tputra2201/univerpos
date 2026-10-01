@@ -194,15 +194,18 @@ function StoreDevices({ store, onChange }: { store: StoreRow; onChange: () => vo
     setRows((data as DeviceRow[]) ?? []);
   }, [store.code, store.activation_key]);
 
-  async function release(d: DeviceRow) {
-    if (!confirm(`Lepas perangkat "${d.device_name}" dari ${store.name}?`)) return;
-    const { error } = await supabase.rpc("release_device", {
+  async function forceLogout(d: DeviceRow) {
+    if (!confirm(`Paksa logout "${d.current_user_name}" dari perangkat "${d.device_name}"? Perangkat tetap aktif.`)) return;
+    const { error } = await (supabase.rpc as unknown as (
+      n: string,
+      a: object,
+    ) => Promise<{ error: { message: string } | null }>)("force_logout_device", {
       _code: store.code,
       _key: store.activation_key,
       _device_id: d.id,
     });
     if (error) return void toast.error(error.message);
-    toast.success("Perangkat dilepas. Kuota kembali tersedia.");
+    toast.success("Perintah logout dikirim. Staf akan keluar saat perangkat tersambung (maks. 2 menit).");
     void load();
     onChange();
   }
@@ -260,9 +263,11 @@ function StoreDevices({ store, onChange }: { store: StoreRow; onChange: () => vo
           <span className="text-muted-foreground">
             {isOn(d) ? "online" : "terakhir aktif"} {new Date(d.last_seen_at).toLocaleString("id-ID")}
           </span>
-          <Button size="sm" variant="ghost" onClick={() => release(d)}>
-            Lepas
-          </Button>
+          {d.current_user_name && (
+            <Button size="sm" variant="ghost" onClick={() => forceLogout(d)}>
+              Paksa Logout
+            </Button>
+          )}
         </div>
       ))}
       {rows.length === 0 && <p className="text-xs text-muted-foreground">Belum ada perangkat terhubung.</p>}
