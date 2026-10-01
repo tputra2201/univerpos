@@ -79,7 +79,7 @@ export function FinanceForm({
     const meta = FINANCE_KINDS.find((k) => k.kind === kind)!;
     const now = new Date();
     const stamp = `${String(now.getFullYear()).slice(2)}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
-    const entry: FinanceEntry = {
+    const newEntry: FinanceEntry = {
       id: uid("fin"),
       code: `${meta.code}-${stamp}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
       kind,
@@ -95,7 +95,7 @@ export function FinanceForm({
       userName: currentUser?.name ?? "Kasir",
       ...(shift ? { shiftId: shift.id } : {}),
     };
-    update((cur) => ({ ...cur, financeEntries: [entry, ...(cur.financeEntries ?? [])] }));
+    update((cur) => ({ ...cur, financeEntries: [newEntry, ...(cur.financeEntries ?? [])] }));
     toast.success(`${meta.label} tercatat.`);
     onOpenChange(false);
   }
