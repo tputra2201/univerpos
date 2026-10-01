@@ -169,7 +169,7 @@ function LaporanPage() {
           <TabsList className="h-auto flex-wrap justify-start">
             <TabsTrigger value="company">Company Report</TabsTrigger>
             <TabsTrigger value="closeout">Close Out</TabsTrigger>
-            <TabsTrigger value="kategori">Per Kategori</TabsTrigger>
+            <TabsTrigger value="kategori">Sales Report</TabsTrigger>
             <TabsTrigger value="statistik">Statistik</TabsTrigger>
             <TabsTrigger value="qris">QRIS</TabsTrigger>
             <TabsTrigger value="transfer">Transfer & Kartu</TabsTrigger>
@@ -268,7 +268,7 @@ function LaporanPage() {
 const TAB_LABEL: Record<string, string> = {
   company: "Company Report",
   closeout: "Close Out",
-  kategori: "Per Kategori",
+  kategori: "Sales Report",
   statistik: "Statistik",
   qris: "QRIS",
   transfer: "Transfer & Kartu",

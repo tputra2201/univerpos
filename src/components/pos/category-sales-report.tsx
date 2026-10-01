@@ -45,7 +45,7 @@ export function CategorySalesReport({ range }: { range: ReportRange }) {
 
   return (
     <div className="rounded-xl border bg-card">
-      <div className="border-b px-4 py-3 text-sm font-semibold">Penjualan per Kategori & Produk</div>
+      <div className="border-b px-4 py-3 text-sm font-semibold">Sales Report</div>
       {!cats.length && <p className="p-4 text-sm text-muted-foreground">Tidak ada penjualan di periode ini.</p>}
       <div className="divide-y">
         {cats.map((c) => {
