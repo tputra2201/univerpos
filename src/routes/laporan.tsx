@@ -19,6 +19,7 @@ import {
   VoidReport,
 } from "@/components/pos/reports";
 import { usePos } from "@/lib/pos/store";
+import { CategorySalesReport } from "@/components/pos/category-sales-report";
 import { StockReport } from "@/components/pos/stock-report";
 import { hasPerm } from "@/lib/pos/permissions";
 import { FINANCE_KINDS } from "@/lib/pos/finance";
@@ -168,6 +169,7 @@ function LaporanPage() {
           <TabsList className="h-auto flex-wrap justify-start">
             <TabsTrigger value="company">Company Report</TabsTrigger>
             <TabsTrigger value="closeout">Close Out</TabsTrigger>
+            <TabsTrigger value="kategori">Per Kategori</TabsTrigger>
             <TabsTrigger value="statistik">Statistik</TabsTrigger>
             <TabsTrigger value="qris">QRIS</TabsTrigger>
             <TabsTrigger value="transfer">Transfer & Kartu</TabsTrigger>
@@ -194,6 +196,9 @@ function LaporanPage() {
           </TabsContent>
           <TabsContent value="closeout" className="mt-4">
             <CloseOutReport range={range} />
+          </TabsContent>
+          <TabsContent value="kategori" className="mt-4">
+            <CategorySalesReport range={range} />
           </TabsContent>
           <TabsContent value="statistik" className="mt-4">
             <StatsReport range={range} />
@@ -263,6 +268,7 @@ function LaporanPage() {
 const TAB_LABEL: Record<string, string> = {
   company: "Company Report",
   closeout: "Close Out",
+  kategori: "Per Kategori",
   statistik: "Statistik",
   qris: "QRIS",
   transfer: "Transfer & Kartu",
