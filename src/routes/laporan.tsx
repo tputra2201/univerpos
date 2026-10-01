@@ -172,6 +172,7 @@ function LaporanPage() {
             <TabsTrigger value="qris">QRIS</TabsTrigger>
             <TabsTrigger value="transfer">Transfer & Kartu</TabsTrigger>
             <TabsTrigger value="online">Order Online</TabsTrigger>
+            <TabsTrigger value="transaksi">Transaksi</TabsTrigger>
             <TabsTrigger value="kasir">Per Kasir</TabsTrigger>
             {db.staff.length > 0 && hasPerm(db.settings, currentUser?.role, "report.commission") && (
               <TabsTrigger value="komisi">Komisi Staf</TabsTrigger>
@@ -221,6 +222,9 @@ function LaporanPage() {
           <TabsContent value="online" className="mt-4">
             <OnlineOrderReport range={range} />
           </TabsContent>
+          <TabsContent value="transaksi" className="mt-4">
+            <TransactionList range={range} />
+          </TabsContent>
           <TabsContent value="kasir" className="mt-4">
             <CashierReport range={range} />
           </TabsContent>
@@ -263,6 +267,7 @@ const TAB_LABEL: Record<string, string> = {
   qris: "QRIS",
   transfer: "Transfer & Kartu",
   online: "Order Online",
+  transaksi: "Transaksi",
   kasir: "Per Kasir",
   stok: "Stok",
   void: "VOID",
@@ -275,6 +280,36 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
       <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="tabular mt-1 text-2xl font-extrabold">{value}</p>
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+    </div>
+  );
+}
+
+function TransactionList({ range }: { range: ReportRange }) {
+  const { db } = usePos();
+  const rows = db.sales
+    .filter((s) => inRange(s.createdAt, range))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return (
+    <div className="rounded-xl border bg-card">
+      <div className="border-b px-4 py-3 text-sm font-semibold">Daftar Transaksi ({rows.length})</div>
+      {rows.length === 0 && <p className="p-4 text-sm text-muted-foreground">Tidak ada transaksi di periode ini.</p>}
+      <div className="divide-y">
+        {rows.map((s) => (
+          <div key={s.id} className="flex items-center justify-between gap-3 px-4 py-2 text-sm">
+            <div className="min-w-0">
+              <p className="font-mono font-semibold">{s.code}</p>
+              <p className="text-xs text-muted-foreground">
+                {dateTime(s.createdAt)} · {s.userName}
+                {s.customerName && ` · ${s.customerName}`} · {s.payments.map((p) => p.methodName).join(" + ")}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className={`tabular font-bold ${s.status !== "paid" ? "line-through text-muted-foreground" : ""}`}>{rupiah(s.total)}</p>
+              {s.status !== "paid" && <p className="text-xs text-destructive">{s.status === "void" ? "Dibatalkan" : "Refund"}</p>}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

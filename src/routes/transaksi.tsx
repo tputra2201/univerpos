@@ -11,6 +11,7 @@ import { dateTime, rupiah } from "@/lib/pos/format";
 import { buildReceipt } from "@/lib/pos/receipt";
 import type { Sale } from "@/lib/pos/types";
 import { hasPerm } from "@/lib/pos/permissions";
+import { defaultRange, inRange, rangeLabel } from "@/lib/pos/report-range";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,16 +57,18 @@ function TransaksiPage() {
   const [action, setAction] = useState<{ sale: Sale; type: "void" | "refund" } | null>(null);
   const [reason, setReason] = useState("");
 
+  const today = useMemo(() => defaultRange(db.settings), [db.settings]);
+  const daySales = useMemo(() => db.sales.filter((s) => inRange(s.createdAt, today)), [db.sales, today]);
   const list = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return [...db.sales].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).filter(
+    return [...daySales].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).filter(
       (s) =>
         !q ||
         s.code.toLowerCase().includes(q) ||
         s.customerName.toLowerCase().includes(q) ||
         s.tableName.toLowerCase().includes(q),
     );
-  }, [db.sales, query]);
+  }, [daySales, query]);
 
   function reprint(sale: Sale) {
     setPrintLines(buildReceipt("receipt", sale, db.settings, db.printer));
@@ -101,7 +104,7 @@ function TransaksiPage() {
     <div>
       <PageHeader
         title="Transaksi"
-        description={`${db.sales.length} transaksi tersimpan di perangkat ini.`}
+        description={`Hari usaha ${rangeLabel(today)} · ${daySales.length} transaksi. Periode lain: Laporan → Transaksi.`}
       />
       <div className="space-y-3 p-4 md:p-6">
         <div className="relative max-w-sm">
