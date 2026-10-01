@@ -277,6 +277,8 @@ function ActivationFlow() {
   const [step, setStep] = useState(0);
   const [storeCode, setStoreCode] = useState("");
   const [key, setKey] = useState("");
+  const [slot, setSlot] = useState("");
+  const [adminKey, setAdminKey] = useState("");
   const [deviceName, setDeviceName] = useState("");
   const [busy, setBusy] = useState(false);
   const [picked, setPicked] = useState<{
@@ -310,24 +312,27 @@ function ActivationFlow() {
   }, []);
 
   async function activate() {
-    if (!storeCode.trim() || !key.trim()) {
-      toast.error("Kode store dan kunci aktivasi wajib diisi.");
+    if (!storeCode.trim() || !slot.trim() || !key.trim()) {
+      toast.error("Kode store, kode perangkat, dan kunci aktivasi wajib diisi.");
       return;
     }
     setBusy(true);
-    const { data, error } = await supabase.rpc("activate_device", {
+    const { data, error } = await (supabase.rpc as any)("activate_slot", {
       _code: storeCode.trim(),
+      _slot: slot.trim(),
       _key: key.trim(),
       _token: deviceToken,
-      _device_name: deviceName.trim() || "Kasir 1",
+      _device_name: deviceName.trim(),
     });
     setBusy(false);
     if (error) {
-      const msg = error.message.replace(/^.*?(INVALID|INACTIVE|MAX_DEVICES):\s*/, "");
-      if (error.message.includes("MAX_DEVICES")) window.alert(`Peringatan: Batas perangkat terlampaui\n\n${msg}`);
+      const msg = error.message.replace(/^.*?(INVALID|INACTIVE|MAX_DEVICES|USED):\s*/, "");
       toast.error(msg || "Aktivasi gagal. Periksa koneksi internet.", { duration: 8000 });
       return;
     }
+    const first = Array.isArray(data) ? data[0] : null;
+    if (first?.admin_key) setAdminKey(first.admin_key);
+    const storeKey: string = first?.admin_key ?? "";
     const row = Array.isArray(data) ? data[0] : null;
     if (!row) {
       toast.error("Aktivasi gagal. Coba lagi.");
