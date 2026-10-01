@@ -204,6 +204,8 @@ export function StockSettings() {
         </DialogContent>
       </Dialog>
 
+      <GroupManager open={groupsOpen} onOpenChange={setGroupsOpen} />
+
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
