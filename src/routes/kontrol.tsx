@@ -104,28 +104,31 @@ function StoreSlots({ store }: { store: StoreRow }) {
 
   async function add() {
     if (store.max_devices > 0 && rows.length >= store.max_devices) {
-      return void toast.error(`Slot sudah mencapai batas ${store.max_devices} perangkat. Naikkan maks perangkat dulu.`);
+      return void toast.error(`Perangkat sudah mencapai batas ${store.max_devices}. Naikkan maks perangkat dulu.`);
     }
-    const label = window.prompt("Nama slot (mis. Kasir Depan)", `Kasir ${rows.length + 1}`);
-    if (label === null) return;
+    const codes = new Set(rows.map((r) => r.slot_code.toUpperCase()));
     let n = rows.length + 1;
-    const codes = new Set(rows.map((r) => r.slot_code));
     while (codes.has(`KSR-${String(n).padStart(2, "0")}`)) n++;
+    const input = window.prompt("Kode Perangkat (mis. KASIR-DEPAN)", `KSR-${String(n).padStart(2, "0")}`);
+    if (input === null) return;
+    const code = input.toUpperCase().replace(/\s+/g, "-").replace(/[^A-Z0-9-]/g, "").slice(0, 20);
+    if (!code) return void toast.error("Kode perangkat wajib diisi.");
+    if (codes.has(code)) return void toast.error(`Kode perangkat ${code} sudah dipakai.`);
     const { error } = await sb.from("device_slots").insert({
-      store_id: store.id, slot_code: `KSR-${String(n).padStart(2, "0")}`, label: label.trim(), one_time_key: newKey(),
+      store_id: store.id, slot_code: code, label: "", one_time_key: newKey(),
     });
     if (error) return void toast.error(error.message);
     void load();
   }
   async function regen(r: SlotRow) {
-    if (r.used_at && !confirm(`Slot ${r.slot_code} sedang dipakai. Buat kunci baru? Perangkat lama tetap jalan sampai dilepas.`)) return;
+    if (r.used_at && !confirm(`Perangkat ${r.slot_code} sedang dipakai. Buat kunci baru? Perangkat lama tetap jalan sampai dihapus.`)) return;
     const { error } = await sb.from("device_slots").update({ one_time_key: newKey(), used_at: null }).eq("id", r.id);
     if (error) return void toast.error(error.message);
     toast.success("Kunci baru dibuat.");
     void load();
   }
   async function remove(r: SlotRow) {
-    if (!confirm(`Hapus slot ${r.slot_code}?`)) return;
+    if (!confirm(`Hapus perangkat ${r.slot_code}? Perangkat yang memakainya akan ditolak saat masuk kembali.`)) return;
     const { error } = await sb.from("device_slots").delete().eq("id", r.id);
     if (error) return void toast.error(error.message);
     void load();
@@ -134,15 +137,15 @@ function StoreSlots({ store }: { store: StoreRow }) {
   return (
     <div className="w-full space-y-1 rounded-lg border p-2">
       <div className="flex items-center gap-2 text-xs">
-        <span className="font-semibold">Slot perangkat</span>
+        <span className="font-semibold">Perangkat</span>
         <span className="text-muted-foreground">
           {rows.length} / {store.max_devices > 0 ? store.max_devices : "∞"}
         </span>
         <Button size="sm" variant="outline" className="ml-auto h-7" onClick={add}>
-          + Slot
+          + Perangkat
         </Button>
       </div>
-      {rows.length === 0 && <p className="text-xs text-muted-foreground">Belum ada slot. Tambahkan slot untuk setiap perangkat.</p>}
+      {rows.length === 0 && <p className="text-xs text-muted-foreground">Belum ada perangkat. Tambahkan satu untuk setiap tablet/HP kasir.</p>}
       {rows.map((r) => (
         <div key={r.id} className="flex flex-wrap items-center gap-2 text-xs">
           <span className="rounded bg-muted px-1.5 py-0.5 font-mono font-semibold">{r.slot_code}</span>
@@ -712,20 +715,6 @@ function StoresPanel() {
                   )}
                 </p>
                 <p className="font-mono text-sm text-primary">{s.code}</p>
-                <p className="text-xs">
-                  Kunci aktivasi: <span className="font-mono font-semibold tracking-widest">{s.activation_key}</span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="ml-1 h-6 px-2 text-xs"
-                    onClick={() => {
-                      void navigator.clipboard.writeText(`${s.code} / ${s.activation_key}`);
-                      toast.success("Kode dan kunci disalin.");
-                    }}
-                  >
-                    Salin
-                  </Button>
-                </p>
                 <p className="text-xs text-muted-foreground">
                   <span className={s.max_devices > 0 && s.device_count >= s.max_devices ? "font-semibold text-destructive" : ""}>
                     {s.device_count} / {s.max_devices > 0 ? s.max_devices : "∞"} perangkat
