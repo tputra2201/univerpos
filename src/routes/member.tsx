@@ -295,8 +295,7 @@ function MemberPage() {
           <div className="max-h-80 space-y-2 overflow-auto">
             {ledger
               .filter((l) => l.memberId === detail?.id)
-              .slice()
-              .reverse()
+              .slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt))
               .map((l) => (
                 <div key={l.id} className="flex items-start justify-between rounded-lg border p-3 text-sm">
                   <div>
