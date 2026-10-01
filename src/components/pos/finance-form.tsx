@@ -18,7 +18,9 @@ export function FinanceForm({
   open,
   kind: initialKind,
   onOpenChange,
+  entry,
 }: {
+  entry?: FinanceEntry | null;
   open: boolean;
   kind: FinanceKind;
   onOpenChange: (v: boolean) => void;
@@ -38,6 +40,15 @@ export function FinanceForm({
 
   useEffect(() => {
     if (!open) return;
+    if (entry) {
+      setKind(entry.kind);
+      setCatId(entry.categoryId);
+      setItemName(entry.itemName);
+      setMethodId(entry.methodId);
+      setAmount(String(entry.amount));
+      setNote(entry.note);
+      return;
+    }
     setKind(initialKind);
     setCatId("");
     setItemName("");
@@ -45,7 +56,7 @@ export function FinanceForm({
     setAmount("");
     setNote("");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, initialKind]);
+  }, [open, initialKind, entry]);
 
   function submit(): void {
     const value = Number(amount) || 0;
@@ -54,6 +65,16 @@ export function FinanceForm({
     if (!itemName) { toast.error("Pilih item."); return; }
     if (!method) { toast.error("Pilih metode pembayaran."); return; }
     if (value <= 0) { toast.error("Isi nominal."); return; }
+    if (entry) {
+      const next: FinanceEntry = {
+        ...entry, kind, categoryId: cat.id, categoryName: cat.name, itemName,
+        methodId: method.id, methodName: method.name, isCash: method.isCash, amount: value, note: note.trim(),
+      };
+      update((cur) => ({ ...cur, financeEntries: (cur.financeEntries ?? []).map((f) => (f.id === entry.id ? next : f)) }));
+      toast.success("Catatan Finance diperbarui.");
+      onOpenChange(false);
+      return;
+    }
     const shift = activeShiftOf(db);
     const meta = FINANCE_KINDS.find((k) => k.kind === kind)!;
     const now = new Date();
@@ -79,11 +100,19 @@ export function FinanceForm({
     onOpenChange(false);
   }
 
+  function remove(): void {
+    if (!entry) return;
+    if (!window.confirm(`Hapus catatan ${entry.code}?`)) return;
+    update((cur) => ({ ...cur, financeEntries: (cur.financeEntries ?? []).filter((f) => f.id !== entry.id) }));
+    toast.success("Catatan Finance dihapus.");
+    onOpenChange(false);
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[96dvh] gap-3 overflow-y-auto p-4 sm:max-w-md md:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Catat Finance</DialogTitle>
+          <DialogTitle>{entry ? `Ubah Finance · ${entry.code}` : "Catat Finance"}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-x-4 gap-y-2 md:grid-cols-2">
           <div className="grid grid-cols-4 gap-1.5 md:col-span-2">
@@ -184,6 +213,11 @@ export function FinanceForm({
           <Button className="h-11 w-full md:col-span-2" onClick={submit}>
             Simpan
           </Button>
+          {entry && (
+            <Button variant="destructive" className="h-11 w-full md:col-span-2" onClick={remove}>
+              Hapus catatan
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>
