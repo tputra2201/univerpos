@@ -142,6 +142,7 @@ export type Database = {
           device_model: string
           device_name: string
           device_token: string
+          force_logout: boolean
           id: string
           is_active: boolean
           is_developer: boolean
@@ -156,6 +157,7 @@ export type Database = {
           device_model?: string
           device_name?: string
           device_token: string
+          force_logout?: boolean
           id?: string
           is_active?: boolean
           is_developer?: boolean
@@ -170,6 +172,7 @@ export type Database = {
           device_model?: string
           device_name?: string
           device_token?: string
+          force_logout?: boolean
           id?: string
           is_active?: boolean
           is_developer?: boolean
@@ -471,6 +474,10 @@ export type Database = {
           _user_name?: string
           _user_role?: string
         }
+        Returns: boolean
+      }
+      force_logout_device: {
+        Args: { _code: string; _device_id: string; _key: string }
         Returns: undefined
       }
       has_role: {
