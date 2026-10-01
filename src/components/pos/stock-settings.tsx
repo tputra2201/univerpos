@@ -105,7 +105,10 @@ export function StockSettings() {
         </CardHeader>
         <CardContent className="space-y-2">
           {!items.length && <p className="text-sm text-muted-foreground">Belum ada bahan. Contoh: Cup 16oz, Sedotan, Air Mineral Botol.</p>}
-          {items.map((it) => {
+          {stockGroups(items).map(([g, list]) => (
+            <div key={g} className="space-y-2 pt-2">
+              <p className="text-xs font-bold uppercase tracking-wide text-primary">{g} · {list.length}</p>
+          {list.map((it) => {
             const low = it.qty <= it.minQty;
             const cats = db.categories.filter((c) => it.categoryIds.includes(c.id)).map((c) => c.name);
             return (
@@ -150,6 +153,8 @@ export function StockSettings() {
               </div>
             );
           })}
+            </div>
+          ))}
         </CardContent>
       </Card>
 
@@ -218,6 +223,13 @@ function StockForm({ value, onChange, onSave }: { value: StockItem; onChange: (v
         <div className="col-span-2">
           <Label>Nama bahan / kemasan</Label>
           <Input value={value.name} onChange={(e) => set({ name: e.target.value })} placeholder="Cup 16oz" />
+        </div>
+        <div className="col-span-2">
+          <Label>Kategori stok</Label>
+          <Input list="stock-groups" value={value.group ?? ""} onChange={(e) => set({ group: e.target.value })} placeholder="Kemasan, Bahan Minuman, ..." />
+          <datalist id="stock-groups">
+            {[...new Set((db.stockItems ?? []).map((x) => x.group?.trim()).filter(Boolean))].map((g) => <option key={g} value={g} />)}
+          </datalist>
         </div>
         <div>
           <Label>Satuan</Label>
