@@ -432,7 +432,7 @@ export interface StockItem {
   name: string;
   unit: string;
   /** Kategori stok, mis. "Kemasan", "Bahan Minuman". */
-  group?: string;
+  group?: string | undefined;
   qty: number;
   /** Saldo awal sebelum mutasi pertama. Saldo = baseQty + jumlah semua mutasi. */
   baseQty?: number;
