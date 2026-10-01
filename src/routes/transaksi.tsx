@@ -170,7 +170,7 @@ function TransaksiPage() {
       </div>
 
       <Dialog open={!!detail} onOpenChange={(v) => !v && setDetail(null)}>
-        <DialogContent className="max-h-[92vh] overflow-auto sm:max-w-md">
+        <DialogContent className="max-h-[92vh] overflow-y-auto overflow-x-hidden sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="font-mono">{detail?.code}</DialogTitle>
             <DialogDescription>{detail && dateTime(detail.createdAt)}</DialogDescription>
@@ -207,7 +207,7 @@ function TransaksiPage() {
               )}
             </div>
           )}
-          <DialogFooter className="flex-col gap-2 sm:flex-row">
+          <DialogFooter className="flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
             <Button variant="secondary" className="gap-2" onClick={() => detail && reprint(detail)}>
               <Printer className="size-4" /> Cetak ulang
             </Button>
