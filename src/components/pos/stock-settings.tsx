@@ -315,3 +315,12 @@ function StockForm({ value, onChange, onSave }: { value: StockItem; onChange: (v
     </div>
   );
 }
+
+function stockGroups(items: StockItem[]): [string, StockItem[]][] {
+  const m = new Map<string, StockItem[]>();
+  for (const it of items) {
+    const g = it.group?.trim() || "Lainnya";
+    m.set(g, [...(m.get(g) ?? []), it]);
+  }
+  return [...m.entries()].sort(([a], [b]) => (a === "Lainnya" ? 1 : b === "Lainnya" ? -1 : a.localeCompare(b)));
+}
