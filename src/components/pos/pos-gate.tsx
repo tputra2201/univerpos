@@ -356,9 +356,9 @@ function ActivationFlow() {
             name: row.name,
             businessTypeName: row.business_type_name ?? "",
             expiresAt: row.expires_at ?? null,
-            activationKey: key.trim(),
+            activationKey: storeKey,
             deviceToken,
-            deviceName: deviceName.trim() || "Kasir",
+            deviceName: deviceName.trim() || slot.trim().toUpperCase(),
           },
         }));
         toast.success("Perangkat tersambung. Data store sedang diunduh — masuk dengan PIN Anda.");
@@ -399,9 +399,9 @@ function ActivationFlow() {
           businessTypeName: picked?.business_type_name ?? "",
           expiresAt: picked?.expires_at ?? null,
           activatedAt: seeded.settings.activatedAt || new Date().toISOString(),
-          activationKey: key.trim(),
+          activationKey: adminKey,
           deviceToken,
-          deviceName: deviceName.trim() || "Kasir 1",
+          deviceName: deviceName.trim() || slot.trim().toUpperCase(),
         },
         serviceTypes: getServiceTypes(seeded),
         users: [owner],
@@ -422,7 +422,7 @@ function ActivationFlow() {
           <CardTitle className="text-2xl">{step === 0 ? "Aktivasi Store" : "Pemilik & PIN"}</CardTitle>
           <CardDescription>
             {step === 0
-              ? "Masukkan Kode Store dan Kunci Aktivasi yang Anda terima dari penyedia aplikasi. Butuh koneksi internet."
+              ? "Masukkan Kode Store, Kode Perangkat, dan Kunci Aktivasi sekali pakai dari penyedia aplikasi. Butuh koneksi internet."
               : `Store ${picked?.name ?? ""} siap dipakai. Buat akun pemilik untuk membuka kasir.`}
           </CardDescription>
         </CardHeader>
@@ -441,14 +441,24 @@ function ActivationFlow() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="st-key">Kunci Aktivasi</Label>
+                <Label htmlFor="st-slot">Kode Perangkat</Label>
+                <Input
+                  id="st-slot"
+                  value={slot}
+                  onChange={(e) => setSlot(e.target.value.toUpperCase().replace(/\s/g, "").slice(0, 20))}
+                  className="h-11 font-mono"
+                  placeholder="KSR-01"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="st-key">Kunci Aktivasi (sekali pakai)</Label>
                 <Input
                   id="st-key"
                   inputMode="numeric"
                   value={key}
-                  onChange={(e) => setKey(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  onChange={(e) => setKey(e.target.value.replace(/\D/g, "").slice(0, 8))}
                   className="h-11 font-mono tracking-widest"
-                  placeholder="000000"
+                  placeholder="00000000"
                 />
               </div>
               <div className="space-y-2">
@@ -458,11 +468,11 @@ function ActivationFlow() {
                   value={deviceName}
                   onChange={(e) => setDeviceName(e.target.value)}
                   className="h-11"
-                  placeholder="Kasir Depan"
+                  placeholder="Kasir Depan (opsional)"
                   onKeyDown={(e) => e.key === "Enter" && activate()}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Perangkat tambahan cukup memakai kode dan kunci yang sama, selama kuota perangkat masih ada.
+                  Boleh dikosongkan. Setiap perangkat punya kode dan kunci sendiri; kunci hangus setelah dipakai.
                 </p>
               </div>
               <Button className="h-12 w-full text-base" disabled={busy} onClick={activate}>
