@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Printer, Download } from "lucide-react";
+import { Printer, Download, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { PosGate } from "@/components/pos/pos-gate";
 import { AppShell, PageHeader } from "@/components/pos/app-shell";
@@ -27,7 +27,7 @@ import { dateTime, rupiah } from "@/lib/pos/format";
 import { buildReport, buildTabReport } from "@/lib/pos/receipt";
 import { blocksFromElement } from "@/lib/pos/report-print";
 import { printerFor } from "@/lib/pos/printers";
-import { exportReportExcel } from "@/lib/pos/report-excel";
+import { exportTabExcel, exportTabPdf } from "@/lib/pos/report-export";
 import { defaultRange, inRange, rangeLabel, type ReportRange } from "@/lib/pos/report-range";
 import { activeShiftOf, salesOfShift, summarize, financeOfShift } from "@/lib/pos/shift";
 import { Button } from "@/components/ui/button";
@@ -110,6 +110,15 @@ function LaporanPage() {
     );
   }
 
+  function exportTab(kind: "excel" | "pdf") {
+    const panel = document.querySelector('[role="tabpanel"][data-state="active"]');
+    if (!panel) return;
+    const run = kind === "excel" ? exportTabExcel : exportTabPdf;
+    void run(panel, db.settings.name, tabLabel, rangeLabel(range), range)
+      .then(() => toast.success(`${tabLabel} (${kind === "excel" ? "Excel" : "PDF"}) diunduh.`))
+      .catch(() => toast.error("Gagal membuat file."));
+  }
+
   function printRange() {
     const panel = document.querySelector('[role="tabpanel"][data-state="active"]');
     if (!panel) return;
@@ -133,16 +142,11 @@ function LaporanPage() {
             <Button variant="secondary" className="gap-2" onClick={printRange}>
               <Printer className="size-4" /> Cetak {tabLabel}
             </Button>
-            <Button
-              variant="secondary"
-              className="gap-2"
-              onClick={() => {
-                void exportReportExcel(db, range)
-                  .then(() => toast.success("Laporan Excel diunduh."))
-                  .catch(() => toast.error("Gagal membuat file Excel."));
-              }}
-            >
+            <Button variant="secondary" className="gap-2" onClick={() => exportTab("excel")}>
               <Download className="size-4" /> Excel
+            </Button>
+            <Button variant="secondary" className="gap-2" onClick={() => exportTab("pdf")}>
+              <FileText className="size-4" /> PDF
             </Button>
           </div>
         }
