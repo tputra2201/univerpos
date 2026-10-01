@@ -187,6 +187,16 @@ export async function exportReportExcel(db: PosDatabase, range: ReportRange) {
       })),
   );
 
-  const label = `${range.from}${range.from === range.to ? "" : "_" + range.to}`;
-  XLSX.writeFile(wb, `laporan-${label}.xlsx`);
+  XLSX.writeFile(wb, `${reportFileName(db.settings.name, range)}.xlsx`);
+}
+
+/** Nama file laporan: laporan-{store}-{periode}-unduh-{dd-mm-yyyy_HHmm}. Dipakai Excel & PDF. */
+export function reportFileName(store: string, range: ReportRange, kind = "laporan"): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const flip = (v: string) => v.split("-").reverse().join("-"); // yyyy-mm-dd → dd-mm-yyyy
+  const period = range.from === range.to ? flip(range.from) : `${flip(range.from)}_sd_${flip(range.to)}`;
+  const n = new Date();
+  const stamp = `${pad(n.getDate())}-${pad(n.getMonth() + 1)}-${n.getFullYear()}_${pad(n.getHours())}${pad(n.getMinutes())}`;
+  const slug = (s: string) => s.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return [slug(kind), slug(store), period, "unduh", stamp].filter(Boolean).join("-");
 }
