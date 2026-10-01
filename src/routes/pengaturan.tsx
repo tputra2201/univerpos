@@ -12,7 +12,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Bluetooth, Download, Plus, Trash2, Upload, Printer } from "lucide-react";
 import { toast } from "sonner";
-import { PosGate } from "@/components/pos/pos-gate";
+import { DevContact, PosGate } from "@/components/pos/pos-gate";
 import { AppShell, PageHeader } from "@/components/pos/app-shell";
 import { PrintPreview } from "@/components/pos/print-sheet";
 import { usePos } from "@/lib/pos/store";
@@ -466,6 +466,15 @@ function PengaturanPage() {
               >
                 Reset nomor order
               </Button>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Bantuan & Dukungan Teknis</CardTitle>
+              <CardDescription>Hubungi developer bila ada kendala aplikasi.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DevContact email={db.settings.devEmail} phone={db.settings.devPhone} />
             </CardContent>
           </Card>
           <UpdateCard />
