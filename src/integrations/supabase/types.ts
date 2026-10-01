@@ -86,6 +86,54 @@ export type Database = {
         }
         Relationships: []
       }
+      device_slots: {
+        Row: {
+          created_at: string
+          device_id: string | null
+          id: string
+          label: string
+          one_time_key: string
+          slot_code: string
+          store_id: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          device_id?: string | null
+          id?: string
+          label?: string
+          one_time_key?: string
+          slot_code: string
+          store_id: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          device_id?: string | null
+          id?: string
+          label?: string
+          one_time_key?: string
+          slot_code?: string
+          store_id?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_slots_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "store_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_slots_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_devices: {
         Row: {
           created_at: string
@@ -336,6 +384,26 @@ export type Database = {
           _token: string
         }
         Returns: {
+          base_kind: string
+          business_type_name: string
+          code: string
+          device_count: number
+          expires_at: string
+          max_devices: number
+          mode: string
+          name: string
+        }[]
+      }
+      activate_slot: {
+        Args: {
+          _code: string
+          _device_name: string
+          _key: string
+          _slot: string
+          _token: string
+        }
+        Returns: {
+          admin_key: string
           base_kind: string
           business_type_name: string
           code: string
