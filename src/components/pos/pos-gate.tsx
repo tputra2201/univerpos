@@ -156,7 +156,7 @@ export function PosGate({ children }: { children: ReactNode }) {
       const result = await (supabase.rpc as unknown as (
         n: string,
         a: object,
-      ) => Promise<{ error?: { message?: string } | null }>)("device_heartbeat", {
+      ) => Promise<{ data?: unknown; error?: { message?: string } | null }>)("device_heartbeat", {
         _code: code,
         _token: token,
         _model: model,
@@ -165,6 +165,10 @@ export function PosGate({ children }: { children: ReactNode }) {
         _shift_open: beatRef.cur.shift,
       });
       if (result.error) console.warn("Status perangkat gagal diperbarui", result.error.message);
+      else if (result.data === true && beatRef.cur.name) {
+        signOutRef.cur?.();
+        toast.info("Sesi Anda telah diakhiri dari Portal Kontrol.");
+      }
     };
     void detectDeviceModel().then((m) => {
       model = m;
