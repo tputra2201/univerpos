@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.on_device_slot_deleted() FROM PUBLIC, anon, authenticated;

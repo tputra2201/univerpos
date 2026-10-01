@@ -429,6 +429,10 @@ export type Database = {
           app_name: string
         }[]
       }
+      check_device: {
+        Args: { _code: string; _token: string }
+        Returns: boolean
+      }
       check_store: {
         Args: { _code: string }
         Returns: {

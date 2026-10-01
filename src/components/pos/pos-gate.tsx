@@ -116,6 +116,21 @@ export function PosGate({ children }: { children: ReactNode }) {
     );
   }, [ready, activated, online, code, update]);
 
+  // Di layar login: tolak perangkat yang sudah dihapus/dilepas di Portal Kontrol.
+  const loggedIn = !!currentUser;
+  useEffect(() => {
+    if (!ready || !activated || !code || loggedIn || typeof navigator === "undefined" || !navigator.onLine) return;
+    const token = db.settings.deviceToken || window.localStorage.getItem(DEVICE_TOKEN_KEY) || "";
+    if (!token) return;
+    (supabase.rpc as unknown as (n: string, a: object) => Promise<{ data: unknown; error: unknown }>)("check_device", {
+      _code: code,
+      _token: token,
+    }).then(({ data, error }) => {
+      if (error) return; // gangguan jaringan: tetap izinkan kerja offline
+      if (data === false) void resetDevice("Akses perangkat ini telah dicabut oleh pengelola. Silakan aktivasi ulang dengan kunci baru.");
+    });
+  }, [ready, activated, code, loggedIn, db.settings.deviceToken]);
+
   const beatInfo = {
     name: currentUser?.name ?? "",
     role: currentUser ? roleLabel(currentUser.role) : "",
