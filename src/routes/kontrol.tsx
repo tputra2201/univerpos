@@ -184,15 +184,23 @@ function StoreSlots({ store }: { store: StoreRow }) {
 
 function StoreDevices({ store, onChange }: { store: StoreRow; onChange: () => void }) {
   const [rows, setRows] = useState<DeviceRow[] | null>(null);
+  const [slotOf, setSlotOf] = useState<Record<string, string>>({});
+  const devLabel = (d: DeviceRow) => {
+    const slot = slotOf[d.id] ?? deviceCode(d.id);
+    return d.device_name && d.device_name.toUpperCase() !== slot.toUpperCase() ? `${slot} - ${d.device_name}` : slot;
+  };
 
   const load = useCallback(async () => {
-    const { data, error } = await supabase.rpc("store_devices_list", {
-      _code: store.code,
-      _key: store.activation_key,
-    });
+    const [{ data, error }, slots] = await Promise.all([
+      supabase.rpc("store_devices_list", { _code: store.code, _key: store.activation_key }),
+      supabase.from("device_slots").select("slot_code, device_id").eq("store_id", store.id),
+    ]);
     if (error) return void toast.error(error.message);
+    const map: Record<string, string> = {};
+    for (const s of slots.data ?? []) if (s.device_id) map[s.device_id] = s.slot_code;
+    setSlotOf(map);
     setRows((data as DeviceRow[]) ?? []);
-  }, [store.code, store.activation_key]);
+  }, [store.code, store.activation_key, store.id]);
 
   async function forceLogout(d: DeviceRow) {
     if (!confirm(`Paksa logout "${d.current_user_name}" dari perangkat "${d.device_name}"? Perangkat tetap aktif.`)) return;
@@ -243,16 +251,15 @@ function StoreDevices({ store, onChange }: { store: StoreRow; onChange: () => vo
           <span className="text-muted-foreground">Sedang online: </span>
           {rows
             .filter(isOn)
-            .map((d) => `${d.device_name}${d.device_model ? ` – ${d.device_model}` : ""} (${deviceCode(d.id)})`)
+            .map((d) => devLabel(d))
             .join(", ")}
         </p>
       )}
       {rows.map((d) => (
         <div key={d.id} className="flex flex-wrap items-center gap-2 text-xs">
           <span className={`size-2 shrink-0 rounded-full ${isOn(d) ? "bg-primary" : "bg-muted-foreground/40"}`} />
-          <span className="rounded bg-background px-1.5 py-0.5 font-mono">{deviceCode(d.id)}</span>
           <span className="min-w-0 flex-1 truncate font-medium">
-            {d.device_name}
+            {devLabel(d)}
             {d.device_model && <span className="font-normal text-muted-foreground"> · {d.device_model}</span>}
             <span className="block font-normal text-muted-foreground">
               {d.current_user_name
