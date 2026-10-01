@@ -57,5 +57,34 @@ export function applyStock(
     });
     return { ...it, qty: balanceAfter };
   });
-  return { stockItems: next, stockMoves: [...moves, ...(db.stockMoves ?? [])].slice(0, 5000) };
+  return { stockItems: next, stockMoves: [...moves, ...(db.stockMoves ?? [])] };
+}
+
+/**
+ * Hitung ulang saldo setiap bahan dari riwayat mutasi, supaya perangkat lain tidak menimpa saldo.
+ * Opname = saldo fisik mutlak (reset); mutasi lain ditambahkan berurutan waktu.
+ */
+export function recomputeStock(db: PosDatabase): PosDatabase {
+  const items = db.stockItems ?? [];
+  if (!items.length) return db;
+  const by = new Map<string, StockMove[]>();
+  for (const m of db.stockMoves ?? []) {
+    const a = by.get(m.stockId) ?? [];
+    a.push(m);
+    by.set(m.stockId, a);
+  }
+  let changed = false;
+  const r = (n: number) => Math.round(n * 1000) / 1000;
+  const next = items.map((it) => {
+    const ms = (by.get(it.id) ?? []).slice().sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    if (!ms.length) return it;
+    const base = it.baseQty ?? r((ms[0]!.balanceAfter ?? 0) - ms[0]!.qty);
+    let run = base;
+    for (const m of ms) run = m.type === "opname" && m.balanceAfter !== undefined ? m.balanceAfter : run + m.qty;
+    run = r(run);
+    if (run === it.qty && it.baseQty !== undefined) return it;
+    changed = true;
+    return { ...it, baseQty: base, qty: run };
+  });
+  return changed ? { ...db, stockItems: next } : db;
 }
