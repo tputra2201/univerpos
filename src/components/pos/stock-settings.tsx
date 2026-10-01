@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Pencil, Trash2, PackagePlus, ClipboardCheck } from "lucide-react";
+import { Plus, Pencil, Trash2, PackagePlus, ClipboardCheck, Tags } from "lucide-react";
 import { toast } from "sonner";
 import { usePos } from "@/lib/pos/store";
 import { uid } from "@/lib/pos/format";
@@ -30,6 +30,7 @@ export function StockSettings() {
   const canAdjust = can("stock.adjust");
   const items = stockItemsOf(db);
   const [editing, setEditing] = useState<StockItem | null>(null);
+  const [groupsOpen, setGroupsOpen] = useState(false);
   const [adjust, setAdjust] = useState<{ item: StockItem; mode: "in" | "opname" } | null>(null);
   const [adjQty, setAdjQty] = useState("");
   const [adjNote, setAdjNote] = useState("");
@@ -97,9 +98,14 @@ export function StockSettings() {
             </CardDescription>
           </div>
           {canManage && (
-            <Button onClick={() => setEditing(blank())}>
-              <Plus className="mr-1 h-4 w-4" /> Tambah
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={() => setGroupsOpen(true)}>
+                <Tags className="mr-1 h-4 w-4" /> Kategori
+              </Button>
+              <Button onClick={() => setEditing(blank())}>
+                <Plus className="mr-1 h-4 w-4" /> Tambah
+              </Button>
+            </div>
           )}
 
         </CardHeader>
@@ -198,6 +204,8 @@ export function StockSettings() {
         </DialogContent>
       </Dialog>
 
+      <GroupManager open={groupsOpen} onOpenChange={setGroupsOpen} />
+
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -226,10 +234,15 @@ function StockForm({ value, onChange, onSave }: { value: StockItem; onChange: (v
         </div>
         <div className="col-span-2">
           <Label>Kategori stok</Label>
-          <Input list="stock-groups" value={value.group ?? ""} onChange={(e) => set({ group: e.target.value })} placeholder="Kemasan, Bahan Minuman, ..." />
-          <datalist id="stock-groups">
-            {[...new Set((db.stockItems ?? []).map((x) => x.group?.trim()).filter(Boolean))].map((g) => <option key={g} value={g} />)}
-          </datalist>
+          <select
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+            value={value.group ?? ""}
+            onChange={(e) => set({ group: e.target.value || undefined })}
+          >
+            <option value="">Tanpa kategori (Lainnya)</option>
+            {groupList(db).map((g) => <option key={g} value={g}>{g}</option>)}
+          </select>
+          <p className="mt-1 text-xs text-muted-foreground">Kategori dibuat lewat tombol "Kategori" di halaman Stok.</p>
         </div>
         <div>
           <Label>Satuan</Label>
@@ -313,6 +326,70 @@ function StockForm({ value, onChange, onSave }: { value: StockItem; onChange: (v
 
       <Button className="w-full" onClick={onSave}>Simpan</Button>
     </div>
+  );
+}
+
+function groupList(db: { settings: { stockGroups?: string[] }; stockItems?: StockItem[] }): string[] {
+  const set = new Set<string>((db.settings.stockGroups ?? []).map((g) => g.trim()).filter(Boolean));
+  for (const it of db.stockItems ?? []) if (it.group?.trim()) set.add(it.group.trim());
+  return [...set].sort((a, b) => a.localeCompare(b));
+}
+
+function GroupManager({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+  const { db, update } = usePos();
+  const [name, setName] = useState("");
+  const groups = groupList(db);
+  const used = (g: string) => (db.stockItems ?? []).filter((x) => x.group?.trim() === g).length;
+
+  function add() {
+    const n = name.trim();
+    if (!n) return;
+    if (groups.some((g) => g.toLowerCase() === n.toLowerCase())) { toast.error("Kategori sudah ada."); return; }
+    update((cur) => ({ ...cur, settings: { ...cur.settings, stockGroups: [...groupList(cur), n] } }));
+    setName("");
+    toast.success("Kategori stok ditambahkan.");
+  }
+  function rename(g: string) {
+    const n = window.prompt("Nama baru kategori", g)?.trim();
+    if (!n || n === g) return;
+    if (groups.some((x) => x !== g && x.toLowerCase() === n.toLowerCase())) { toast.error("Kategori sudah ada."); return; }
+    update((cur) => ({
+      ...cur,
+      settings: { ...cur.settings, stockGroups: groupList(cur).map((x) => (x === g ? n : x)) },
+      stockItems: (cur.stockItems ?? []).map((x) => (x.group?.trim() === g ? { ...x, group: n } : x)),
+    }));
+  }
+  function del(g: string) {
+    const c = used(g);
+    if (!window.confirm(c ? `Hapus kategori "${g}"? ${c} bahan akan pindah ke "Lainnya".` : `Hapus kategori "${g}"?`)) return;
+    update((cur) => ({
+      ...cur,
+      settings: { ...cur.settings, stockGroups: groupList(cur).filter((x) => x !== g) },
+      stockItems: (cur.stockItems ?? []).map((x) => (x.group?.trim() === g ? { ...x, group: undefined } : x)),
+    }));
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>Kategori Stok</DialogTitle></DialogHeader>
+        <div className="flex gap-2">
+          <Input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="Mis. Kemasan, Bahan Minuman" />
+          <Button onClick={add}><Plus className="mr-1 h-4 w-4" /> Tambah</Button>
+        </div>
+        <div className="space-y-1">
+          {!groups.length && <p className="text-sm text-muted-foreground">Belum ada kategori.</p>}
+          {groups.map((g) => (
+            <div key={g} className="flex items-center gap-2 rounded-lg border p-2">
+              <span className="flex-1 font-medium">{g}</span>
+              <span className="text-xs text-muted-foreground">{used(g)} bahan</span>
+              <Button size="icon" variant="outline" title="Ganti nama" onClick={() => rename(g)}><Pencil className="h-4 w-4" /></Button>
+              <Button size="icon" variant="outline" title="Hapus" onClick={() => del(g)}><Trash2 className="h-4 w-4" /></Button>
+            </div>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

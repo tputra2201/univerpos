@@ -43,6 +43,8 @@ export interface StoreSettings {
   themeId?: string;
   /** Mode tampilan: terang, gelap, atau ikut perangkat. */
   themeMode?: "light" | "dark" | "system";
+  /** Master kategori stok (bahan & kemasan). */
+  stockGroups?: string[];
 }
 
 export interface LoyaltySettings {
@@ -430,7 +432,7 @@ export interface StockItem {
   name: string;
   unit: string;
   /** Kategori stok, mis. "Kemasan", "Bahan Minuman". */
-  group?: string;
+  group?: string | undefined;
   qty: number;
   /** Saldo awal sebelum mutasi pertama. Saldo = baseQty + jumlah semua mutasi. */
   baseQty?: number;
