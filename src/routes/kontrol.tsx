@@ -258,9 +258,8 @@ function StoreDevices({ store, onChange }: { store: StoreRow; onChange: () => vo
       {rows.map((d) => (
         <div key={d.id} className="flex flex-wrap items-center gap-2 text-xs">
           <span className={`size-2 shrink-0 rounded-full ${isOn(d) ? "bg-primary" : "bg-muted-foreground/40"}`} />
-          <span className="rounded bg-background px-1.5 py-0.5 font-mono">{deviceCode(d.id)}</span>
           <span className="min-w-0 flex-1 truncate font-medium">
-            {d.device_name}
+            {devLabel(d)}
             {d.device_model && <span className="font-normal text-muted-foreground"> · {d.device_model}</span>}
             <span className="block font-normal text-muted-foreground">
               {d.current_user_name
