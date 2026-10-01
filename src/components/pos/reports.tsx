@@ -688,7 +688,7 @@ export function VoidReport({ range }: { range: ReportRange }) {
 /** Laporan Finance: ringkasan 4 jenis + detail per jenis. */
 export function FinanceReport({ range, kind }: { range: ReportRange; kind?: FinanceKind }) {
   const { db } = usePos();
-  const all = (db.financeEntries ?? []).filter((f) => inRange(f.createdAt, range));
+  const all = (db.financeEntries ?? []).filter((f) => inRange(f.createdAt, range)).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const rows = kind ? all.filter((f) => f.kind === kind) : all;
   const total = (k: FinanceKind) => all.filter((f) => f.kind === k).reduce((a, f) => a + f.amount, 0);
   const net = total("income") - total("expense") + total("paidin") - total("paidout");
@@ -862,7 +862,7 @@ export function CommissionReport({ range }: { range: ReportRange }) {
   const rows = [...byStaff.entries()].sort((a, b) => b[1].commission - a[1].commission);
   const total = rows.reduce((a, [, v]) => a + v.commission, 0);
   const active = detail ? byStaff.get(detail) : undefined;
-  const jobs = [...(active?.list ?? [])].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const jobs = [...(active?.list ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   return (
     <div className="space-y-4">
       <Section title={`Komisi Staf · ${rupiah(total)}`}>

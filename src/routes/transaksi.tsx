@@ -58,7 +58,7 @@ function TransaksiPage() {
 
   const list = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return db.sales.filter(
+    return [...db.sales].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).filter(
       (s) =>
         !q ||
         s.code.toLowerCase().includes(q) ||
