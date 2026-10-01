@@ -1,7 +1,7 @@
 import { applyStock } from "@/lib/pos/stock";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Printer, Ban, Undo2, Search } from "lucide-react";
+import { Printer, Ban, Undo2, Search, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { PosGate } from "@/components/pos/pos-gate";
 import { AppShell, PageHeader } from "@/components/pos/app-shell";
@@ -56,6 +56,23 @@ function TransaksiPage() {
   const [printLines, setPrintLines] = useState<string[] | null>(null);
   const [action, setAction] = useState<{ sale: Sale; type: "void" | "refund" } | null>(null);
   const [reason, setReason] = useState("");
+  const [editPay, setEditPay] = useState<string[] | null>(null);
+
+  function savePayments() {
+    if (!detail || !editPay) return;
+    const payments = detail.payments.map((p, i) => {
+      const m = db.paymentMethods.find((x) => x.id === editPay[i]);
+      if (!m || m.id === p.methodId) return p;
+      const { tendered: _t, ...rest } = p;
+      return m.isCash ? { ...rest, methodId: m.id, methodName: m.name, tendered: p.amount } : { ...rest, methodId: m.id, methodName: m.name };
+    });
+    const hasCash = payments.some((p) => db.paymentMethods.find((m) => m.id === p.methodId)?.isCash);
+    const next = { ...detail, payments, change: hasCash ? detail.change : 0 };
+    update((cur) => ({ ...cur, sales: cur.sales.map((s) => (s.id === detail.id ? next : s)) }));
+    setDetail(next);
+    setEditPay(null);
+    toast.success("Metode pembayaran diperbarui.");
+  }
 
   const today = useMemo(() => defaultRange(db.settings), [db.settings]);
   const daySales = useMemo(() => db.sales.filter((s) => inRange(s.createdAt, today)), [db.sales, today]);
@@ -196,6 +213,9 @@ function TransaksiPage() {
             </Button>
             {detail?.status === "paid" && hasPerm(db.settings, currentUser?.role, "transaction.void") && (
               <>
+                <Button variant="secondary" className="gap-2" onClick={() => setEditPay(detail.payments.map((p) => p.methodId))}>
+                  <CreditCard className="size-4" /> Ubah pembayaran
+                </Button>
                 <Button
                   variant="secondary"
                   className="gap-2"
@@ -234,6 +254,34 @@ function TransaksiPage() {
             <Button className="w-full" onClick={applyAction}>
               Konfirmasi
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editPay} onOpenChange={(v) => !v && setEditPay(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Ubah Metode Pembayaran</DialogTitle>
+            <DialogDescription>Nominal tetap, hanya metode yang diganti.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {detail?.payments.map((p, i) => (
+              <div key={i} className="space-y-1.5">
+                <Label>{rupiah(p.amount)}</Label>
+                <select
+                  className="h-11 w-full rounded-md border bg-background px-3 text-sm"
+                  value={editPay?.[i] ?? p.methodId}
+                  onChange={(e) => setEditPay((cur) => (cur ? cur.map((v, j) => (j === i ? e.target.value : v)) : cur))}
+                >
+                  {db.paymentMethods.filter((m) => m.active || m.id === p.methodId).map((m) => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button className="w-full" onClick={savePayments}>Simpan</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
