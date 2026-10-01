@@ -1,7 +1,7 @@
 import { productRule, type CommissionRule } from "@/lib/pos/commission";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
-import { Plus, Pencil, Trash2, Download, Upload, Search, Copy } from "lucide-react";
+import { Plus, Pencil, Trash2, Download, Upload, Search, Copy, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { PosGate } from "@/components/pos/pos-gate";
 import { SortableList, SortableItem, applyOrder } from "@/components/pos/sortable";
@@ -78,6 +78,14 @@ function ProdukPage() {
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<Product | null>(null);
   const [newCategory, setNewCategory] = useState("");
+  const [openCats, setOpenCats] = useState<Set<string>>(new Set());
+  const toggleCat = (id: string) =>
+    setOpenCats((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   const fileRef = useRef<HTMLInputElement>(null);
   const services = useMemo(() => getServiceTypes(db).filter((s) => s.active), [db]);
 
@@ -193,7 +201,8 @@ function ProdukPage() {
         </TabsContent>
 
         <TabsContent value="produk" className="space-y-3">
-          <div className="relative max-w-sm">
+          <div className="flex flex-wrap items-center gap-2">
+          <div className="relative w-full max-w-sm">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={query}
@@ -201,6 +210,13 @@ function ProdukPage() {
               placeholder="Cari produk"
               className="h-10 pl-9"
             />
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setOpenCats(new Set([...db.categories.map((c) => c.id), "__none"]))}>
+              Buka semua
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setOpenCats(new Set())}>
+              Tutup semua
+            </Button>
           </div>
           {list.length === 0 && (
             <p className="text-sm text-muted-foreground">Belum ada produk.</p>
@@ -289,6 +305,7 @@ function ProdukPage() {
             ))}
           </div>
           </SortableList>
+                </>)}
               </section>
             );
           })}
