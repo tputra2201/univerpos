@@ -153,47 +153,50 @@ function LaporanPage() {
       />
 
       <div className="space-y-4 p-4 md:p-6">
-        <RangePicker range={range} onChange={setRange} />
-
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <Stat label="Omzet periode" value={rupiah(omzet)} />
-          <Stat label="Jumlah transaksi" value={String(rangeSales.length)} />
-          <Stat
-            label="Rata-rata per transaksi"
-            value={rupiah(rangeSales.length ? omzet / rangeSales.length : 0)}
-          />
-          <Stat
-            label="Status kasir"
-            value={shift ? `Terbuka · ${shift.userName}` : "Tertutup"}
-            hint={shift ? `Kas awal ${rupiah(shift.openingCash)}` : "Lakukan check-in dulu"}
-          />
-        </div>
-
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="h-auto flex-wrap justify-start">
-            <TabsTrigger value="company">Company Report</TabsTrigger>
-            <TabsTrigger value="closeout">Close Out</TabsTrigger>
-            <TabsTrigger value="kategori">Sales Report</TabsTrigger>
-            <TabsTrigger value="statistik">Statistik</TabsTrigger>
-            <TabsTrigger value="qris">QRIS</TabsTrigger>
-            <TabsTrigger value="transfer">Transfer & Kartu</TabsTrigger>
-            <TabsTrigger value="online">Order Online</TabsTrigger>
-            <TabsTrigger value="transaksi">Transaksi</TabsTrigger>
-            <TabsTrigger value="kasir">Per Kasir</TabsTrigger>
+          <TabsList className="h-auto w-full flex-wrap justify-start gap-1 p-1.5">
+            <TabsTrigger className={TAB_CLS} value="company">Company Report</TabsTrigger>
+            <TabsTrigger className={TAB_CLS} value="closeout">Close Out</TabsTrigger>
+            <TabsTrigger className={TAB_CLS} value="kategori">Sales Report</TabsTrigger>
+            <TabsTrigger className={TAB_CLS} value="statistik">Statistik</TabsTrigger>
+            <TabsTrigger className={TAB_CLS} value="qris">QRIS</TabsTrigger>
+            <TabsTrigger className={TAB_CLS} value="transfer">Transfer & Kartu</TabsTrigger>
+            <TabsTrigger className={TAB_CLS} value="online">Order Online</TabsTrigger>
+            <TabsTrigger className={TAB_CLS} value="transaksi">Transaksi</TabsTrigger>
+            <TabsTrigger className={TAB_CLS} value="kasir">Per Kasir</TabsTrigger>
             {db.staff.length > 0 && hasPerm(db.settings, currentUser?.role, "report.commission") && (
-              <TabsTrigger value="komisi">Komisi Staf</TabsTrigger>
+              <TabsTrigger className={TAB_CLS} value="komisi">Komisi Staf</TabsTrigger>
             )}
 
-            {hasPerm(db.settings, currentUser?.role, "stock.view") && <TabsTrigger value="stok">Stok</TabsTrigger>}
-            <TabsTrigger value="void">VOID</TabsTrigger>
-            {canFinance && <TabsTrigger value="finance">Finance</TabsTrigger>}
+            {hasPerm(db.settings, currentUser?.role, "stock.view") && <TabsTrigger className={TAB_CLS} value="stok">Stok</TabsTrigger>}
+            <TabsTrigger className={TAB_CLS} value="void">VOID</TabsTrigger>
+            {canFinance && <TabsTrigger className={TAB_CLS} value="finance">Finance</TabsTrigger>}
             {canFinance &&
               FINANCE_KINDS.map((k) => (
-                <TabsTrigger key={k.kind} value={`fin-${k.kind}`}>
+                <TabsTrigger className={TAB_CLS} key={k.kind} value={`fin-${k.kind}`}>
                   {k.label}
                 </TabsTrigger>
               ))}
           </TabsList>
+
+          <div className="mt-4 space-y-4">
+          <RangePicker range={range} onChange={setRange} />
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <Stat label="Omzet periode" value={rupiah(omzet)} />
+            <Stat label="Jumlah transaksi" value={String(rangeSales.length)} />
+            <Stat
+              label="Rata-rata per transaksi"
+              value={rupiah(rangeSales.length ? omzet / rangeSales.length : 0)}
+            />
+            <Stat
+              label="Status kasir"
+              value={shift ? `Terbuka · ${shift.userName}` : "Tertutup"}
+              hint={shift ? `Kas awal ${rupiah(shift.openingCash)}` : "Lakukan check-in dulu"}
+            />
+          </div>
+
+          </div>
 
           <TabsContent value="company" className="mt-4">
             <CompanyReport range={range} />
@@ -268,6 +271,9 @@ function LaporanPage() {
     </div>
   );
 }
+
+const TAB_CLS =
+  "data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-bold data-[state=active]:shadow-md";
 
 const TAB_LABEL: Record<string, string> = {
   company: "Company Report",
