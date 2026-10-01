@@ -45,6 +45,7 @@ export function StockSettings() {
     update((cur) => {
       const list = cur.stockItems ?? [];
       const exists = list.some((x) => x.id === item.id);
+      if (!exists) item = { ...item, baseQty: item.qty };
       return { ...cur, stockItems: exists ? list.map((x) => (x.id === item.id ? item : x)) : [...list, item] };
     });
     setEditing(null);
@@ -79,7 +80,7 @@ export function StockSettings() {
     update((cur) => ({
       ...cur,
       stockItems: (cur.stockItems ?? []).map((x) => (x.id === item.id ? { ...x, qty: x.qty + delta } : x)),
-      stockMoves: [move, ...(cur.stockMoves ?? [])].slice(0, 5000),
+      stockMoves: [move, ...(cur.stockMoves ?? [])],
     }));
     setAdjust(null);
     toast.success("Stok diperbarui.");

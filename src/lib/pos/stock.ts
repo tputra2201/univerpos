@@ -57,5 +57,22 @@ export function applyStock(
     });
     return { ...it, qty: balanceAfter };
   });
-  return { stockItems: next, stockMoves: [...moves, ...(db.stockMoves ?? [])].slice(0, 5000) };
+  return { stockItems: next, stockMoves: [...moves, ...(db.stockMoves ?? [])] };
+}
+
+/** Hitung ulang saldo setiap bahan dari mutasi (agar data antar perangkat tidak saling menimpa). */
+export function recomputeStock(db: PosDatabase): PosDatabase {
+  const items = db.stockItems ?? [];
+  if (!items.length) return db;
+  const sum = new Map<string, number>();
+  for (const m of db.stockMoves ?? []) sum.set(m.stockId, (sum.get(m.stockId) ?? 0) + m.qty);
+  let changed = false;
+  const next = items.map((it) => {
+    if (it.baseQty === undefined && !sum.has(it.id)) return it;
+    const qty = Math.round(((it.baseQty ?? 0) + (sum.get(it.id) ?? 0)) * 1000) / 1000;
+    if (qty === it.qty && it.baseQty !== undefined) return it;
+    changed = true;
+    return { ...it, baseQty: it.baseQty ?? Math.round((it.qty - (sum.get(it.id) ?? 0)) * 1000) / 1000, qty: it.baseQty === undefined ? it.qty : qty };
+  });
+  return changed ? { ...db, stockItems: next } : db;
 }

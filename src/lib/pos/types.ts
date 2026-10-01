@@ -430,6 +430,8 @@ export interface StockItem {
   name: string;
   unit: string;
   qty: number;
+  /** Saldo awal sebelum mutasi pertama. Saldo = baseQty + jumlah semua mutasi. */
+  baseQty?: number;
   /** Batas peringatan stok menipis. */
   minQty: number;
   /** Kategori yang otomatis memakai bahan ini. */

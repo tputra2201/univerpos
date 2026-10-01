@@ -7,6 +7,7 @@ import { useEffect, useRef, useSyncExternalStore } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { PosDatabase, StoreSettings } from "./types";
 import { usePos } from "./store";
+import { recomputeStock } from "./stock";
 
 export const SYNC_CURSOR_KEY = "wo-pos-sync-cursor";
 export const SYNC_BASE_KEY = "wo-pos-sync-base";
@@ -158,7 +159,7 @@ function applyRows(cur: PosDatabase, rows: PullRow[], replace: boolean, skip: Se
   }
   for (const c of COLLECTIONS) (next as unknown as Record<string, unknown>)[c] = [...maps.get(c)!.values()];
   next.settings = settings;
-  return next;
+  return recomputeStock(next);
 }
 
 /** Jalankan sinkronisasi di latar belakang (hanya store mode online). */
