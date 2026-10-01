@@ -1,7 +1,7 @@
 /** Ekspor tab laporan yang sedang tampil ke Excel / PDF. */
 import { rangeBounds, type ReportRange } from "./report-range";
 
-type Section = { title?: string; head?: string[]; rows: string[][] };
+type Section = { title?: string | undefined; head?: string[]; rows: string[][] };
 
 const txt = (el: Element) => (el.textContent ?? "").replace(/\s+/g, " ").trim();
 
@@ -102,7 +102,7 @@ export async function exportTabPdf(root: Element, store: string, tab: string, pe
       head: s.title || s.head?.length ? [
         ...(s.title ? [[{ content: s.title, colSpan: width, styles: { fillColor: [40, 40, 40] as [number, number, number] } }]] : []),
         ...(s.head?.length ? [s.head] : []),
-      ] : undefined,
+      ] : [],
       body,
       theme: "grid",
       styles: { fontSize: 8, cellPadding: 4 },
