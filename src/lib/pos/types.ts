@@ -214,6 +214,8 @@ export interface ServiceType {
   /** Penyesuaian harga global: nominal rupiah atau persen (boleh negatif). */
   priceAdjustMode?: "amount" | "percent";
   priceAdjustValue?: number;
+  /** Selisih penyesuaian harga dicatat sebagai Komisi (plus) atau Diskon (minus) di laporan. */
+  adjustAsCommission?: boolean;
   /** Boleh bayar sebagian (split bill). Kosong = boleh. */
   allowSplit?: boolean;
   /** Layanan bawaan: kasir bisa langsung pilih menu tanpa memilih layanan. */

@@ -1,4 +1,5 @@
 import { lineCommission } from "@/lib/pos/commission";
+import { saleAdjust } from "@/lib/pos/service-adjust";
 /** Kumpulan laporan berbasis rentang waktu (hari usaha). */
 import { getServiceTypes } from "@/lib/pos/seed";
 import { useMemo, useState } from "react";
@@ -196,7 +197,14 @@ export function CompanyReport({ range }: { range: ReportRange }) {
   const discount = paid.reduce((a, s) => a + s.discount, 0);
   const tax = paid.reduce((a, s) => a + s.tax, 0);
   const service = paid.reduce((a, s) => a + s.service, 0);
-  const net = paid.reduce((a, s) => a + s.total, 0);
+  const salesTotal = paid.reduce((a, s) => a + s.total, 0);
+  const adjMap = new Map<string, number>();
+  paid.forEach((s) => {
+    const a = saleAdjust(db, s);
+    if (a && a.amount) adjMap.set(a.label, (adjMap.get(a.label) ?? 0) + a.amount);
+  });
+  const adjTotal = [...adjMap.values()].reduce((a, b) => a + b, 0);
+  const net = salesTotal - adjTotal;
   const voided = sales.filter((s) => s.status !== "paid");
 
   const methods = new Map<string, { qty: number; amount: number }>();
@@ -229,6 +237,9 @@ export function CompanyReport({ range }: { range: ReportRange }) {
     <div className="grid gap-4 lg:grid-cols-2">
       <Section title="Pendapatan Bersih">
         <Row label="Penjualan kotor" value={rupiah(subtotal)} />
+        {[...adjMap.entries()].map(([label, v]) => (
+          <Row key={label} label={label} value={"-" + rupiah(v)} />
+        ))}
         <Row label="Diskon" value={"-" + rupiah(discount)} />
         <Row label="Pajak & biaya layanan" value={rupiah(tax + service)} />
         <Row label="Omzet penjualan" value={rupiah(net)} />

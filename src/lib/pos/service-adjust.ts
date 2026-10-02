@@ -1,5 +1,5 @@
 import type { PosDatabase, Sale, ServiceType } from "./types";
-import { getServiceTypes } from "./store";
+import { getServiceTypes } from "./seed";
 
 export interface SaleAdjust {
   service: ServiceType;
