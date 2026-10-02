@@ -17,6 +17,7 @@ import {
   RangePicker,
   StatsReport,
   VoidReport,
+  DeletedReport,
 } from "@/components/pos/reports";
 import { usePos } from "@/lib/pos/store";
 import { CategorySalesReport } from "@/components/pos/category-sales-report";
@@ -170,6 +171,7 @@ function LaporanPage() {
 
             {hasPerm(db.settings, currentUser?.role, "stock.view") && <TabsTrigger className={TAB_CLS} value="stok">Stok</TabsTrigger>}
             <TabsTrigger className={TAB_CLS} value="void">VOID</TabsTrigger>
+            <TabsTrigger className={TAB_CLS} value="dihapus">Dihapus & Batal</TabsTrigger>
             {canFinance && <TabsTrigger className={TAB_CLS} value="finance">Finance</TabsTrigger>}
             {canFinance &&
               FINANCE_KINDS.map((k) => (
@@ -249,6 +251,9 @@ function LaporanPage() {
           <TabsContent value="void" className="mt-4">
             <VoidReport range={range} />
           </TabsContent>
+          <TabsContent value="dihapus" className="mt-4">
+            <DeletedReport range={range} />
+          </TabsContent>
           <TabsContent value="finance" className="mt-4">
             <FinanceReport range={range} />
           </TabsContent>
@@ -287,6 +292,7 @@ const TAB_LABEL: Record<string, string> = {
   kasir: "Per Kasir",
   stok: "Stok",
   void: "VOID",
+  dihapus: "Dihapus & Batal",
   finance: "Finance",
 };
 
