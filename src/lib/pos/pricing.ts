@@ -47,3 +47,15 @@ export function lineNeedsKitchen(db: PosDatabase, line: CartLine, service?: Serv
   if (cat?.sendToKitchen != null) return cat.sendToKitchen;
   return service?.sendToKitchen !== false;
 }
+
+/** Layanan ini memberi diskon global (penyesuaian harga negatif)? Diskon manual di kasir dikunci. */
+export function isDiscountService(service?: ServiceType | undefined): boolean {
+  return !!service && (service.priceAdjustValue ?? 0) < 0;
+}
+
+/** Produk boleh tampil untuk layanan diskon? Setelan produk menang atas kategori; kosong = boleh. */
+export function productAllowsServiceDiscount(db: PosDatabase, product: Product): boolean {
+  if (product.serviceDiscount != null) return product.serviceDiscount;
+  const cat = db.categories.find((c) => c.id === product.categoryId);
+  return cat?.serviceDiscount !== false;
+}

@@ -35,7 +35,7 @@ import { layoutFor, printerFor, printersFor, productStation, sendToPrinter, spli
 import type { PrinterRole } from "@/lib/pos/types";
 import { getServiceTypes } from "@/lib/pos/seed";
 import { serviceIcon } from "@/lib/pos/service-icons";
-import { categoryAllowed, lineNeedsKitchen, servicePrice, serviceOptionPrice } from "@/lib/pos/pricing";
+import { categoryAllowed, isDiscountService, lineNeedsKitchen, productAllowsServiceDiscount, servicePrice, serviceOptionPrice } from "@/lib/pos/pricing";
 import { MemberPicker } from "@/components/pos/member-picker";
 import {
   loyaltyOf,
@@ -233,9 +233,24 @@ function KasirPage() {
   /** Layanan yang dipakai untuk menghitung harga di katalog. */
   const priceService = activeService ?? defaultService;
 
+  const discountLocked = isDiscountService(priceService);
+
+  // Layanan diskon: diskon manual di kasir dinonaktifkan.
+  useEffect(() => {
+    if (!discountLocked) return;
+    setCart((prev) =>
+      prev.billDiscount || prev.lines.some((l) => l.discount)
+        ? { ...prev, billDiscount: 0, lines: prev.lines.map((l) => (l.discount ? { ...l, discount: 0 } : l)) }
+        : prev,
+    );
+  }, [discountLocked, cart.lines.length]);
+
   const visibleCategories = useMemo(
-    () => db.categories.filter((c) => categoryAllowed(c, cart.serviceId)),
-    [db.categories, cart.serviceId],
+    () =>
+      db.categories.filter(
+        (c) => categoryAllowed(c, cart.serviceId) && (!discountLocked || c.serviceDiscount !== false),
+      ),
+    [db.categories, cart.serviceId, discountLocked],
   );
 
   // Kategori yang dipilih bisa tidak tersedia lagi setelah layanan berganti.
@@ -251,13 +266,19 @@ function KasirPage() {
     const allowed = new Set(visibleCategories.map((c) => c.id));
     return db.products.filter((p) => {
       if (!p.active) return false;
-      if (p.categoryId && db.categories.some((c) => c.id === p.categoryId) && !allowed.has(p.categoryId))
+      if (
+        p.categoryId &&
+        db.categories.some((c) => c.id === p.categoryId) &&
+        !allowed.has(p.categoryId) &&
+        !(discountLocked && p.serviceDiscount === true && categoryAllowed(db.categories.find((c) => c.id === p.categoryId)!, cart.serviceId))
+      )
         return false;
       if (categoryId !== "all" && p.categoryId !== categoryId) return false;
+      if (discountLocked && !productAllowsServiceDiscount(db, p)) return false;
       if (!q) return true;
       return p.name.toLowerCase().includes(q) || p.barcode.includes(q);
     });
-  }, [db.products, db.categories, visibleCategories, query, categoryId]);
+  }, [db, visibleCategories, query, categoryId, discountLocked, cart.serviceId]);
 
   const shiftOpen = !!activeShiftOf(db);
 
@@ -1001,6 +1022,7 @@ function KasirPage() {
       />
 
       <LineEditor
+        discountLocked={discountLocked}
         line={editLine}
         onClose={() => setEditLine(null)}
         onSave={saveLine}
@@ -1617,8 +1639,11 @@ function CartPanel({
         <div className="max-h-[22dvh] space-y-1 overflow-y-auto text-sm">
           <Row label="Subtotal" value={rupiah(totals.subtotal)} />
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Diskon transaksi</span>
+            <span className="text-muted-foreground">
+              Diskon transaksi{isDiscountService(cartService) ? " (dikunci layanan)" : ""}
+            </span>
             <Input
+              disabled={isDiscountService(cartService)}
               inputMode="numeric"
               value={cart.billDiscount ? String(cart.billDiscount) : ""}
               onChange={(e) =>
@@ -1740,6 +1765,7 @@ function LineEditor({
   staffNames,
   showStaff,
   onChangeOptions,
+  discountLocked = false,
 }: {
   line: CartLine | null;
   onClose: () => void;
@@ -1747,6 +1773,7 @@ function LineEditor({
   staffNames: string[];
   showStaff: boolean;
   onChangeOptions?: ((line: CartLine) => void) | undefined;
+  discountLocked?: boolean;
 }) {
   const [draft, setDraft] = useState<CartLine | null>(line);
 
@@ -1774,8 +1801,9 @@ function LineEditor({
               />
             </div>
             <div className="space-y-2">
-              <Label>Diskon item (Rp)</Label>
+              <Label>Diskon item (Rp){discountLocked ? " · dikunci" : ""}</Label>
               <Input
+                disabled={discountLocked}
                 inputMode="numeric"
                 value={draft.discount ? String(draft.discount) : ""}
                 onChange={(e) =>

@@ -119,6 +119,8 @@ export interface Category {
   serviceIds?: string[];
   /** Kirim ke dapur: true/false menang atas jenis layanan; kosong = ikut layanan. */
   sendToKitchen?: boolean;
+  /** Berlaku diskon layanan. false = kategori disembunyikan saat layanan diskon dipilih. */
+  serviceDiscount?: boolean;
 }
 
 
@@ -174,6 +176,8 @@ export interface Product {
   commissionValue?: number;
   /** Estimasi durasi pengerjaan dalam menit (opsional, untuk bisnis jasa). */
   durationMinutes?: number | undefined;
+  /** Berlaku diskon layanan: true/false menang atas kategori; kosong = ikut kategori. */
+  serviceDiscount?: boolean | undefined;
 }
 
 

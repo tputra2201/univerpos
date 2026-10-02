@@ -426,6 +426,22 @@ function ProdukPage() {
                       <option value="no">Tidak aktif</option>
                     </select>
                   </label>
+                  <label className="flex items-center justify-between gap-2 text-sm">
+                    <span>Berlaku diskon layanan</span>
+                    <Switch
+                      checked={c.serviceDiscount !== false}
+                      onCheckedChange={(v) =>
+                        update((current) => ({
+                          ...current,
+                          categories: current.categories.map((x) => {
+                            if (x.id !== c.id) return x;
+                            const { serviceDiscount: _o, ...rest } = x;
+                            return v ? rest : { ...rest, serviceDiscount: false };
+                          }),
+                        }))
+                      }
+                    />
+                  </label>
                 </div>
                 </SortableItem>
               );
@@ -924,6 +940,25 @@ function ProductDialog({
               checked={draft.active}
               onCheckedChange={(v) => setDraft({ ...draft, active: v })}
             />
+          </div>
+          <div className="flex items-center justify-between gap-2 rounded-lg border p-3">
+            <div>
+              <p className="text-sm font-medium">Berlaku diskon layanan</p>
+              <p className="text-xs text-muted-foreground">Bila tidak, produk disembunyikan saat layanan diskon dipilih. Setelan produk menang atas kategori.</p>
+            </div>
+            <select
+              className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+              value={draft.serviceDiscount == null ? "" : draft.serviceDiscount ? "yes" : "no"}
+              onChange={(e) => {
+                const v = e.target.value;
+                const { serviceDiscount: _o, ...rest } = draft;
+                setDraft(v === "" ? rest : { ...rest, serviceDiscount: v === "yes" });
+              }}
+            >
+              <option value="">Ikuti kategori</option>
+              <option value="yes">Berlaku</option>
+              <option value="no">Tidak berlaku</option>
+            </select>
           </div>
           <div className="space-y-3 rounded-lg border p-3">
             <div className="flex items-center justify-between">
