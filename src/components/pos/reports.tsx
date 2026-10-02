@@ -1,4 +1,5 @@
 import { lineCommission } from "@/lib/pos/commission";
+import { saleAdjust } from "@/lib/pos/service-adjust";
 /** Kumpulan laporan berbasis rentang waktu (hari usaha). */
 import { getServiceTypes } from "@/lib/pos/seed";
 import { useMemo, useState } from "react";
@@ -196,7 +197,14 @@ export function CompanyReport({ range }: { range: ReportRange }) {
   const discount = paid.reduce((a, s) => a + s.discount, 0);
   const tax = paid.reduce((a, s) => a + s.tax, 0);
   const service = paid.reduce((a, s) => a + s.service, 0);
-  const net = paid.reduce((a, s) => a + s.total, 0);
+  const salesTotal = paid.reduce((a, s) => a + s.total, 0);
+  const adjMap = new Map<string, number>();
+  paid.forEach((s) => {
+    const a = saleAdjust(db, s);
+    if (a && a.amount) adjMap.set(a.label, (adjMap.get(a.label) ?? 0) + a.amount);
+  });
+  const adjTotal = [...adjMap.values()].reduce((a, b) => a + b, 0);
+  const net = salesTotal - adjTotal;
   const voided = sales.filter((s) => s.status !== "paid");
 
   const methods = new Map<string, { qty: number; amount: number }>();
@@ -229,6 +237,9 @@ export function CompanyReport({ range }: { range: ReportRange }) {
     <div className="grid gap-4 lg:grid-cols-2">
       <Section title="Pendapatan Bersih">
         <Row label="Penjualan kotor" value={rupiah(subtotal)} />
+        {[...adjMap.entries()].map(([label, v]) => (
+          <Row key={label} label={label} value={"-" + rupiah(v)} />
+        ))}
         <Row label="Diskon" value={"-" + rupiah(discount)} />
         <Row label="Pajak & biaya layanan" value={rupiah(tax + service)} />
         <Row label="Omzet penjualan" value={rupiah(net)} />
@@ -1075,5 +1086,86 @@ export function ExpenseItemReport({ range }: { range: ReportRange }) {
         />
       ))}
     </Section>
+  );
+}
+
+/** Laporan detail Komisi & Diskon jenis layanan. */
+export function ServiceAdjustReport({ range }: { range: ReportRange }) {
+  const { db } = usePos();
+  const sales = useRangeSales(range).filter((s) => s.status === "paid");
+  const rows = sales
+    .map((s) => ({ s, a: saleAdjust(db, s) }))
+    .filter((r): r is { s: Sale; a: NonNullable<ReturnType<typeof saleAdjust>> } => !!r.a && r.a.amount > 0)
+    .sort((x, y) => y.s.createdAt.localeCompare(x.s.createdAt));
+  const groups = new Map<string, { kind: string; count: number; gross: number; amount: number }>();
+  rows.forEach(({ a }) => {
+    const g = groups.get(a.label) ?? { kind: a.kind, count: 0, gross: 0, amount: 0 };
+    g.count += 1; g.gross += a.gross; g.amount += a.amount;
+    groups.set(a.label, g);
+  });
+  const komisi = rows.filter((r) => r.a.kind === "komisi").reduce((t, r) => t + r.a.amount, 0);
+  const diskon = rows.filter((r) => r.a.kind === "diskon").reduce((t, r) => t + r.a.amount, 0);
+  const gross = rows.reduce((t, r) => t + r.a.gross, 0);
+  return (
+    <div className="space-y-4">
+      <Section title="Ringkasan Komisi & Diskon">
+        <Row label="Penjualan kotor (layanan terkait)" value={rupiah(gross)} />
+        <Row label="Total komisi" value={"-" + rupiah(komisi)} />
+        <Row label="Total diskon" value={"-" + rupiah(diskon)} />
+        <Row label="Penjualan bersih" value={rupiah(gross - komisi - diskon)} bold />
+      </Section>
+      <Card>
+        <CardHeader className="pb-2"><CardTitle data-print-title className="text-base">Rekap per Layanan</CardTitle></CardHeader>
+        <CardContent className="overflow-x-auto">
+          {groups.size === 0 ? <p className="text-sm text-muted-foreground">Belum ada komisi/diskon pada periode ini.</p> : (
+            <Table>
+              <TableHeader><TableRow>
+                <TableHead>Pos</TableHead><TableHead className="text-right">Nota</TableHead>
+                <TableHead className="text-right">Kotor</TableHead><TableHead className="text-right">Potongan</TableHead>
+                <TableHead className="text-right">Bersih</TableHead>
+              </TableRow></TableHeader>
+              <TableBody>
+                {[...groups.entries()].map(([label, g]) => (
+                  <TableRow key={label}>
+                    <TableCell>{label}</TableCell>
+                    <TableCell className="tabular text-right">{g.count}</TableCell>
+                    <TableCell className="tabular text-right">{rupiah(g.gross)}</TableCell>
+                    <TableCell className="tabular text-right">{rupiah(g.amount)}</TableCell>
+                    <TableCell className="tabular text-right">{rupiah(g.gross - g.amount)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-2"><CardTitle data-print-title className="text-base">Detail Transaksi</CardTitle></CardHeader>
+        <CardContent className="overflow-x-auto">
+          {rows.length === 0 ? <p className="text-sm text-muted-foreground">Tidak ada transaksi.</p> : (
+            <Table>
+              <TableHeader><TableRow>
+                <TableHead>Waktu</TableHead><TableHead>Nota</TableHead><TableHead>Kasir</TableHead><TableHead>Pos</TableHead>
+                <TableHead className="text-right">Kotor</TableHead><TableHead className="text-right">Potongan</TableHead>
+                <TableHead className="text-right">Bersih</TableHead>
+              </TableRow></TableHeader>
+              <TableBody>
+                {rows.map(({ s, a }) => (
+                  <TableRow key={s.id}>
+                    <TableCell className="whitespace-nowrap">{dateTime(s.createdAt)}</TableCell>
+                    <TableCell className="font-mono text-xs">{s.code}</TableCell>
+                    <TableCell>{s.userName}</TableCell>
+                    <TableCell>{a.label}</TableCell>
+                    <TableCell className="tabular text-right">{rupiah(a.gross)}</TableCell>
+                    <TableCell className="tabular text-right">{rupiah(a.amount)}</TableCell>
+                    <TableCell className="tabular text-right">{rupiah(a.gross - a.amount)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

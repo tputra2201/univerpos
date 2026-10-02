@@ -1298,6 +1298,18 @@ export function ServiceTypesCard() {
                 Isi minus untuk mengurangi harga, mis. -10.
               </span>
             </div>
+            {(svc.priceAdjustValue ?? 0) !== 0 && (
+              <label className="flex w-full items-center gap-2 border-t pt-2 text-sm">
+                <Switch
+                  checked={svc.adjustAsCommission === true}
+                  onCheckedChange={(v) => patch(svc.id, { adjustAsCommission: v })}
+                />
+                Komisi/Diskon
+                <span className="text-xs text-muted-foreground">
+                  — selisih harga dicatat sebagai {(svc.priceAdjustValue ?? 0) > 0 ? "Komisi" : "Diskon"} {svc.name} dan mengurangi omzet di laporan
+                </span>
+              </label>
+            )}
           </div>
 
         ))}

@@ -9,6 +9,7 @@ import {
   CashierReport,
   CloseOutReport,
   CompanyReport,
+  ServiceAdjustReport,
   FinanceReport,
   MethodReport,
   OnlineOrderReport,
@@ -165,6 +166,7 @@ function LaporanPage() {
             <TabsTrigger className={TAB_CLS} value="online">Order Online</TabsTrigger>
             <TabsTrigger className={TAB_CLS} value="transaksi">Transaksi</TabsTrigger>
             <TabsTrigger className={TAB_CLS} value="kasir">Per Kasir</TabsTrigger>
+            <TabsTrigger className={TAB_CLS} value="adjust">Komisi & Diskon</TabsTrigger>
             {db.staff.length > 0 && hasPerm(db.settings, currentUser?.role, "report.commission") && (
               <TabsTrigger className={TAB_CLS} value="komisi">Komisi Staf</TabsTrigger>
             )}
@@ -200,6 +202,9 @@ function LaporanPage() {
 
           </div>
 
+          <TabsContent value="adjust" className="mt-4">
+            <ServiceAdjustReport range={range} />
+          </TabsContent>
           <TabsContent value="company" className="mt-4">
             <CompanyReport range={range} />
           </TabsContent>
@@ -282,6 +287,7 @@ const TAB_CLS =
 
 const TAB_LABEL: Record<string, string> = {
   company: "Company Report",
+  adjust: "Komisi & Diskon",
   closeout: "Close Out",
   kategori: "Sales Report",
   statistik: "Statistik",
