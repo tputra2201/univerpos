@@ -247,10 +247,8 @@ function KasirPage() {
 
   const visibleCategories = useMemo(
     () =>
-      db.categories.filter(
-        (c) => categoryAllowed(c, cart.serviceId) && (!discountLocked || c.serviceDiscount !== false),
-      ),
-    [db.categories, cart.serviceId, discountLocked],
+      db.categories.filter((c) => categoryAllowed(c, cart.serviceId)),
+    [db.categories, cart.serviceId],
   );
 
   // Kategori yang dipilih bisa tidak tersedia lagi setelah layanan berganti.
@@ -269,8 +267,7 @@ function KasirPage() {
       if (
         p.categoryId &&
         db.categories.some((c) => c.id === p.categoryId) &&
-        !allowed.has(p.categoryId) &&
-        !(discountLocked && p.serviceDiscount === true && categoryAllowed(db.categories.find((c) => c.id === p.categoryId)!, cart.serviceId))
+        !allowed.has(p.categoryId)
       )
         return false;
       if (categoryId !== "all" && p.categoryId !== categoryId) return false;
