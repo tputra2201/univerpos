@@ -53,9 +53,7 @@ export function isDiscountService(service?: ServiceType | undefined): boolean {
   return !!service && (service.priceAdjustValue ?? 0) < 0;
 }
 
-/** Produk boleh tampil untuk layanan diskon? Setelan produk menang atas kategori; kosong = boleh. */
-export function productAllowsServiceDiscount(db: PosDatabase, product: Product): boolean {
-  if (product.serviceDiscount != null) return product.serviceDiscount;
-  const cat = db.categories.find((c) => c.id === product.categoryId);
-  return cat?.serviceDiscount !== false;
+/** Produk boleh tampil untuk layanan diskon? Kosong = boleh. */
+export function productAllowsServiceDiscount(_db: PosDatabase, product: Product): boolean {
+  return product.serviceDiscount !== false;
 }
