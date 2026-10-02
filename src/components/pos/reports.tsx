@@ -617,6 +617,103 @@ export function CloseOutReport({ range }: { range: ReportRange }) {
   );
 }
 
+/** Audit: nota dibatalkan/refund dan catatan Finance yang dihapus. */
+export function DeletedReport({ range }: { range: ReportRange }) {
+  const { db } = usePos();
+  const sales = db.sales
+    .filter((s) => (s.status === "void" || s.status === "refund") && inRange(s.cancelledAt ?? s.createdAt, range))
+    .sort((a, b) => ((b.cancelledAt ?? b.createdAt) < (a.cancelledAt ?? a.createdAt) ? -1 : 1));
+  const fins = (db.deletedFinance ?? [])
+    .filter((f) => inRange(f.deletedAt, range))
+    .sort((a, b) => b.deletedAt.localeCompare(a.deletedAt));
+  const saleTotal = sales.reduce((a, s) => a + s.total, 0);
+  const finTotal = fins.reduce((a, f) => a + f.amount, 0);
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle data-print-title className="text-base">
+            Transaksi Dibatalkan / Refund · {sales.length} nota · {rupiah(saleTotal)}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
+          {sales.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Tidak ada transaksi dibatalkan pada periode ini.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Waktu batal</TableHead>
+                  <TableHead>Nota</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Kasir nota</TableHead>
+                  <TableHead>Dibatalkan oleh</TableHead>
+                  <TableHead>Alasan</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sales.map((s) => (
+                  <TableRow key={s.id}>
+                    <TableCell className="whitespace-nowrap">{dateTime(s.cancelledAt ?? s.createdAt)}</TableCell>
+                    <TableCell className="font-mono">{s.orderNo || s.code}</TableCell>
+                    <TableCell>{s.status === "void" ? "Void" : "Refund"}</TableCell>
+                    <TableCell>{s.userName}</TableCell>
+                    <TableCell>{s.cancelledBy || "-"}</TableCell>
+                    <TableCell>{s.reason || "-"}</TableCell>
+                    <TableCell className="tabular text-right">{rupiah(s.total)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle data-print-title className="text-base">
+            Finance Dihapus · {fins.length} catatan · {rupiah(finTotal)}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
+          {fins.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Tidak ada catatan Finance dihapus pada periode ini.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Waktu hapus</TableHead>
+                  <TableHead>Kode</TableHead>
+                  <TableHead>Jenis</TableHead>
+                  <TableHead>Keterangan</TableHead>
+                  <TableHead>Dicatat</TableHead>
+                  <TableHead>Dihapus oleh</TableHead>
+                  <TableHead>Alasan</TableHead>
+                  <TableHead className="text-right">Nominal</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {fins.map((f) => (
+                  <TableRow key={f.id}>
+                    <TableCell className="whitespace-nowrap">{dateTime(f.deletedAt)}</TableCell>
+                    <TableCell className="font-mono">{f.code}</TableCell>
+                    <TableCell>{kindLabel(f.kind)}</TableCell>
+                    <TableCell>{f.categoryName} · {f.itemName} · {f.methodName}</TableCell>
+                    <TableCell className="whitespace-nowrap">{f.userName} · {dateTime(f.createdAt)}</TableCell>
+                    <TableCell>{f.deletedBy}</TableCell>
+                    <TableCell>{f.deleteReason}</TableCell>
+                    <TableCell className="tabular text-right">{rupiah(f.amount)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 /** Laporan pembatalan nota dan item. */
 export function VoidReport({ range }: { range: ReportRange }) {
   const sales = useRangeSales(range);
