@@ -31,6 +31,7 @@ const COLLECTIONS = [
   "memberPoints",
   "financeCategories",
   "financeEntries",
+  "deletedFinance",
   "stockItems",
   "stockMoves",
 

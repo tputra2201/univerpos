@@ -102,8 +102,23 @@ export function FinanceForm({
 
   function remove(): void {
     if (!entry) return;
-    if (!window.confirm(`Hapus catatan ${entry.code}?`)) return;
-    update((cur) => ({ ...cur, financeEntries: (cur.financeEntries ?? []).filter((f) => f.id !== entry.id) }));
+    const why = window.prompt(`Hapus catatan ${entry.code}? Tulis alasan penghapusan:`);
+    if (why === null) return;
+    if (!why.trim()) {
+      toast.error("Alasan penghapusan wajib diisi.");
+      return;
+    }
+    const gone = {
+      ...entry,
+      deletedAt: new Date().toISOString(),
+      deletedBy: currentUser?.name ?? "Kasir",
+      deleteReason: why.trim(),
+    };
+    update((cur) => ({
+      ...cur,
+      financeEntries: (cur.financeEntries ?? []).filter((f) => f.id !== entry.id),
+      deletedFinance: [gone, ...(cur.deletedFinance ?? [])],
+    }));
     toast.success("Catatan Finance dihapus.");
     onOpenChange(false);
   }

@@ -148,6 +148,7 @@ function PengaturanPage() {
       shifts: [],
       businessDays: [],
       financeEntries: [],
+      deletedFinance: [],
       stockMoves: [],
       memberPoints: [],
       members: (cur.members ?? []).map((m) => ({ ...m, points: 0, totalSpend: 0, visits: 0 })),

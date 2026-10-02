@@ -303,6 +303,9 @@ export interface Sale {
   pointBalance?: number | undefined;
   status: SaleStatus;
   reason: string;
+  /** Siapa & kapan nota dibatalkan/di-refund. */
+  cancelledBy?: string;
+  cancelledAt?: string;
 }
 
 
@@ -392,6 +395,13 @@ export interface FinanceEntry {
   note: string;
   userName: string;
   shiftId?: string;
+}
+
+/** Catatan Finance yang dihapus, disimpan untuk penelusuran. */
+export interface DeletedFinance extends FinanceEntry {
+  deletedAt: string;
+  deletedBy: string;
+  deleteReason: string;
 }
 
 /** Pelanggan terdaftar (member) untuk program loyalitas. */
@@ -486,6 +496,8 @@ export interface PosDatabase {
   financeCategories?: FinanceCategory[];
 
   financeEntries?: FinanceEntry[];
+  /** Jejak catatan Finance yang dihapus (audit). */
+  deletedFinance?: DeletedFinance[];
   stockItems?: StockItem[];
   stockMoves?: StockMove[];
 }

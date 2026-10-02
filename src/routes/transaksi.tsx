@@ -101,7 +101,9 @@ function TransaksiPage() {
     update((current) => ({
       ...current,
       sales: current.sales.map((s) =>
-        s.id === sale.id ? { ...s, status: type, reason: reason.trim() } : s,
+        s.id === sale.id
+          ? { ...s, status: type, reason: reason.trim(), cancelledBy: currentUser?.name ?? "", cancelledAt: new Date().toISOString() }
+          : s,
       ),
       products: current.products.map((p) => {
         const qty = sale.items.filter((i) => i.productId === p.id && !i.voided).reduce((a, i) => a + i.qty, 0);
