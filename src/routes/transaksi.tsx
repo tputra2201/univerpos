@@ -245,7 +245,7 @@ function TransaksiPage() {
               {action?.type === "void" ? "Batalkan Transaksi" : "Catat Refund"}
             </DialogTitle>
             <DialogDescription>
-              Stok produk akan dikembalikan. Transaksi tidak dihitung dalam omzet.
+              Stok produk akan dikembalikan. Transaksi tidak dihitung dalam Total Sales.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">

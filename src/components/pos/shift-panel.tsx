@@ -329,7 +329,7 @@ export function ShiftPanel({
               <Field label="Sekarang" value={dateTime(new Date().toISOString())} />
               <Field label="Kas awal" value={rupiah(shift.openingCash)} />
               <Field label="Jumlah transaksi" value={String(sum.count)} />
-              <Field label="Omzet shift" value={rupiah(sum.omzet)} />
+              <Field label="Total Sales" value={rupiah(sum.omzet)} />
               <Field label="Penjualan tunai" value={rupiah(sum.cashSales)} />
               <Field label="Penjualan non-tunai" value={rupiah(sum.nonCashSales)} />
               <Field label="Mutasi kas Finance" value={rupiah(sum.financeCash)} />
@@ -471,7 +471,7 @@ export function ShiftPanel({
                   </p>
                 </div>
                 <div className="tabular text-right text-xs">
-                  <p>{sm.count} transaksi · Pendapatan {rupiah(sm.omzet)}</p>
+                  <p>{sm.count} transaksi · Total Sales {rupiah(sm.omzet)}</p>
                   <p>Tunai {rupiah(sm.cashSales)} · Non-tunai {rupiah(sm.nonCashSales)}</p>
                   <p>Awal {rupiah(s.openingCash)}</p>
                   <p>

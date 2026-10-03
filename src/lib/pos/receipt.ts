@@ -214,7 +214,7 @@ export function buildReport(
   const valid = input.sales.filter((s) => s.status === "paid");
   const omzet = valid.reduce((sum, s) => sum + s.total, 0);
   out.push(twoCol("Total Transaksi", String(valid.length), width));
-  out.push(twoCol("Total Omzet", money(omzet), width));
+  out.push(twoCol("Total Sales", money(omzet), width));
   out.push(divider(width));
   out.push("Metode Pembayaran");
   const byMethod = new Map<string, number>();

@@ -1306,7 +1306,7 @@ export function ServiceTypesCard() {
                 />
                 Komisi/Diskon
                 <span className="text-xs text-muted-foreground">
-                  — selisih harga dicatat sebagai {(svc.priceAdjustValue ?? 0) > 0 ? "Komisi" : "Diskon"} {svc.name} dan mengurangi omzet di laporan
+                  — selisih harga dicatat sebagai {(svc.priceAdjustValue ?? 0) > 0 ? "Komisi" : "Diskon"} {svc.name} dan mengurangi Net Sales di laporan
                 </span>
               </label>
             )}
