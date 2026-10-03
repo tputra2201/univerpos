@@ -236,13 +236,13 @@ export function CompanyReport({ range }: { range: ReportRange }) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <Section title="Pendapatan Bersih">
-        <Row label="Penjualan kotor" value={rupiah(subtotal)} />
+        <Row label="Total Sales" value={rupiah(subtotal)} />
         {[...adjMap.entries()].map(([label, v]) => (
           <Row key={label} label={label} value={"-" + rupiah(v)} />
         ))}
         <Row label="Diskon" value={"-" + rupiah(discount)} />
         <Row label="Pajak & biaya layanan" value={rupiah(tax + service)} />
-        <Row label="Omzet penjualan" value={rupiah(net)} />
+        <Row label="Net Sales" value={rupiah(net)} />
         <Row label="Other Income" value={"+" + rupiah(otherIncome)} />
         <Row label="Expense (biaya operasional)" value={"-" + rupiah(expense)} />
         <Row label="Laba operasional bersih" value={rupiah(net + otherIncome - expense)} bold />
@@ -258,7 +258,7 @@ export function CompanyReport({ range }: { range: ReportRange }) {
         <Row label="Diskon" value={"-" + rupiah(discount)} />
         <Row label="Pajak" value={rupiah(tax)} />
         <Row label="Biaya layanan" value={rupiah(service)} />
-        <Row label="Omzet bersih" value={rupiah(net)} bold />
+        <Row label="Net Sales" value={rupiah(net)} bold />
         <Row
           label="Rata-rata per transaksi"
           value={rupiah(paid.length ? net / paid.length : 0)}
@@ -273,14 +273,14 @@ export function CompanyReport({ range }: { range: ReportRange }) {
         ))}
       </Section>
 
-      <Section title="Omzet per Jenis Layanan">
+      <Section title="Total Sales per Jenis Layanan">
         {services.size === 0 && <p className="text-muted-foreground">Belum ada penjualan.</p>}
         {[...services.entries()].sort(byAmount).map(([name, v]) => (
           <Row key={name} label={`${name} (${v.qty} nota)`} value={rupiah(v.amount)} />
         ))}
       </Section>
 
-      <Section title="Omzet per Kategori Produk">
+      <Section title="Total Sales per Kategori Produk">
         {categories.size === 0 && <p className="text-muted-foreground">Belum ada penjualan.</p>}
         {[...categories.entries()].sort(byAmount).map(([name, v]) => (
           <Row key={name} label={`${name} (${v.qty} item)`} value={rupiah(v.amount)} />
@@ -339,7 +339,7 @@ export function StatsReport({ range }: { range: ReportRange }) {
                 <TableRow>
                   <TableHead>Produk</TableHead>
                   <TableHead className="text-right">Terjual</TableHead>
-                  <TableHead className="text-right">Omzet</TableHead>
+                  <TableHead className="text-right">Total Sales</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -374,7 +374,7 @@ export function StatsReport({ range }: { range: ReportRange }) {
         ))}
       </Section>
 
-      <Section title="Tanggal Teromzet">
+      <Section title="Tanggal Total Sales Tertinggi">
         {data.dates.length === 0 && <p className="text-muted-foreground">Belum ada data.</p>}
         {data.dates.slice(0, 20).map(([name, v]) => (
           <Row key={name} label={`${name} (${v.qty} nota)`} value={rupiah(v.amount)} />
@@ -503,7 +503,7 @@ export function CashierReport({ range }: { range: ReportRange }) {
                 <TableHead className="text-right">Tunai</TableHead>
                 <TableHead className="text-right">Non-tunai</TableHead>
                 <TableHead className="text-right">Diskon</TableHead>
-                <TableHead className="text-right">Omzet</TableHead>
+                <TableHead className="text-right">Total Sales</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -550,7 +550,7 @@ export function CloseOutReport({ range }: { range: ReportRange }) {
                   <TableHead>Buka</TableHead>
                   <TableHead>Tutup</TableHead>
                   <TableHead className="text-right">Transaksi</TableHead>
-                  <TableHead className="text-right">Pendapatan</TableHead>
+                  <TableHead className="text-right">Total Sales</TableHead>
                   <TableHead className="text-right">Tunai</TableHead>
                   <TableHead className="text-right">Non-tunai</TableHead>
                   <TableHead className="text-right">Finance kas</TableHead>
@@ -1109,10 +1109,10 @@ export function ServiceAdjustReport({ range }: { range: ReportRange }) {
   return (
     <div className="space-y-4">
       <Section title="Ringkasan Komisi & Diskon">
-        <Row label="Penjualan kotor (layanan terkait)" value={rupiah(gross)} />
+        <Row label="Total Sales (layanan terkait)" value={rupiah(gross)} />
         <Row label="Total komisi" value={"-" + rupiah(komisi)} />
         <Row label="Total diskon" value={"-" + rupiah(diskon)} />
-        <Row label="Penjualan bersih" value={rupiah(gross - komisi - diskon)} bold />
+        <Row label="Net Sales" value={rupiah(gross - komisi - diskon)} bold />
       </Section>
       <Card>
         <CardHeader className="pb-2"><CardTitle data-print-title className="text-base">Rekap per Layanan</CardTitle></CardHeader>

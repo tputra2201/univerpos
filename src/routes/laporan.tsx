@@ -42,7 +42,7 @@ export const Route = createFileRoute("/laporan")({
       {
         name: "description",
         content:
-          "Check-in dan close out kasir, End of Day, serta laporan omzet, produk terlaku, hari ramai, QRIS, dan per kasir dengan rentang waktu.",
+          "Check-in dan close out kasir, End of Day, serta laporan Total Sales, produk terlaku, hari ramai, QRIS, dan per kasir dengan rentang waktu.",
       },
       { property: "og:title", content: "Laporan & Shift Kasir — POS UKM" },
       {
@@ -187,7 +187,7 @@ function LaporanPage() {
           <RangePicker range={range} onChange={setRange} />
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <Stat label="Omzet periode" value={rupiah(omzet)} />
+            <Stat label="Total Sales" value={rupiah(omzet)} />
             <Stat label="Jumlah transaksi" value={String(rangeSales.length)} />
             <Stat
               label="Rata-rata per transaksi"

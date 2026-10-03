@@ -87,7 +87,7 @@ export function CategorySalesReport({ range }: { range: ReportRange }) {
       </div>
       {cats.length > 0 && (
         <div className="flex gap-2 border-t-2 px-4 py-3 font-extrabold">
-          <span className="flex-1">Total Penjualan</span>
+          <span className="flex-1">Total Sales</span>
           <span className="tabular w-16 text-right">{qty}</span>
           <span className="tabular w-32 text-right">{rupiah(total)}</span>
         </div>

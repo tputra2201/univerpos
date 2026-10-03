@@ -21,7 +21,7 @@ export async function exportReportExcel(db: PosDatabase, range: ReportRange) {
     { Keterangan: "Diskon", Nilai: paid.reduce((a, s) => a + s.discount, 0) },
     { Keterangan: "Pajak", Nilai: paid.reduce((a, s) => a + s.tax, 0) },
     { Keterangan: "Biaya layanan", Nilai: paid.reduce((a, s) => a + s.service, 0) },
-    { Keterangan: "Omzet bersih", Nilai: paid.reduce((a, s) => a + s.total, 0) },
+    { Keterangan: "Net Sales", Nilai: paid.reduce((a, s) => a + s.total, 0) },
   ];
 
   const transaksi = paid.map((s) => ({
@@ -51,7 +51,7 @@ export async function exportReportExcel(db: PosDatabase, range: ReportRange) {
   );
   const produk = [...prod.entries()]
     .sort((a, b) => b[1].qty - a[1].qty)
-    .map(([Nama, v]) => ({ Nama, Terjual: v.qty, Omzet: v.amount }));
+    .map(([Nama, v]) => ({ Nama, Terjual: v.qty, "Total Sales": v.amount }));
 
   const kasirMap = new Map<string, { count: number; cash: number; nonCash: number; total: number }>();
   paid.forEach((s) => {
@@ -66,7 +66,7 @@ export async function exportReportExcel(db: PosDatabase, range: ReportRange) {
     Nota: v.count,
     Tunai: v.cash,
     Non_Tunai: v.nonCash,
-    Omzet: v.total,
+    "Total Sales": v.total,
   }));
 
   const metodeMap = new Map<string, number>();
@@ -91,8 +91,8 @@ export async function exportReportExcel(db: PosDatabase, range: ReportRange) {
     jamMap.set(hourKey, h);
   });
   const statistik = [
-    ...[...hariMap.entries()].map(([Nama, v]) => ({ Jenis: "Hari", Nama, Nota: v.qty, Omzet: v.amount })),
-    ...[...jamMap.entries()].map(([Nama, v]) => ({ Jenis: "Jam", Nama, Nota: v.qty, Omzet: v.amount })),
+    ...[...hariMap.entries()].map(([Nama, v]) => ({ Jenis: "Hari", Nama, Nota: v.qty, "Total Sales": v.amount })),
+    ...[...jamMap.entries()].map(([Nama, v]) => ({ Jenis: "Jam", Nama, Nota: v.qty, "Total Sales": v.amount })),
   ];
 
   const closeOut = db.shifts
