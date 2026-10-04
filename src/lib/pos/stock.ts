@@ -37,6 +37,7 @@ export function applyStock(
   const svcId =
     info.serviceId ??
     (db.serviceTypes ?? []).find((s) => info.orderType && s.name === info.orderType)?.id;
+  const svcName = (db.serviceTypes ?? []).find((s) => s.id === svcId)?.name ?? info.orderType;
   const next = items.map((it) => {
     let used = 0;
     const products: { name: string; qty: number; used: number }[] = [];
@@ -63,6 +64,7 @@ export function applyStock(
       qty,
       note: info.note,
       ...(info.saleCode ? { saleCode: info.saleCode } : {}),
+      ...(svcName ? { serviceName: svcName } : {}),
       userName: info.userName,
       balanceAfter,
       products,
