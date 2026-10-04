@@ -5,12 +5,21 @@ export function stockItemsOf(db: PosDatabase): StockItem[] {
   return db.stockItems ?? [];
 }
 
-/** Pemakaian satu bahan untuk 1 unit produk: aturan produk menang, lalu kategori. */
-export function usagePerUnit(item: StockItem, product: Product | undefined): number {
+const svcOk = (ids: string[] | undefined, svcId: string | undefined) =>
+  !ids?.length || !svcId || ids.includes(svcId);
+
+/**
+ * Pemakaian satu bahan untuk 1 unit produk: aturan produk menang, lalu kategori.
+ * Layanan: kategori dengan layanan khusus memakai daftarnya sendiri; lainnya ikut layanan bawaan bahan.
+ */
+export function usagePerUnit(item: StockItem, product: Product | undefined, svcId?: string): number {
   if (!product) return 0;
   const own = item.productUses.find((u) => u.productId === product.id);
-  if (own) return own.qty;
-  return item.categoryIds.includes(product.categoryId) ? item.categoryQty : 0;
+  if (own) return svcOk(item.serviceIds, svcId) ? own.qty : 0;
+  if (!item.categoryIds.includes(product.categoryId)) return 0;
+  const catSvc = item.categoryServices?.[product.categoryId];
+  const ids = catSvc?.length ? catSvc : item.serviceIds;
+  return svcOk(ids, svcId) ? item.categoryQty : 0;
 }
 
 /** Hitung perubahan stok untuk baris penjualan. sign -1 = kurangi, +1 = kembalikan. */
@@ -29,12 +38,11 @@ export function applyStock(
     info.serviceId ??
     (db.serviceTypes ?? []).find((s) => info.orderType && s.name === info.orderType)?.id;
   const next = items.map((it) => {
-    if (it.serviceIds?.length && svcId && !it.serviceIds.includes(svcId)) return it;
     let used = 0;
     const products: { name: string; qty: number; used: number }[] = [];
     for (const l of lines) {
       if (l.voided) continue;
-      const u = usagePerUnit(it, byId.get(l.productId)) * l.qty;
+      const u = usagePerUnit(it, byId.get(l.productId), svcId) * l.qty;
       if (!u) continue;
       used += u;
       const ex = products.find((p) => p.name === l.name);
