@@ -473,6 +473,8 @@ export interface StockMove {
   qty: number;
   note: string;
   saleCode?: string;
+  /** Jenis layanan transaksi penyebab mutasi. */
+  serviceName?: string;
   userName: string;
   /** Saldo setelah mutasi. */
   balanceAfter?: number;

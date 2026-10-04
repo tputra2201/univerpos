@@ -67,6 +67,10 @@ export function StockReport({ range }: { range: ReportRange }) {
       )
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }, [db.stockMoves, range, q]);
+  const svcOf = useMemo(() => {
+    const m = new Map(db.sales.map((s) => [s.code, s.orderType ?? ""]));
+    return (mv: StockMove) => mv.serviceName || (mv.saleCode ? m.get(mv.saleCode) : "") || "-";
+  }, [db.sales]);
   const unitOf = (id: string) => items.find((i) => i.id === id)?.unit ?? "";
 
   return (
@@ -129,6 +133,7 @@ export function StockReport({ range }: { range: ReportRange }) {
                   <TableHead>Bahan</TableHead>
                   <TableHead>Jenis</TableHead>
                   <TableHead>Nota</TableHead>
+                  <TableHead>Jenis layanan</TableHead>
                   <TableHead>Produk penyebab</TableHead>
                   <TableHead>Pelaku</TableHead>
                   <TableHead className="text-right">Jumlah</TableHead>
@@ -142,6 +147,7 @@ export function StockReport({ range }: { range: ReportRange }) {
                     <TableCell>{m.stockName}</TableCell>
                     <TableCell>{TYPE_LABEL[m.type]}</TableCell>
                     <TableCell>{m.saleCode ?? "-"}</TableCell>
+                    <TableCell>{svcOf(m)}</TableCell>
                     <TableCell className="text-xs">
                       {m.products?.length
                         ? m.products.map((p) => `${p.qty}x ${p.name} (${n(p.used)})`).join(", ")
