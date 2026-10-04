@@ -261,6 +261,28 @@ function StockForm({ value, onChange, onSave }: { value: StockItem; onChange: (v
       </div>
 
       <div className="space-y-2 rounded-lg border p-3">
+        <div className="font-semibold">Dipakai untuk jenis layanan</div>
+        <p className="text-xs text-muted-foreground">
+          Tidak dicentang semua = berlaku untuk semua layanan. Mis. Cup 22oz hanya Take Out/Dine In, Cup 16oz hanya Grab/Shopee.
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          {(db.serviceTypes ?? []).map((s) => (
+            <label key={s.id} className="flex items-center gap-2 text-sm">
+              <Checkbox
+                checked={!!value.serviceIds?.includes(s.id)}
+                onCheckedChange={(v) => {
+                  const cur = value.serviceIds ?? [];
+                  const nx = v ? [...cur, s.id] : cur.filter((x) => x !== s.id);
+                  set({ serviceIds: nx.length ? nx : undefined });
+                }}
+              />
+              {s.name}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-2 rounded-lg border p-3">
         <div className="font-semibold">Dipakai oleh kategori (aturan umum)</div>
         <div className="grid grid-cols-2 gap-2">
           {db.categories.map((c) => (

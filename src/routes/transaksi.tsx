@@ -110,7 +110,7 @@ function TransaksiPage() {
         return qty > 0 && p.stock != null ? { ...p, stock: p.stock + qty } : p;
       }),
       ...(sale.status === "paid"
-        ? applyStock(current, sale.items, 1, { note: `${type === "void" ? "Void" : "Refund"} ${sale.code}`, saleCode: sale.code, userName: currentUser?.name ?? "" })
+        ? applyStock(current, sale.items, 1, { note: `${type === "void" ? "Void" : "Refund"} ${sale.code}`, saleCode: sale.code, userName: currentUser?.name ?? "", orderType: sale.orderType })
         : {}),
     }));
     setAction(null);

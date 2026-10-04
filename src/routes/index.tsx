@@ -710,7 +710,7 @@ function KasirPage() {
 
     update((current) => ({
       ...current,
-      ...applyStock(current, sale.items, -1, { note: `Penjualan ${sale.code}`, saleCode: sale.code, userName: sale.userName }),
+      ...applyStock(current, sale.items, -1, { note: `Penjualan ${sale.code}`, saleCode: sale.code, userName: sale.userName, serviceId: cart.serviceId, orderType: sale.orderType }),
       sales: [sale, ...current.sales],
       heldOrders: cart.heldId
         ? current.heldOrders.filter((h) => h.id !== cart.heldId)

@@ -18,14 +18,18 @@ export function applyStock(
   db: PosDatabase,
   lines: CartLine[],
   sign: 1 | -1,
-  info: { note: string; saleCode?: string; userName: string },
+  info: { note: string; saleCode?: string; userName: string; serviceId?: string | undefined; orderType?: string | undefined },
 ): Partial<Pick<PosDatabase, "stockItems" | "stockMoves">> {
   const items = stockItemsOf(db);
   if (!items.length) return {};
   const byId = new Map(db.products.map((p) => [p.id, p]));
   const now = new Date().toISOString();
   const moves: StockMove[] = [];
+  const svcId =
+    info.serviceId ??
+    (db.serviceTypes ?? []).find((s) => info.orderType && s.name === info.orderType)?.id;
   const next = items.map((it) => {
+    if (it.serviceIds?.length && svcId && !it.serviceIds.includes(svcId)) return it;
     let used = 0;
     const products: { name: string; qty: number; used: number }[] = [];
     for (const l of lines) {
