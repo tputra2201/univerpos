@@ -261,9 +261,9 @@ function StockForm({ value, onChange, onSave }: { value: StockItem; onChange: (v
       </div>
 
       <div className="space-y-2 rounded-lg border p-3">
-        <div className="font-semibold">Dipakai untuk jenis layanan</div>
+        <div className="font-semibold">Layanan bawaan</div>
         <p className="text-xs text-muted-foreground">
-          Tidak dicentang semua = berlaku untuk semua layanan. Mis. Cup 22oz hanya Take Out/Dine In, Cup 16oz hanya Grab/Shopee.
+          Berlaku untuk aturan produk dan kategori yang tidak punya layanan khusus. Tidak dicentang = semua layanan.
         </p>
         <div className="grid grid-cols-2 gap-2">
           {(db.serviceTypes ?? []).map((s) => (
@@ -284,18 +284,62 @@ function StockForm({ value, onChange, onSave }: { value: StockItem; onChange: (v
 
       <div className="space-y-2 rounded-lg border p-3">
         <div className="font-semibold">Dipakai oleh kategori (aturan umum)</div>
-        <div className="grid grid-cols-2 gap-2">
-          {db.categories.map((c) => (
-            <label key={c.id} className="flex items-center gap-2 text-sm">
-              <Checkbox
-                checked={value.categoryIds.includes(c.id)}
-                onCheckedChange={(v) =>
-                  set({ categoryIds: v ? [...value.categoryIds, c.id] : value.categoryIds.filter((x) => x !== c.id) })
-                }
-              />
-              {c.name}
-            </label>
-          ))}
+        <p className="text-xs text-muted-foreground">
+          Centang kategori, lalu pilih layanannya. Mis. Cup 16oz: Single Lite untuk semua layanan, Single Juice hanya Grab/Shopee.
+        </p>
+        <div className="space-y-2">
+          {db.categories.map((c) => {
+            const on = value.categoryIds.includes(c.id);
+            const svc = value.categoryServices?.[c.id] ?? [];
+            const setSvc = (ids: string[]) => {
+              const map = { ...(value.categoryServices ?? {}) };
+              if (ids.length) map[c.id] = ids;
+              else delete map[c.id];
+              set({ categoryServices: map });
+            };
+            return (
+              <div key={c.id} className="rounded-md border p-2">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <Checkbox
+                    checked={on}
+                    onCheckedChange={(v) => {
+                      if (v) set({ categoryIds: [...value.categoryIds, c.id] });
+                      else {
+                        const map = { ...(value.categoryServices ?? {}) };
+                        delete map[c.id];
+                        set({ categoryIds: value.categoryIds.filter((x) => x !== c.id), categoryServices: map });
+                      }
+                    }}
+                  />
+                  {c.name}
+                </label>
+                {on && (
+                  <div className="mt-2 flex flex-wrap gap-1.5 pl-6">
+                    <button
+                      type="button"
+                      onClick={() => setSvc([])}
+                      className={`rounded-full border px-2 py-0.5 text-xs ${svc.length ? "text-muted-foreground" : "border-primary bg-primary text-primary-foreground"}`}
+                    >
+                      Semua Layanan
+                    </button>
+                    {(db.serviceTypes ?? []).map((s) => {
+                      const sel = svc.includes(s.id);
+                      return (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => setSvc(sel ? svc.filter((x) => x !== s.id) : [...svc, s.id])}
+                          className={`rounded-full border px-2 py-0.5 text-xs ${sel ? "border-primary bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                        >
+                          {s.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
         <div>
           <Label>Pemakaian per 1 produk</Label>

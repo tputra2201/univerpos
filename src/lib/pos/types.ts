@@ -460,6 +460,8 @@ export interface StockItem {
   productUses: { productId: string; qty: number }[];
   /** Hanya dipakai untuk jenis layanan ini. Kosong = semua layanan. */
   serviceIds?: string[] | undefined;
+  /** Layanan khusus per kategori (menang atas serviceIds). Kosong = ikut layanan bawaan. */
+  categoryServices?: Record<string, string[]> | undefined;
 }
 
 export interface StockMove {
