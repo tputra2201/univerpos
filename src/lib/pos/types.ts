@@ -458,6 +458,8 @@ export interface StockItem {
   categoryQty: number;
   /** Aturan khusus produk (menang atas kategori). qty 0 = tidak memakai. */
   productUses: { productId: string; qty: number }[];
+  /** Hanya dipakai untuk jenis layanan ini. Kosong = semua layanan. */
+  serviceIds?: string[] | undefined;
 }
 
 export interface StockMove {
