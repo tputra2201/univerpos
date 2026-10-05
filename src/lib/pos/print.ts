@@ -50,7 +50,15 @@ export async function pickBluetoothPrinter(): Promise<{ id: string; name: string
   if (!bluetooth) throw new Error("Perangkat/browser ini tidak mendukung Bluetooth langsung.");
   const device = await bluetooth.requestDevice({
     acceptAllDevices: true,
-    optionalServices: [SPP_SERVICE, 0x18f0, "000018f0-0000-1000-8000-00805f9b34fb"],
+    optionalServices: [
+      SPP_SERVICE,
+      "000018f0-0000-1000-8000-00805f9b34fb",
+      "0000ffe0-0000-1000-8000-00805f9b34fb",
+      "0000ae00-0000-1000-8000-00805f9b34fb",
+      "0000ff00-0000-1000-8000-00805f9b34fb",
+      "49535343-fe7d-4ae5-8fa9-9fafd205e455",
+      "e7810a71-73ae-499d-8c15-faa9aef0c3f2",
+    ],
   });
   devices.set(device.id ?? "", device);
   return { id: device.id ?? "", name: device.name ?? "Printer Bluetooth" };
@@ -67,17 +75,33 @@ async function restoreBluetoothPrinter(deviceId?: string, deviceName?: string): 
   return found ?? null;
 }
 
+const PREFERRED_CHARS = [
+  "0000ffe1-0000-1000-8000-00805f9b34fb",
+  "00002af1-0000-1000-8000-00805f9b34fb",
+  "0000ae01-0000-1000-8000-00805f9b34fb",
+];
+
 async function writableCharacteristic(device: any) {
-  const server = await device.gatt.connect();
+  const server = device.gatt.connected ? device.gatt : await device.gatt.connect();
   const services = await server.getPrimaryServices();
+  const all: any[] = [];
   for (const service of services) {
-    const chars = await service.getCharacteristics();
-    for (const c of chars) {
-      if (c.properties?.write || c.properties?.writeWithoutResponse) return c;
+    try {
+      all.push(...(await service.getCharacteristics()));
+    } catch {
+      /* layanan terkunci, lewati */
     }
   }
+  for (const uuid of PREFERRED_CHARS) {
+    const c = all.find((x) => x.uuid === uuid && (x.properties?.write || x.properties?.writeWithoutResponse));
+    if (c) return c;
+  }
+  const any = all.find((c) => c.properties?.write || c.properties?.writeWithoutResponse);
+  if (any) return any;
   throw new Error("Printer tidak menyediakan jalur tulis data.");
 }
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export async function printViaBluetooth(
   lines: string[],
@@ -95,11 +119,15 @@ export async function printViaBluetooth(
   }
   const characteristic = await writableCharacteristic(device);
   const data = escposBytes(lines);
-  const chunkSize = 180;
+  const chunkSize = 20;
+  const noResp = Boolean(characteristic.properties?.writeWithoutResponse && characteristic.writeValueWithoutResponse);
   for (let i = 0; i < data.length; i += chunkSize) {
     const chunk = data.slice(i, i + chunkSize);
-    if (characteristic.writeValueWithoutResponse) {
+    if (noResp) {
       await characteristic.writeValueWithoutResponse(chunk);
+      await sleep(15);
+    } else if (characteristic.writeValueWithResponse) {
+      await characteristic.writeValueWithResponse(chunk);
     } else {
       await characteristic.writeValue(chunk);
     }
