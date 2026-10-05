@@ -110,6 +110,9 @@ export function ShiftPanel({
 
   const dayShifts = day ? db.shifts.filter((s) => s.openedAt >= day.openedAt) : [];
   const dayOpen = dayShifts.some((s) => !s.closedAt);
+  const lastClosedDay = (db.businessDays ?? [])
+    .filter((d) => d.closedAt)
+    .sort((a, b) => (b.closedAt! > a.closedAt! ? 1 : -1))[0];
 
   function checkIn() {
     const cash = num(startCash || String(suggested));
@@ -434,8 +437,16 @@ export function ShiftPanel({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
+            {lastClosedDay && (
+              <p className="rounded-lg border bg-muted/40 px-3 py-2 font-semibold">
+                {lastClosedDay.closedBy === "System"
+                  ? lastClosedDay.note || `End of Day : ${dateTime(lastClosedDay.closedAt!)} by System`
+                  : `End of Day : ${dateTime(lastClosedDay.closedAt!)} by ${lastClosedDay.closedBy ?? "-"}`}
+              </p>
+            )}
             <p className="text-muted-foreground">
-              Tutup hari usaha setelah seluruh shift kasir selesai close out.
+              Tutup hari usaha setelah seluruh shift kasir selesai close out. Bila lupa, End of Day
+              dilakukan otomatis oleh sistem saat Mulai Shift di tanggal berikutnya.
               {dayOpen && " Masih ada shift yang berjalan."}
             </p>
             <div className="space-y-1.5 sm:max-w-md">
@@ -471,6 +482,7 @@ export function ShiftPanel({
               <div key={s.id} className="flex flex-wrap justify-between gap-2 border-b pb-2 last:border-0">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2 font-semibold">
+                    {s.shiftNumber && <Badge variant="outline">Shift {s.shiftNumber}</Badge>}
                     <span>{s.userName}</span>
                     {!s.closedAt && <Badge variant="secondary">Sedang bertugas</Badge>}
                   </div>
