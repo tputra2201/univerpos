@@ -13,7 +13,7 @@ import {
   activeShiftOf,
   salesOfShift,
   suggestedStartCash,
-  summarize, financeOfShift,
+  summarize, financeOfShift, needsAutoEod, nextShiftNumber,
 } from "@/lib/pos/shift";
 import type { FinanceKind, Shift } from "@/lib/pos/types";
 import { FinanceForm } from "@/components/pos/finance-form";
@@ -114,16 +114,21 @@ export function ShiftPanel({
   function checkIn() {
     const cash = num(startCash || String(suggested));
     const now = new Date().toISOString();
-    let dayId = day?.id;
+    let autoClosed = false;
+    let shiftNo = 1;
     update((cur) => {
-      const days = cur.businessDays ?? [];
-      let nextDays = days;
-      if (!days.some((d) => !d.closedAt)) {
-        dayId = uid("bday");
-        nextDays = [{ id: dayId, openedAt: now, closedAt: null, openedBy: who }, ...days];
-      } else {
-        dayId = days.find((d) => !d.closedAt)!.id;
+      let days = cur.businessDays ?? [];
+      if (needsAutoEod(cur, now)) {
+        const label = `End of Day : ${dateTime(now)} by System`;
+        days = days.map((d) => (!d.closedAt ? { ...d, closedAt: now, closedBy: "System", note: label } : d));
+        autoClosed = true;
       }
+      let open = days.find((d) => !d.closedAt);
+      if (!open) {
+        open = { id: uid("bday"), openedAt: now, closedAt: null, openedBy: who };
+        days = [open, ...days];
+      }
+      shiftNo = nextShiftNumber(cur, open.id, open.openedAt);
       const row: Shift = {
         id: uid("shf"),
         openedAt: now,
@@ -131,12 +136,14 @@ export function ShiftPanel({
         openingCash: cash,
         closingCash: null,
         userName: who,
-        businessDayId: dayId,
+        businessDayId: open.id,
+        shiftNumber: shiftNo,
       };
-      return { ...cur, businessDays: nextDays, shifts: [row, ...cur.shifts] };
+      return { ...cur, businessDays: days, shifts: [row, ...cur.shifts] };
     });
     setStartCash("");
-    toast.success(`Shift ${who} dimulai.`);
+    if (autoClosed) toast.success(`Hari usaha sebelumnya ditutup otomatis (End of Day by System). Shift 1 ${who} dimulai.`);
+    else toast.success(`Shift ${shiftNo} ${who} dimulai.`);
     navigate({ to: "/" });
   }
 
