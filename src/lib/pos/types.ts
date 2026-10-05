@@ -357,6 +357,8 @@ export interface Shift {
   closedBy?: string;
   /** Hari usaha tempat shift ini berjalan. */
   businessDayId?: string;
+  /** Urutan shift dalam hari usaha (1, 2, ...). */
+  shiftNumber?: number;
 }
 
 /** Satu hari usaha, ditutup lewat prosedur End of Day. */

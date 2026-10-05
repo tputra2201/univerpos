@@ -70,3 +70,25 @@ export function activeShiftOf(db: PosDatabase): Shift | null {
 export function activeBusinessDayOf(db: PosDatabase) {
   return (db.businessDays ?? []).find((d) => !d.closedAt) ?? null;
 }
+
+/** Tanggal kalender lokal (YYYY-MM-DD) dari ISO. */
+export function localDateKey(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/**
+ * Hari usaha perlu End of Day otomatis saat check-in: tidak ada shift terbuka
+ * dan tanggal sekarang berbeda dengan tanggal hari usaha dibuka.
+ */
+export function needsAutoEod(db: PosDatabase, nowIso: string): boolean {
+  const day = activeBusinessDayOf(db);
+  if (!day) return false;
+  if (db.shifts.some((s) => !s.closedAt)) return false;
+  return localDateKey(day.openedAt) !== localDateKey(nowIso);
+}
+
+/** Nomor shift berikutnya dalam hari usaha. */
+export function nextShiftNumber(db: PosDatabase, dayId: string, dayOpenedAt: string): number {
+  return db.shifts.filter((s) => (s.businessDayId ? s.businessDayId === dayId : s.openedAt >= dayOpenedAt)).length + 1;
+}

@@ -13,7 +13,7 @@ import {
   activeShiftOf,
   salesOfShift,
   suggestedStartCash,
-  summarize, financeOfShift,
+  summarize, financeOfShift, needsAutoEod, nextShiftNumber,
 } from "@/lib/pos/shift";
 import type { FinanceKind, Shift } from "@/lib/pos/types";
 import { FinanceForm } from "@/components/pos/finance-form";
@@ -110,20 +110,28 @@ export function ShiftPanel({
 
   const dayShifts = day ? db.shifts.filter((s) => s.openedAt >= day.openedAt) : [];
   const dayOpen = dayShifts.some((s) => !s.closedAt);
+  const lastClosedDay = (db.businessDays ?? [])
+    .filter((d) => d.closedAt)
+    .sort((a, b) => (b.closedAt! > a.closedAt! ? 1 : -1))[0];
 
   function checkIn() {
     const cash = num(startCash || String(suggested));
     const now = new Date().toISOString();
-    let dayId = day?.id;
+    let autoClosed = false;
+    let shiftNo = 1;
     update((cur) => {
-      const days = cur.businessDays ?? [];
-      let nextDays = days;
-      if (!days.some((d) => !d.closedAt)) {
-        dayId = uid("bday");
-        nextDays = [{ id: dayId, openedAt: now, closedAt: null, openedBy: who }, ...days];
-      } else {
-        dayId = days.find((d) => !d.closedAt)!.id;
+      let days = cur.businessDays ?? [];
+      if (needsAutoEod(cur, now)) {
+        const label = `End of Day : ${dateTime(now)} by System`;
+        days = days.map((d) => (!d.closedAt ? { ...d, closedAt: now, closedBy: "System", note: label } : d));
+        autoClosed = true;
       }
+      let open = days.find((d) => !d.closedAt);
+      if (!open) {
+        open = { id: uid("bday"), openedAt: now, closedAt: null, openedBy: who };
+        days = [open, ...days];
+      }
+      shiftNo = nextShiftNumber(cur, open.id, open.openedAt);
       const row: Shift = {
         id: uid("shf"),
         openedAt: now,
@@ -131,12 +139,17 @@ export function ShiftPanel({
         openingCash: cash,
         closingCash: null,
         userName: who,
-        businessDayId: dayId,
+        businessDayId: open.id,
+        shiftNumber: shiftNo,
       };
-      return { ...cur, businessDays: nextDays, shifts: [row, ...cur.shifts] };
+      return { ...cur, businessDays: days, shifts: [row, ...cur.shifts] };
     });
     setStartCash("");
-    toast.success(`Shift ${who} dimulai.`);
+    const willClose = needsAutoEod(db, now);
+    const no = willClose || !day ? 1 : nextShiftNumber(db, day.id, day.openedAt);
+    void autoClosed; void shiftNo;
+    if (willClose) toast.success(`Hari usaha sebelumnya ditutup otomatis (End of Day by System). Shift 1 ${who} dimulai.`);
+    else toast.success(`Shift ${no} ${who} dimulai.`);
     navigate({ to: "/" });
   }
 
@@ -424,8 +437,16 @@ export function ShiftPanel({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
+            {lastClosedDay && (
+              <p className="rounded-lg border bg-muted/40 px-3 py-2 font-semibold">
+                {lastClosedDay.closedBy === "System"
+                  ? lastClosedDay.note || `End of Day : ${dateTime(lastClosedDay.closedAt!)} by System`
+                  : `End of Day : ${dateTime(lastClosedDay.closedAt!)} by ${lastClosedDay.closedBy ?? "-"}`}
+              </p>
+            )}
             <p className="text-muted-foreground">
-              Tutup hari usaha setelah seluruh shift kasir selesai close out.
+              Tutup hari usaha setelah seluruh shift kasir selesai close out. Bila lupa, End of Day
+              dilakukan otomatis oleh sistem saat Mulai Shift di tanggal berikutnya.
               {dayOpen && " Masih ada shift yang berjalan."}
             </p>
             <div className="space-y-1.5 sm:max-w-md">
@@ -461,6 +482,7 @@ export function ShiftPanel({
               <div key={s.id} className="flex flex-wrap justify-between gap-2 border-b pb-2 last:border-0">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2 font-semibold">
+                    {s.shiftNumber && <Badge variant="outline">Shift {s.shiftNumber}</Badge>}
                     <span>{s.userName}</span>
                     {!s.closedAt && <Badge variant="secondary">Sedang bertugas</Badge>}
                   </div>
