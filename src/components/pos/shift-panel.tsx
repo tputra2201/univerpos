@@ -142,8 +142,11 @@ export function ShiftPanel({
       return { ...cur, businessDays: days, shifts: [row, ...cur.shifts] };
     });
     setStartCash("");
-    if (autoClosed) toast.success(`Hari usaha sebelumnya ditutup otomatis (End of Day by System). Shift 1 ${who} dimulai.`);
-    else toast.success(`Shift ${shiftNo} ${who} dimulai.`);
+    const willClose = needsAutoEod(db, now);
+    const no = willClose || !day ? 1 : nextShiftNumber(db, day.id, day.openedAt);
+    void autoClosed; void shiftNo;
+    if (willClose) toast.success(`Hari usaha sebelumnya ditutup otomatis (End of Day by System). Shift 1 ${who} dimulai.`);
+    else toast.success(`Shift ${no} ${who} dimulai.`);
     navigate({ to: "/" });
   }
 
