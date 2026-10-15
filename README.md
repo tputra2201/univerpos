@@ -1,4 +1,4 @@
-# Univer
+# UniverPos
 
 buatkan aplikasi pos seperti W&O POS yang fleksibel bisa digunakan berbagai macam tipe usaha ukm
 
