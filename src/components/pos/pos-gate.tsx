@@ -19,14 +19,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ChangePinForm } from "@/components/pos/change-pin";
 import { normalizeEmail, normalizeWa, pinMessage, randomPin, deliverPin } from "@/lib/pos/pin";
 import { daysLeft, formatExpiry } from "@/lib/pos/expiry";
-import { SYNC_BASE_KEY, SYNC_CURSOR_KEY, useCentralSync } from "@/lib/pos/sync";
+import { SYNC_BASE_KEY, SYNC_CURSOR_KEY, RECOVERY_KEY, useCentralSync } from "@/lib/pos/sync";
 
 const DEVICE_TOKEN_KEY = "wo-pos-device-token";
 
 /** Hapus seluruh data store di perangkat ini lalu kembali ke halaman aktivasi. */
 async function resetDevice(message?: string) {
   await clearDatabase().catch(() => undefined);
-  for (const k of ["wo-pos-session", "wo-pos-cart", "wo-pos-update-request", DEVICE_TOKEN_KEY, SYNC_CURSOR_KEY, SYNC_BASE_KEY]) {
+  for (const k of ["wo-pos-session", "wo-pos-cart", "wo-pos-update-request", DEVICE_TOKEN_KEY, SYNC_CURSOR_KEY, SYNC_BASE_KEY, RECOVERY_KEY]) {
     window.localStorage.removeItem(k);
   }
   if (message) window.sessionStorage.setItem("wo-pos-reset-msg", message);

@@ -4,7 +4,7 @@ import { ArrowLeftRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePos } from "@/lib/pos/store";
 import { emptyDatabase } from "@/lib/pos/seed";
-import { SYNC_BASE_KEY, SYNC_CURSOR_KEY } from "@/lib/pos/sync";
+import { SYNC_BASE_KEY, SYNC_CURSOR_KEY, RECOVERY_KEY } from "@/lib/pos/sync";
 
 const DEVICE_TOKEN_KEY = "wo-pos-device-token";
 export const DEV_USER_PREFIX = "dev:";
@@ -75,6 +75,7 @@ export function DevStoreSwitcher({ compact }: { compact?: boolean }) {
     }
     localStorage.removeItem(SYNC_CURSOR_KEY);
     localStorage.removeItem(SYNC_BASE_KEY);
+    localStorage.removeItem(RECOVERY_KEY);
     const base = emptyDatabase();
     replaceAll({
       ...base,
