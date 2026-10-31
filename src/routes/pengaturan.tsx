@@ -49,6 +49,8 @@ export const Route = createFileRoute("/pengaturan")({
   head: () => ({
     meta: [
       { title: "Pengaturan Store — POS UKM" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       {
         name: "description",
         content:
@@ -132,7 +134,7 @@ function PengaturanPage() {
         toast.error("Cadangan berasal dari store berbeda. Data tidak diubah.");
         return;
       }
-      const restored = { ...parsed, syncDeletes: [], settings: { ...parsed.settings, storeCode: db.settings.storeCode, activated: db.settings.activated, storeMode: db.settings.storeMode, deviceToken: db.settings.deviceToken, deviceName: db.settings.deviceName } };
+      const restored: PosDatabase = { ...parsed, syncDeletes: [], settings: { ...parsed.settings, storeCode: db.settings.storeCode, activated: db.settings.activated, storeMode: db.settings.storeMode ?? "offline", deviceToken: db.settings.deviceToken ?? "", deviceName: db.settings.deviceName ?? "" } };
       replaceAll(restored);
       // Bangun ulang basis sinkron agar data yang dikembalikan tidak dianggap terhapus.
       rebuildSyncBase(restored);

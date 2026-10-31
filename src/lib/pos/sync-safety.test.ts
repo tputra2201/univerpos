@@ -18,7 +18,7 @@ describe("POS data protection", () => {
     const before = emptyDatabase();
     before.sales = [{ id: "sale-1" }] as typeof before.sales;
     before.shifts = [{ id: "shift-1" }] as typeof before.shifts;
-    before.businessDays = [{ id: "day-1" }] as typeof before.businessDays;
+    before.businessDays = [{ id: "day-1" }] as NonNullable<typeof before.businessDays>;
     expect(trackExplicitDeletes(before, { ...before, sales: [], shifts: [], businessDays: [] }, "System", "now").syncDeletes).toEqual([]);
   });
   it("switching TS to VT never queues TS deletions", () => {
@@ -31,8 +31,8 @@ describe("POS data protection", () => {
   it("archives close out and EOD once on their closing transition", () => {
     const before = emptyDatabase(); before.settings.storeCode = "TS";
     before.shifts = [{ id: "shift-1", closedAt: null }] as typeof before.shifts;
-    before.businessDays = [{ id: "day-1", closedAt: null }] as typeof before.businessDays;
-    const after = { ...before, shifts: [{ ...before.shifts[0], closedAt: "2026-10-31T11:39:00Z" }], businessDays: [{ ...before.businessDays[0], closedAt: "2026-10-31T11:39:00Z" }] } as typeof before;
+    before.businessDays = [{ id: "day-1", closedAt: null }] as NonNullable<typeof before.businessDays>;
+    const after = { ...before, shifts: [{ ...before.shifts[0], closedAt: "2026-10-31T11:39:00Z" }], businessDays: [{ ...before.businessDays?.[0], closedAt: "2026-10-31T11:39:00Z" }] } as typeof before;
     expect(closedArchiveEvents(before, after)).toEqual(["shifts:shift-1", "businessDays:day-1"]);
     expect(closedArchiveEvents(after, after)).toEqual([]);
   });
