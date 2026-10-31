@@ -1,5 +1,3 @@
-import { confirmedAction } from "@/lib/pos/action-confirmation";
-import { CommitInput } from "@/components/pos/commit-input";
 import { THEME_PRESETS } from "@/lib/pos/theme";
 import { FinanceSettings } from "@/components/pos/finance-settings";
 import { MemberSettings } from "@/components/pos/member-settings";
@@ -99,21 +97,14 @@ function PengaturanPage() {
   const [newStaff, setNewStaff] = useState("");
 
   function setSettings(patch: Partial<PosDatabase["settings"]>) {
-return confirmedAction("Simpan perubahan pengaturan atau data ini?", () => {
     update((current) => ({ ...current, settings: { ...current.settings, ...patch } }));
-  
-});
-}
+  }
 
   function setPrinter(patch: Partial<PosDatabase["printer"]>) {
-return confirmedAction("Simpan perubahan pengaturan atau data ini?", () => {
     update((current) => ({ ...current, printer: { ...current.printer, ...patch } }));
-  
-});
-}
+  }
 
   function changeBusinessType(type: BusinessType) {
-return confirmedAction("Simpan perubahan pengaturan atau data ini?", () => {
     if (db.products.length > 0) {
       setSettings({ businessType: type });
       toast.success("Tipe usaha diperbarui. Produk yang ada tetap tersimpan.");
@@ -121,9 +112,7 @@ return confirmedAction("Simpan perubahan pengaturan atau data ini?", () => {
     }
     update((current) => seedForBusiness(current, type));
     toast.success("Tipe usaha diperbarui beserta contoh produk.");
-  
-});
-}
+  }
 
   function backup() {
     const blob = new Blob([JSON.stringify(db)], { type: "application/octet-stream" });
@@ -138,7 +127,6 @@ return confirmedAction("Simpan perubahan pengaturan atau data ini?", () => {
   }
 
   async function restore(file: File) {
-return confirmedAction("Simpan perubahan pengaturan atau data ini?", async () => {
     try {
       const parsed = JSON.parse(await file.text()) as PosDatabase;
       if (!parsed.settings || !Array.isArray(parsed.products)) throw new Error("format");
@@ -154,9 +142,7 @@ return confirmedAction("Simpan perubahan pengaturan atau data ini?", async () =>
     } catch {
       toast.error("Berkas cadangan tidak valid.");
     }
-  
-});
-}
+  }
 
   async function downloadArchives() {
     try {
@@ -330,25 +316,25 @@ return confirmedAction("Simpan perubahan pengaturan atau data ini?", async () =>
                 />
               </Field>
               <Field label="Telepon">
-                <CommitInput
+                <Input
                   value={db.settings.phone}
-                  onChange={(e) => confirmedAction("Simpan perubahan ini?", () => (setSettings({ phone: e.target.value })))}
+                  onChange={(e) => setSettings({ phone: e.target.value })}
                   className="h-11"
                 />
               </Field>
               <Field label="Email Store">
-                <CommitInput
+                <Input
                   type="email"
                   value={db.settings.email ?? ""}
-                  onChange={(e) => confirmedAction("Simpan perubahan ini?", () => (setSettings({ email: e.target.value })))}
+                  onChange={(e) => setSettings({ email: e.target.value })}
                   placeholder="store@contoh.com"
                   className="h-11"
                 />
               </Field>
               <Field label="Alamat" className="md:col-span-2">
-                <CommitInput
+                <Input
                   value={db.settings.address}
-                  onChange={(e) => confirmedAction("Simpan perubahan ini?", () => (setSettings({ address: e.target.value })))}
+                  onChange={(e) => setSettings({ address: e.target.value })}
                   className="h-11"
                 />
               </Field>
@@ -385,19 +371,19 @@ return confirmedAction("Simpan perubahan pengaturan atau data ini?", async () =>
               </Field>
               <Field label="Jam operasional">
                 <div className="flex items-center gap-2">
-                  <CommitInput
+                  <Input
                     type="time"
                     aria-label="Jam buka"
                     value={db.settings.openTime ?? ""}
-                    onChange={(e) => confirmedAction("Simpan perubahan ini?", () => (setSettings({ openTime: e.target.value })))}
+                    onChange={(e) => setSettings({ openTime: e.target.value })}
                     className="h-11 min-w-0 flex-1"
                   />
                   <span className="text-muted-foreground">–</span>
-                  <CommitInput
+                  <Input
                     type="time"
                     aria-label="Jam tutup"
                     value={db.settings.closeTime ?? ""}
-                    onChange={(e) => confirmedAction("Simpan perubahan ini?", () => (setSettings({ closeTime: e.target.value })))}
+                    onChange={(e) => setSettings({ closeTime: e.target.value })}
                     className="h-11 min-w-0 flex-1"
                   />
                 </div>
@@ -406,7 +392,7 @@ return confirmedAction("Simpan perubahan pengaturan atau data ini?", async () =>
                 <p className="text-sm font-medium">Tema tampilan</p>
                 <div className="flex flex-wrap gap-2">
                   {(["light", "dark", "system"] as const).map((m) => (
-                    <Button key={m} type="button" size="sm" variant={(db.settings.themeMode ?? "light") === m ? "default" : "outline"} onClick={() => confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => (setSettings({ themeMode: m })))}>
+                    <Button key={m} type="button" size="sm" variant={(db.settings.themeMode ?? "light") === m ? "default" : "outline"} onClick={() => setSettings({ themeMode: m })}>
                       {m === "light" ? "Terang" : m === "dark" ? "Gelap" : "Ikut perangkat"}
                     </Button>
                   ))}
@@ -415,7 +401,7 @@ return confirmedAction("Simpan perubahan pengaturan atau data ini?", async () =>
                   {THEME_PRESETS.map((t) => {
                     const on = (db.settings.themeId ?? "logo") === t.id;
                     return (
-                      <button key={t.id} type="button" onClick={() => confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => (setSettings({ themeId: t.id })))}
+                      <button key={t.id} type="button" onClick={() => setSettings({ themeId: t.id })}
                         className={`flex items-center gap-2 rounded-lg border p-2 text-left ${on ? "border-primary ring-2 ring-primary" : ""}`}>
                         <span className="flex shrink-0 overflow-hidden rounded-md border">
                           {t.id === "logo"
@@ -457,15 +443,15 @@ return confirmedAction("Simpan perubahan pengaturan atau data ini?", async () =>
                 title="Pajak"
                 desc="Tambahkan pajak pada total transaksi."
                 checked={db.settings.taxEnabled}
-                onCheckedChange={(v) => confirmedAction("Simpan perubahan ini?", () => (setSettings({ taxEnabled: v })))}
+                onCheckedChange={(v) => setSettings({ taxEnabled: v })}
               />
               {db.settings.taxEnabled && (
                 <Field label="Persentase pajak (%)">
-                  <CommitInput
+                  <Input
                     inputMode="numeric"
                     value={String(db.settings.taxPercent)}
                     onChange={(e) =>
-                      confirmedAction("Simpan perubahan ini?", () => (setSettings({ taxPercent: Number(e.target.value.replace(/\D/g, "")) || 0 })))
+                      setSettings({ taxPercent: Number(e.target.value.replace(/\D/g, "")) || 0 })
                     }
                     className="tabular h-11 max-w-32"
                   />
@@ -475,15 +461,15 @@ return confirmedAction("Simpan perubahan pengaturan atau data ini?", async () =>
                 title="Biaya layanan"
                 desc="Umum dipakai kafe dan restoran."
                 checked={db.settings.serviceEnabled}
-                onCheckedChange={(v) => confirmedAction("Simpan perubahan ini?", () => (setSettings({ serviceEnabled: v })))}
+                onCheckedChange={(v) => setSettings({ serviceEnabled: v })}
               />
               {db.settings.serviceEnabled && (
                 <Field label="Persentase layanan (%)">
-                  <CommitInput
+                  <Input
                     inputMode="numeric"
                     value={String(db.settings.servicePercent)}
                     onChange={(e) =>
-                      confirmedAction("Simpan perubahan ini?", () => (setSettings({ servicePercent: Number(e.target.value.replace(/\D/g, "")) || 0 })))
+                      setSettings({ servicePercent: Number(e.target.value.replace(/\D/g, "")) || 0 })
                     }
                     className="tabular h-11 max-w-32"
                   />
@@ -501,14 +487,14 @@ return confirmedAction("Simpan perubahan pengaturan atau data ini?", async () =>
             </CardHeader>
             <CardContent className="space-y-3">
               <Field label="Nomor urut berikutnya">
-                <CommitInput
+                <Input
                   id="order-seq"
                   inputMode="numeric"
                   value={String(db.settings.orderSeq ?? 1)}
                   onChange={(e) =>
-                    confirmedAction("Simpan perubahan ini?", () => (setSettings({
+                    setSettings({
                       orderSeq: Math.max(1, Number(e.target.value.replace(/\D/g, "")) || 1),
-                    })))
+                    })
                   }
                   className="tabular h-11 max-w-32 font-mono"
                 />
@@ -519,12 +505,9 @@ return confirmedAction("Simpan perubahan pengaturan atau data ini?", async () =>
               <Button
                 variant="secondary"
                 onClick={() => {
-return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
                   setSettings({ orderSeq: 1 });
                   toast.success("Nomor order direset ke 000001.");
-                
-});
-}}
+                }}
               >
                 Reset nomor order
               </Button>
@@ -566,7 +549,6 @@ return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
                     variant="outline"
                     disabled={!u.email && !u.whatsapp}
                     onClick={() => {
-return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
                       if (!window.confirm(`Buat PIN default baru untuk ${u.name} dan kirim ke ${u.whatsapp ? "WhatsApp" : "email"}-nya?`)) return;
                       const temp = randomPin();
                       update((current) => ({
@@ -574,9 +556,7 @@ return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
                         users: current.users.map((x) => (x.id === u.id ? { ...x, pin: temp, mustChangePin: true } : x)),
                       }));
                       void deliverPin({ email: u.email, whatsapp: u.whatsapp, subject: `PIN ${db.settings.name}`, message: pinMessage(db.settings.name, u.name, temp, true), storeCode: db.settings.storeCode, activationKey: db.settings.activationKey, storeName: db.settings.name, userName: u.name, pin: temp, temporary: true }).then((r) => (r.ok ? toast.success("PIN dikirim.") : toast.error(`PIN tidak terkirim: ${r.error}`)));
-                    
-});
-}}
+                    }}
                   >
                     Kirim Ulang PIN
                   </Button>
@@ -588,10 +568,10 @@ return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
                       variant="ghost"
                       aria-label="Hapus pengguna"
                       onClick={() =>
-                        confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => (update((current) => ({
+                        update((current) => ({
                           ...current,
                           users: current.users.filter((x) => x.id !== u.id),
-                        }))))
+                        }))
                       }
                     >
                       <Trash2 className="size-4" />
@@ -644,7 +624,6 @@ return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
                 <Button
                   className="gap-2"
                   onClick={() => {
-return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
                     if (!newUser.name.trim()) {
                       toast.error("Nama wajib diisi.");
                       return;
@@ -678,9 +657,7 @@ return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
                     void deliverPin({ email: em, whatsapp: wa, subject: `PIN ${db.settings.name}`, message: pinMessage(db.settings.name, newUser.name.trim(), temp, false), storeCode: db.settings.storeCode, activationKey: db.settings.activationKey, storeName: db.settings.name, userName: newUser.name.trim(), pin: temp, temporary: false }).then((r) => (r.ok ? toast.success("PIN dikirim.") : toast.error(`PIN tidak terkirim: ${r.error}`)));
                     toast.success("Pengguna ditambahkan.");
                     setNewUser({ name: "", email: "", whatsapp: "", role: "cashier" });
-                  
-});
-}}
+                  }}
                 >
                   <Plus className="size-4" /> Tambah
                 </Button>
@@ -705,15 +682,15 @@ return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
                 return (
                 <div key={m.id} className="space-y-2 rounded-lg border p-3">
                   <div className="flex items-center gap-3">
-                  <CommitInput
+                  <Input
                     value={m.name}
                     onChange={(e) =>
-                      confirmedAction("Simpan perubahan ini?", () => (update((current) => ({
+                      update((current) => ({
                         ...current,
                         paymentMethods: current.paymentMethods.map((x) =>
                           x.id === m.id ? { ...x, name: e.target.value } : x,
                         ),
-                      }))))
+                      }))
                     }
                     className="h-10"
                   />
@@ -721,12 +698,12 @@ return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
                   <Switch
                     checked={m.active}
                     onCheckedChange={(v) =>
-                      confirmedAction("Simpan perubahan ini?", () => (update((current) => ({
+                      update((current) => ({
                         ...current,
                         paymentMethods: current.paymentMethods.map((x) =>
                           x.id === m.id ? { ...x, active: v } : x,
                         ),
-                      }))))
+                      }))
                     }
                   />
                   {!m.isCash && (
@@ -735,10 +712,10 @@ return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
                       variant="ghost"
                       aria-label="Hapus metode"
                       onClick={() =>
-                        confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => (update((current) => ({
+                        update((current) => ({
                           ...current,
                           paymentMethods: current.paymentMethods.filter((x) => x.id !== m.id),
-                        }))))
+                        }))
                       }
                     >
                       <Trash2 className="size-4" />
@@ -755,7 +732,7 @@ return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
                           <Switch
                             checked={picked.length === 0 || picked.includes(s.id)}
                             onCheckedChange={(v) =>
-                              confirmedAction("Simpan perubahan ini?", () => (update((current) => ({
+                              update((current) => ({
                                 ...current,
                                 paymentMethods: current.paymentMethods.map((x) => {
                                   if (x.id !== m.id) return x;
@@ -768,7 +745,7 @@ return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
                                     : base.filter((id) => id !== s.id);
                                   return { ...x, serviceIds: next };
                                 }),
-                              }))))
+                              }))
                             }
                           />
                           {s.name}
@@ -788,7 +765,6 @@ return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
                 />
                 <Button
                   onClick={() => {
-return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
                     if (!newMethod.trim()) return;
                     update((current) => ({
                       ...current,
@@ -798,9 +774,7 @@ return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
                       ],
                     }));
                     setNewMethod("");
-                  
-});
-}}
+                  }}
                 >
                   Tambah
                 </Button>
@@ -823,7 +797,7 @@ return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
               <Field label="Lebar kertas">
                 <Select
                   value={String(db.printer.paperWidth)}
-                  onValueChange={(v) => confirmedAction("Simpan perubahan ini?", () => (setPrinter({ paperWidth: Number(v) === 48 ? 48 : 32 })))}
+                  onValueChange={(v) => setPrinter({ paperWidth: Number(v) === 48 ? 48 : 32 })}
                 >
                   <SelectTrigger className="h-11 max-w-60">
                     <SelectValue />
@@ -838,7 +812,7 @@ return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
                 <Select
                   value={db.printer.printMode ?? "dialog"}
                   onValueChange={(value) =>
-                    confirmedAction("Simpan perubahan ini?", () => (setPrinter({ printMode: value === "bluetooth" ? "bluetooth" : "dialog" })))
+                    setPrinter({ printMode: value === "bluetooth" ? "bluetooth" : "dialog" })
                   }
                 >
                   <SelectTrigger className="h-11 max-w-60">
@@ -852,42 +826,42 @@ return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
               </Field>
               <div className="grid gap-3 md:grid-cols-2">
                 <Field label="Header 1">
-                  <CommitInput
+                  <Input
                     value={db.printer.header1}
-                    onChange={(e) => confirmedAction("Simpan perubahan ini?", () => (setPrinter({ header1: e.target.value })))}
+                    onChange={(e) => setPrinter({ header1: e.target.value })}
                     className="h-11"
                   />
                 </Field>
                 <Field label="Header 2">
-                  <CommitInput
+                  <Input
                     value={db.printer.header2}
-                    onChange={(e) => confirmedAction("Simpan perubahan ini?", () => (setPrinter({ header2: e.target.value })))}
+                    onChange={(e) => setPrinter({ header2: e.target.value })}
                     className="h-11"
                   />
                 </Field>
                 <Field label="Footer" className="md:col-span-2">
-                  <CommitInput
+                  <Input
                     value={db.printer.footer}
-                    onChange={(e) => confirmedAction("Simpan perubahan ini?", () => (setPrinter({ footer: e.target.value })))}
+                    onChange={(e) => setPrinter({ footer: e.target.value })}
                     className="h-11"
                   />
                 </Field>
                 <Field label="Margin atas (baris)">
-                  <CommitInput
+                  <Input
                     inputMode="numeric"
                     value={String(db.printer.marginTop)}
                     onChange={(e) =>
-                      confirmedAction("Simpan perubahan ini?", () => (setPrinter({ marginTop: Number(e.target.value.replace(/\D/g, "")) || 0 })))
+                      setPrinter({ marginTop: Number(e.target.value.replace(/\D/g, "")) || 0 })
                     }
                     className="tabular h-11 max-w-32"
                   />
                 </Field>
                 <Field label="Margin bawah (baris)">
-                  <CommitInput
+                  <Input
                     inputMode="numeric"
                     value={String(db.printer.marginBottom)}
                     onChange={(e) =>
-                      confirmedAction("Simpan perubahan ini?", () => (setPrinter({ marginBottom: Number(e.target.value.replace(/\D/g, "")) || 0 })))
+                      setPrinter({ marginBottom: Number(e.target.value.replace(/\D/g, "")) || 0 })
                     }
                     className="tabular h-11 max-w-32"
                   />
@@ -897,13 +871,13 @@ return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
                 title="Cetak struk otomatis setelah bayar"
                 desc="Tanpa pratinjau, langsung ke dialog cetak."
                 checked={db.printer.autoPrintOnPay}
-                onCheckedChange={(v) => confirmedAction("Simpan perubahan ini?", () => (setPrinter({ autoPrintOnPay: v })))}
+                onCheckedChange={(v) => setPrinter({ autoPrintOnPay: v })}
               />
               <ToggleRow
                 title="Cetak saat kirim ke dapur"
                 desc="Matikan bila ada pesanan yang tidak perlu dicetak ke dapur/bar. Pesanan tetap masuk antrean dapur."
                 checked={db.printer.autoPrintOnSend !== false}
-                onCheckedChange={(v) => confirmedAction("Simpan perubahan ini?", () => (setPrinter({ autoPrintOnSend: v })))}
+                onCheckedChange={(v) => setPrinter({ autoPrintOnSend: v })}
               />
               <div className="flex flex-wrap items-center gap-2">
                 <Button
@@ -911,7 +885,6 @@ return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
                   className="gap-2"
                   disabled={!bluetoothSupported()}
                   onClick={async () => {
-return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", async () => {
                     try {
                       const device = await pickBluetoothPrinter();
                       setPrinter({
@@ -925,9 +898,7 @@ return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", async () => {
                         err instanceof Error ? err.message : "Pencarian printer dibatalkan.",
                       );
                     }
-                  
-});
-}}
+                  }}
                 >
                   <Bluetooth className="size-4" />
                   {bluetoothSupported() ? "Cari Printer Bluetooth" : "Bluetooth tak didukung"}
@@ -958,10 +929,10 @@ return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", async () => {
                       type="button"
                       aria-label={`Hapus ${t.name}`}
                       onClick={() =>
-                        confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => (update((current) => ({
+                        update((current) => ({
                           ...current,
                           tables: current.tables.filter((x) => x.id !== t.id),
-                        }))))
+                        }))
                       }
                     >
                       <Trash2 className="size-3" />
@@ -981,16 +952,13 @@ return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", async () => {
                 />
                 <Button
                   onClick={() => {
-return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
                     if (!newTable.trim()) return;
                     update((current) => ({
                       ...current,
                       tables: [...current.tables, { id: uid("tbl"), name: newTable.trim() }],
                     }));
                     setNewTable("");
-                  
-});
-}}
+                  }}
                 >
                   Tambah
                 </Button>
@@ -1015,10 +983,10 @@ return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
                       <Switch
                         checked={s.commissionEnabled !== false}
                         onCheckedChange={(v) =>
-                          confirmedAction("Simpan perubahan ini?", () => (update((current) => ({
+                          update((current) => ({
                             ...current,
                             staff: current.staff.map((x) => (x.id === s.id ? { ...x, commissionEnabled: v } : x)),
-                          }))))
+                          }))
                         }
                       />
                     </label>
@@ -1028,18 +996,15 @@ return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
                           aria-label={`Tipe komisi ${s.name}`}
                           value={s.commissionMode ?? "percent"}
                           onChange={(e) => {
-return confirmedAction("Simpan perubahan ini?", () => {
                             const m = e.target.value === "amount" ? "amount" : "percent";
                             update((c) => ({ ...c, staff: c.staff.map((x) => (x.id === s.id ? { ...x, commissionMode: m } : x)) }));
-                          
-});
-}}
+                          }}
                           className="h-9 rounded-md border bg-background px-2 text-xs"
                         >
                           <option value="percent">%</option>
                           <option value="amount">Rp</option>
                         </select>
-                        <CommitInput
+                        <input
                           type="number"
                           inputMode="decimal"
                           min={0}
@@ -1047,12 +1012,9 @@ return confirmedAction("Simpan perubahan ini?", () => {
                           value={s.commissionValue ?? ""}
                           placeholder="0"
                           onChange={(e) => {
-return confirmedAction("Simpan perubahan ini?", () => {
                             const v = e.target.value === "" ? 0 : Math.max(0, Number(e.target.value));
                             update((c) => ({ ...c, staff: c.staff.map((x) => (x.id === s.id ? { ...x, commissionValue: v } : x)) }));
-                          
-});
-}}
+                          }}
                           className="h-9 w-24 rounded-md border bg-background px-2 text-sm"
                         />
                       </>
@@ -1061,10 +1023,10 @@ return confirmedAction("Simpan perubahan ini?", () => {
                       type="button"
                       aria-label={`Hapus ${s.name}`}
                       onClick={() =>
-                        confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => (update((current) => ({
+                        update((current) => ({
                           ...current,
                           staff: current.staff.filter((x) => x.id !== s.id),
-                        }))))
+                        }))
                       }
                     >
                       <Trash2 className="size-4 text-muted-foreground" />
@@ -1084,16 +1046,13 @@ return confirmedAction("Simpan perubahan ini?", () => {
                 />
                 <Button
                   onClick={() => {
-return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
                     if (!newStaff.trim()) return;
                     update((current) => ({
                       ...current,
                       staff: [...current.staff, { id: uid("stf"), name: newStaff.trim() }],
                     }));
                     setNewStaff("");
-                  
-});
-}}
+                  }}
                 >
                   Tambah
                 </Button>
@@ -1149,13 +1108,10 @@ return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
                 accept=".posbak,application/json"
                 className="hidden"
                 onChange={(e) => {
-return confirmedAction("Simpan perubahan ini?", () => {
                   const file = e.target.files?.[0];
                   if (file) void restore(file);
                   e.target.value = "";
-                
-});
-}}
+                }}
               />
             </CardContent>
           </Card>
@@ -1262,18 +1218,12 @@ export function ServiceTypesCard() {
   const [draft, setDraft] = useState({ name: "", code: "", kind: "takeout" as ServiceKind, icon: "bag" as ServiceIconKey });
 
   function save(next: ServiceType[]) {
-return confirmedAction("Simpan perubahan pengaturan atau data ini?", () => {
     // Aplikasi online kini tersimpan langsung sebagai jenis layanan.
     update((current) => ({ ...current, serviceTypes: next, onlineChannels: [] }));
-  
-});
-}
+  }
   function patch(id: string, values: Partial<ServiceType>) {
-return confirmedAction("Simpan perubahan pengaturan atau data ini?", () => {
     save(services.map((x) => (x.id === id ? { ...x, ...values } : x)));
-  
-});
-}
+  }
 
   return (
     <Card>
@@ -1290,19 +1240,19 @@ return confirmedAction("Simpan perubahan pengaturan atau data ini?", () => {
               const Ico = serviceIcon(svc);
               return <Ico className="size-5 shrink-0 text-primary" />;
             })()}
-            <CommitInput
+            <Input
               aria-label="Nama layanan"
               value={svc.name}
-              onChange={(e) => confirmedAction("Simpan perubahan ini?", () => (patch(svc.id, { name: e.target.value })))}
+              onChange={(e) => patch(svc.id, { name: e.target.value })}
               className="h-10 w-40"
             />
-            <CommitInput
+            <Input
               aria-label="Kode layanan"
               value={svc.code}
-              onChange={(e) => confirmedAction("Simpan perubahan ini?", () => (patch(svc.id, { code: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4) })))}
+              onChange={(e) => patch(svc.id, { code: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4) })}
               className="h-10 w-20 font-mono"
             />
-            <Select value={serviceIconKey(svc)} onValueChange={(v) => confirmedAction("Simpan perubahan ini?", () => (patch(svc.id, { icon: v })))}>
+            <Select value={serviceIconKey(svc)} onValueChange={(v) => patch(svc.id, { icon: v })}>
               <SelectTrigger className="h-10 w-52" aria-label={`Ikon ${svc.name}`}>
                 <SelectValue />
               </SelectTrigger>
@@ -1319,7 +1269,7 @@ return confirmedAction("Simpan perubahan pengaturan atau data ini?", () => {
                 })}
               </SelectContent>
             </Select>
-            <Select value={svc.kind} onValueChange={(v) => confirmedAction("Simpan perubahan ini?", () => (patch(svc.id, { kind: v as ServiceKind })))}>
+            <Select value={svc.kind} onValueChange={(v) => patch(svc.id, { kind: v as ServiceKind })}>
               <SelectTrigger className="h-10 w-72">
                 <SelectValue />
               </SelectTrigger>
@@ -1332,28 +1282,28 @@ return confirmedAction("Simpan perubahan pengaturan atau data ini?", () => {
               </SelectContent>
             </Select>
             <label className="ml-auto flex items-center gap-2 text-sm">
-              <Switch checked={svc.active} onCheckedChange={(v) => confirmedAction("Simpan perubahan ini?", () => (patch(svc.id, { active: v })))} />
+              <Switch checked={svc.active} onCheckedChange={(v) => patch(svc.id, { active: v })} />
               {svc.active ? "Aktif" : "Nonaktif"}
             </label>
             <Button
               size="icon"
               variant="ghost"
               aria-label={`Hapus ${svc.name}`}
-              onClick={() => confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => (save(services.filter((x) => x.id !== svc.id))))}
+              onClick={() => save(services.filter((x) => x.id !== svc.id))}
             >
               <Trash2 className="size-4" />
             </Button>
             <label className="flex w-full items-center gap-2 border-t pt-2 text-sm">
               <Switch
                 checked={svc.allowSplit !== false}
-                onCheckedChange={(v) => confirmedAction("Simpan perubahan ini?", () => (patch(svc.id, { allowSplit: v })))}
+                onCheckedChange={(v) => patch(svc.id, { allowSplit: v })}
               />
               Boleh bayar sebagian (split bill)
             </label>
             <label className="flex w-full items-center gap-2 border-t pt-2 text-sm">
               <Switch
                 checked={svc.sendToKitchen !== false}
-                onCheckedChange={(v) => confirmedAction("Simpan perubahan ini?", () => (patch(svc.id, { sendToKitchen: v })))}
+                onCheckedChange={(v) => patch(svc.id, { sendToKitchen: v })}
               />
               Aktifkan "Sent to Kitchen" (bisa ditimpa per kategori produk)
             </label>
@@ -1361,11 +1311,11 @@ return confirmedAction("Simpan perubahan pengaturan atau data ini?", () => {
               <Switch
                 checked={svc.isDefault === true}
                 onCheckedChange={(v) =>
-                  confirmedAction("Simpan perubahan ini?", () => (save(
+                  save(
                     services.map((x) =>
                       x.id === svc.id ? { ...x, isDefault: v } : { ...x, isDefault: false },
                     ),
-                  )))
+                  )
                 }
               />
               Jadikan layanan bawaan (kasir bisa langsung pilih menu)
@@ -1373,7 +1323,7 @@ return confirmedAction("Simpan perubahan pengaturan atau data ini?", () => {
             <label className="flex w-full items-center gap-2 border-t pt-2 text-sm">
               <Switch
                 checked={svc.autoPrintReceipt === true}
-                onCheckedChange={(v) => confirmedAction("Simpan perubahan ini?", () => (patch(svc.id, { autoPrintReceipt: v })))}
+                onCheckedChange={(v) => patch(svc.id, { autoPrintReceipt: v })}
               />
               Langsung cetak struk setelah pembayaran
             </label>
@@ -1382,11 +1332,11 @@ return confirmedAction("Simpan perubahan pengaturan atau data ini?", () => {
               <AdjustInput
                 label={`Penyesuaian harga ${svc.name}`}
                 value={svc.priceAdjustValue ?? 0}
-                onChange={(v) => confirmedAction("Simpan perubahan ini?", () => (patch(svc.id, { priceAdjustValue: v })))}
+                onChange={(v) => patch(svc.id, { priceAdjustValue: v })}
               />
               <Select
                 value={svc.priceAdjustMode ?? "amount"}
-                onValueChange={(v) => confirmedAction("Simpan perubahan ini?", () => (patch(svc.id, { priceAdjustMode: v as "amount" | "percent" })))}
+                onValueChange={(v) => patch(svc.id, { priceAdjustMode: v as "amount" | "percent" })}
               >
                 <SelectTrigger className="h-9 w-32">
                   <SelectValue />
@@ -1404,7 +1354,7 @@ return confirmedAction("Simpan perubahan pengaturan atau data ini?", () => {
               <label className="flex w-full items-center gap-2 border-t pt-2 text-sm">
                 <Switch
                   checked={svc.adjustAsCommission === true}
-                  onCheckedChange={(v) => confirmedAction("Simpan perubahan ini?", () => (patch(svc.id, { adjustAsCommission: v })))}
+                  onCheckedChange={(v) => patch(svc.id, { adjustAsCommission: v })}
                 />
                 Komisi/Diskon
                 <span className="text-xs text-muted-foreground">
@@ -1460,16 +1410,13 @@ return confirmedAction("Simpan perubahan pengaturan atau data ini?", () => {
           <Button
             className="gap-2"
             onClick={() => {
-return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
               if (!draft.name.trim() || !draft.code) {
                 toast.error("Nama dan kode layanan wajib diisi.");
                 return;
               }
               save([...services, { id: uid("svc"), name: draft.name.trim(), code: draft.code, kind: draft.kind, icon: draft.icon, active: true }]);
               setDraft({ name: "", code: "", kind: "takeout", icon: "bag" });
-            
-});
-}}
+            }}
           >
             <Plus className="size-4" /> Tambah
           </Button>
@@ -1492,12 +1439,9 @@ function EditUserButton({ user }: { user: import("@/lib/pos/types").PosUser }) {
             user={user}
             onCancel={() => setOpen(false)}
             onSave={(next) => {
-return confirmedAction("Simpan perubahan ini?", () => {
               update((cur) => ({ ...cur, users: cur.users.map((x) => (x.id === next.id ? next : x)) }));
               setOpen(false);
-            
-});
-}}
+            }}
           />
         </DialogContent>
       </Dialog>

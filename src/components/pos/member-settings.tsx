@@ -1,5 +1,3 @@
-import { confirmedAction } from "@/lib/pos/action-confirmation";
-import { CommitInput } from "@/components/pos/commit-input";
 /** Pengaturan → Member: aturan poin dan diskon member. */
 import { usePos } from "@/lib/pos/store";
 import { loyaltyOf } from "@/lib/pos/members";
@@ -15,14 +13,11 @@ export function MemberSettings() {
   const loyalty = loyaltyOf(db.settings);
 
   function patch(next: Partial<LoyaltySettings>) {
-return confirmedAction("Simpan perubahan pengaturan atau data ini?", () => {
     update((cur) => ({
       ...cur,
       settings: { ...cur.settings, loyalty: { ...loyaltyOf(cur.settings), ...next } },
     }));
-  
-});
-}
+  }
 
   const num = (v: string) => Number(v.replace(/\D/g, "")) || 0;
 
@@ -44,17 +39,17 @@ return confirmedAction("Simpan perubahan pengaturan atau data ini?", () => {
                 Kalau dimatikan, poin tidak bertambah dan tidak bisa ditukar.
               </p>
             </div>
-            <Switch checked={loyalty.enabled} onCheckedChange={(v) => confirmedAction("Simpan perubahan ini?", () => (patch({ enabled: v })))} />
+            <Switch checked={loyalty.enabled} onCheckedChange={(v) => patch({ enabled: v })} />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="earn">Belanja per 1 poin (Rp)</Label>
-            <CommitInput
+            <Input
               id="earn"
               inputMode="numeric"
               className="tabular"
               value={loyalty.earnPerAmount ? String(loyalty.earnPerAmount) : ""}
-              onChange={(e) => confirmedAction("Simpan perubahan ini?", () => (patch({ earnPerAmount: num(e.target.value) })))}
+              onChange={(e) => patch({ earnPerAmount: num(e.target.value) })}
               placeholder="10000"
             />
             <p className="text-xs text-muted-foreground">
@@ -64,40 +59,40 @@ return confirmedAction("Simpan perubahan pengaturan atau data ini?", () => {
 
           <div className="space-y-2">
             <Label htmlFor="value">Nilai 1 poin saat ditukar (Rp)</Label>
-            <CommitInput
+            <Input
               id="value"
               inputMode="numeric"
               className="tabular"
               value={loyalty.pointValue ? String(loyalty.pointValue) : ""}
-              onChange={(e) => confirmedAction("Simpan perubahan ini?", () => (patch({ pointValue: num(e.target.value) })))}
+              onChange={(e) => patch({ pointValue: num(e.target.value) })}
               placeholder="100"
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="minredeem">Poin minimum untuk menukar</Label>
-            <CommitInput
+            <Input
               id="minredeem"
               inputMode="numeric"
               className="tabular"
               value={loyalty.minRedeem ? String(loyalty.minRedeem) : ""}
-              onChange={(e) => confirmedAction("Simpan perubahan ini?", () => (patch({ minRedeem: num(e.target.value) })))}
+              onChange={(e) => patch({ minRedeem: num(e.target.value) })}
               placeholder="10"
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="mdisc">Diskon khusus member (%)</Label>
-            <CommitInput
+            <Input
               id="mdisc"
               inputMode="decimal"
               className="tabular"
               value={loyalty.memberDiscountPercent ? String(loyalty.memberDiscountPercent) : ""}
               onChange={(e) =>
-                confirmedAction("Simpan perubahan ini?", () => (patch({
+                patch({
                   memberDiscountPercent:
                     Number(e.target.value.replace(",", ".").replace(/[^\d.]/g, "")) || 0,
-                })))
+                })
               }
               placeholder="0"
             />

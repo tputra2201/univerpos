@@ -1,4 +1,3 @@
-import { confirmedAction } from "@/lib/pos/action-confirmation";
 import { toast } from "sonner";
 import { usePos } from "@/lib/pos/store";
 import { ROLE_LABEL } from "@/lib/pos/roles";
@@ -19,22 +18,16 @@ export function AccessMatrix() {
   const { db, update } = usePos();
 
   function setRole(role: LimitedRole, perms: PermKey[]) {
-return confirmedAction("Simpan perubahan pengaturan atau data ini?", () => {
     update((d) => ({
       ...d,
       settings: { ...d.settings, rolePermissions: { ...d.settings.rolePermissions, [role]: perms } },
     }));
-  
-});
-}
+  }
 
   function toggle(role: LimitedRole, key: PermKey, on: boolean) {
-return confirmedAction("Simpan perubahan pengaturan atau data ini?", () => {
     const cur = permsFor(db.settings, role);
     setRole(role, on ? [...new Set([...cur, key])] : cur.filter((k) => k !== key));
-  
-});
-}
+  }
 
   return (
     <Card>
@@ -52,18 +45,15 @@ return confirmedAction("Simpan perubahan pengaturan atau data ini?", () => {
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <p className="font-semibold">{ROLE_LABEL[role]}</p>
                 <div className="flex flex-wrap gap-1">
-                  <Button size="sm" variant="outline" onClick={() => confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => (setRole(role, [...ALL_PERMS])))}>Pilih semua</Button>
-                  <Button size="sm" variant="outline" onClick={() => confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => (setRole(role, [])))}>Kosongkan</Button>
+                  <Button size="sm" variant="outline" onClick={() => setRole(role, [...ALL_PERMS])}>Pilih semua</Button>
+                  <Button size="sm" variant="outline" onClick={() => setRole(role, [])}>Kosongkan</Button>
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={() => {
-return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
                       setRole(role, [...DEFAULT_PERMS[role]]);
                       toast.success(`Hak akses ${ROLE_LABEL[role]} dikembalikan ke standar.`);
-                    
-});
-}}
+                    }}
                   >
                     Reset standar
                   </Button>
@@ -77,7 +67,7 @@ return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
                       <label key={it.key} className="flex cursor-pointer items-start gap-2 text-sm">
                         <Checkbox
                           checked={perms.includes(it.key)}
-                          onCheckedChange={(v) => confirmedAction("Simpan perubahan ini?", () => (toggle(role, it.key, v === true)))}
+                          onCheckedChange={(v) => toggle(role, it.key, v === true)}
                           className="mt-0.5"
                         />
                         <span>{it.label}</span>

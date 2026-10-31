@@ -1,4 +1,3 @@
-import { confirmedAction } from "@/lib/pos/action-confirmation";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Pencil, Plus, Search, Star, Trash2 } from "lucide-react";
@@ -86,7 +85,6 @@ function MemberPage() {
   const totalSpend = members.reduce((s, m) => s + m.totalSpend, 0);
 
   function save(m: Member) {
-return confirmedAction("Simpan perubahan pengaturan atau data ini?", () => {
     if (!m.name.trim()) {
       toast.error("Nama member wajib diisi.");
       return;
@@ -101,9 +99,7 @@ return confirmedAction("Simpan perubahan pengaturan atau data ini?", () => {
     });
     setEdit(null);
     toast.success("Member disimpan.");
-  
-});
-}
+  }
 
   function remove(m: Member) {
     if (!window.confirm(`Hapus member ${m.name}? Riwayat poinnya juga dihapus.`)) return;
@@ -116,7 +112,6 @@ return confirmedAction("Simpan perubahan pengaturan atau data ini?", () => {
   }
 
   function applyAdjust(m: Member, points: number, note: string) {
-return confirmedAction("Simpan perubahan pengaturan atau data ini?", () => {
     if (!points) {
       toast.error("Jumlah poin tidak boleh 0.");
       return;
@@ -141,9 +136,7 @@ return confirmedAction("Simpan perubahan pengaturan atau data ini?", () => {
     }));
     setAdjust(null);
     toast.success("Poin disesuaikan.");
-  
-});
-}
+  }
 
   return (
     <div>

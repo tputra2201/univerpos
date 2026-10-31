@@ -1,4 +1,3 @@
-import { confirmAction } from "@/lib/pos/action-confirmation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -26,7 +25,6 @@ export function ChangePinForm({
     if (!/^\d{4,6}$/.test(pin)) { toast.error("PIN baru harus 4–6 angka."); return; }
     if (pin !== pin2) { toast.error("Konfirmasi PIN belum sama."); return; }
     if (oldPin !== undefined && pin === oldPin) { toast.error("PIN baru tidak boleh sama dengan PIN lama."); return; }
-    if (!confirmAction("Simpan PIN baru pengguna ini?")) return;
     onSave(pin);
     toast.success("PIN berhasil diganti.");
   }

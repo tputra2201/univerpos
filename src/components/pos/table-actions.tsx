@@ -2,7 +2,6 @@ import { useState } from "react";
 import { ArrowRightLeft, Combine, ListChecks, Split } from "lucide-react";
 import { toast } from "sonner";
 import { usePos } from "@/lib/pos/store";
-import { confirmAction } from "@/lib/pos/action-confirmation";
 import { uid } from "@/lib/pos/format";
 import { getServiceTypes } from "@/lib/pos/seed";
 import type { CartLine, HeldOrder, PosDatabase } from "@/lib/pos/types";
@@ -26,9 +25,8 @@ export function splitLinesByTable(lines: CartLine[], tableName: string) {
   const parts = tableParts(tableName);
   const groups = new Map<string, CartLine[]>(parts.map((p) => [p, []]));
   for (const l of lines) {
-    const key = l.tableName && groups.has(l.tableName) ? l.tableName : parts[0];
-    const group = key ? groups.get(key) : undefined;
-    if (group) group.push({ ...l, tableName: undefined });
+    const key = l.tableName && groups.has(l.tableName) ? l.tableName : parts[0]!;
+    groups.get(key)!.push({ ...l, tableName: undefined });
   }
   return groups;
 }
@@ -83,7 +81,6 @@ export function TableActions<T extends CartLike>({
     db.heldOrders.find((h) => h.id !== cart.heldId && tableParts(h.tableName).includes(name));
 
   function pick(name: string) {
-    if (!confirmAction(`${mode === "merge" ? "Gabungkan" : "Pindahkan"} pesanan ${cart.tableName || "ini"} ke ${name}?`)) return;
     const other = heldAt(name);
     if (mode === "move") {
       if (other) {
@@ -115,7 +112,6 @@ export function TableActions<T extends CartLike>({
   }
 
   function splitTables() {
-    if (!confirmAction(`Pisahkan ${cart.tableName} dan kembalikan item ke meja asalnya?`)) return;
     const groups = splitLinesByTable(cart.lines, cart.tableName);
     const [first, ...rest] = [...groups.entries()];
     if (!first) return;
@@ -189,7 +185,7 @@ function TableGrid({
         .map((t) => {
           const held = heldAt(t.name);
           return (
-            <Button
+            <button
               key={t.id}
               type="button"
               disabled={blockOccupied && !!held}
@@ -203,7 +199,7 @@ function TableGrid({
               <span className="text-xs">
                 {held ? `Terisi • ${held.items.filter((i) => !i.voided).reduce((s, i) => s + i.qty, 0)} item` : "Kosong"}
               </span>
-            </Button>
+            </button>
           );
         })}
     </div>
@@ -248,7 +244,6 @@ export function ItemActions<T extends CartLike>({
   }
 
   function moveOut(dest: { table?: string; takeout?: boolean }) {
-    if (!confirmAction(`Transfer ${picked.length} item ke ${dest.takeout ? "Take Out" : dest.table}?`)) return;
     const moved = cart.lines.filter((l) => picked.includes(l.lineId)).map((l) => ({ ...l, tableName: undefined }));
     const keep = cart.lines.filter((l) => !picked.includes(l.lineId));
     const existing = dest.table ? heldAt(dest.table) : undefined;

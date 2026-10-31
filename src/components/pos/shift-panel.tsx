@@ -1,4 +1,3 @@
-import { confirmedAction } from "@/lib/pos/action-confirmation";
 /** Prosedur check-in kasir, cash close out, dan End of Day (tutup hari usaha). */
 import { useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
@@ -116,7 +115,6 @@ export function ShiftPanel({
     .sort((a, b) => (b.closedAt! > a.closedAt! ? 1 : -1))[0];
 
   function checkIn() {
-return confirmedAction("Mulai shift kasir dengan kas awal yang diisi?", () => {
     const cash = num(startCash || String(suggested));
     const now = new Date().toISOString();
     let autoClosed = false;
@@ -153,9 +151,7 @@ return confirmedAction("Mulai shift kasir dengan kas awal yang diisi?", () => {
     if (willClose) toast.success(`Hari usaha sebelumnya ditutup otomatis (End of Day by System). Shift 1 ${who} dimulai.`);
     else toast.success(`Shift ${no} ${who} dimulai.`);
     navigate({ to: "/" });
-  
-});
-}
+  }
 
   function closeOut() {
     if (!shift || !sum) return;
@@ -220,7 +216,6 @@ return confirmedAction("Mulai shift kasir dengan kas awal yang diisi?", () => {
   }
 
   function endOfDay() {
-return confirmedAction("Tutup hari usaha (End of Day)?", () => {
     if (!day) return;
     if (dayOpen) {
       toast.error("Masih ada shift yang belum di-close out.");
@@ -262,9 +257,7 @@ return confirmedAction("Tutup hari usaha (End of Day)?", () => {
     );
     setDayNote("");
     toast.success("Hari usaha ditutup.");
-  
-});
-}
+  }
 
   const sortedShifts = useMemo(
     () => [...db.shifts].sort((a, b) => (a.openedAt < b.openedAt ? 1 : -1)),

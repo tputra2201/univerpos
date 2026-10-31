@@ -36,8 +36,6 @@ import type { PrinterRole } from "@/lib/pos/types";
 import { getServiceTypes } from "@/lib/pos/seed";
 import { serviceIcon } from "@/lib/pos/service-icons";
 import { categoryAllowed, isDiscountService, lineNeedsKitchen, productAllowsServiceDiscount, servicePrice, serviceOptionPrice } from "@/lib/pos/pricing";
-import { CommitInput, CommitTextarea } from "@/components/pos/commit-input";
-import { confirmAction } from "@/lib/pos/action-confirmation";
 import { heldAfterSelectedPayment, selectPaymentItems } from "@/lib/pos/selected-payment";
 import { sortProductsForDisplay } from "@/lib/pos/product-sort";
 import { MemberPicker } from "@/components/pos/member-picker";
@@ -490,7 +488,6 @@ function KasirPage() {
   }
 
   function sendToKitchen() {
-    if (!confirmAction(`Kirim pesanan ${cart.tableName || "ini"} ke Tiket Stasiun?`)) return;
     if (cart.lines.filter((l) => !l.voided).length === 0) return;
     const orderNo = ensureOrderNo();
     const lines = cart.lines.map((l) => ({ ...l, sentToKitchen: true }));
@@ -689,7 +686,6 @@ function KasirPage() {
   }
 
   function recallOrder(id: string) {
-    if (cart.lines.length && cart.heldId !== id && !confirmAction("Buka pesanan tertahan dan ganti keranjang aktif?")) return;
     const held = db.heldOrders.find((h) => h.id === id);
     if (!held) return;
     setCart({
@@ -1460,7 +1456,7 @@ function CartPanel({
             Nomor order {cart.orderNo}
           </p>
         )}
-        <CommitInput
+        <Input
           value={cart.customerName}
           onChange={(e) => { setCart((prev) => ({ ...prev, customerName: e.target.value })); }}
           placeholder={type === "jasa" ? "Nama pelanggan" : "Nama pelanggan (opsional)"}
@@ -1524,7 +1520,7 @@ function CartPanel({
           }
         />
 
-        <CommitTextarea
+        <Textarea
           id="order-note"
           value={cart.note}
           onChange={(e) => { setCart((prev) => ({ ...prev, note: e.target.value })); }}
@@ -1685,7 +1681,7 @@ function CartPanel({
             <span className="text-muted-foreground">
               Diskon transaksi{isDiscountService(cartService) ? " (dikunci layanan)" : ""}
             </span>
-            <CommitInput
+            <Input
               disabled={isDiscountService(cartService)}
               inputMode="numeric"
               value={cart.billDiscount ? String(cart.billDiscount) : ""}
@@ -1713,7 +1709,7 @@ function CartPanel({
                   (maks {maxRedeemable(member, Math.max(0, totals.subtotal - totals.discount + memberDiscount + pointDiscount), loyalty)})
                 </span>
               </span>
-              <CommitInput
+              <Input
                 inputMode="numeric"
                 value={cart.redeemPoints ? String(cart.redeemPoints) : ""}
                 onChange={(e) => {

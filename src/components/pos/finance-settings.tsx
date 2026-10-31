@@ -1,5 +1,3 @@
-import { confirmedAction } from "@/lib/pos/action-confirmation";
-import { CommitInput } from "@/components/pos/commit-input";
 /** Pengaturan → Finance: kategori dan item per jenis transaksi. */
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
@@ -16,11 +14,8 @@ export function FinanceSettings() {
   const cats = financeCategoriesOf(db);
 
   function save(fn: (list: FinanceCategory[]) => FinanceCategory[]) {
-return confirmedAction("Simpan perubahan pengaturan atau data ini?", () => {
     update((cur) => ({ ...cur, financeCategories: fn(financeCategoriesOf(cur)) }));
-  
-});
-}
+  }
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
@@ -72,13 +67,10 @@ function KindCard({
           <Button
             className="gap-1"
             onClick={() => {
-return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
               if (!name.trim()) return;
               save((l) => [...l, { id: uid("fc"), kind, name: name.trim(), items: [] }]);
               setName("");
-            
-});
-}}
+            }}
           >
             <Plus className="size-4" /> Kategori
           </Button>
@@ -101,22 +93,19 @@ function CategoryBlock({
   return (
     <div className="space-y-2 rounded-lg border p-3">
       <div className="flex gap-2">
-        <CommitInput
+        <Input
           value={cat.name}
           className="font-semibold"
-          onChange={(e) => confirmedAction("Simpan perubahan ini?", () => (patch((c) => ({ ...c, name: e.target.value }))))}
+          onChange={(e) => patch((c) => ({ ...c, name: e.target.value }))}
         />
         <Button
           size="icon"
           variant="ghost"
           aria-label="Hapus kategori"
           onClick={() => {
-return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
             if (window.confirm(`Hapus kategori ${cat.name}?`))
               save((l) => l.filter((c) => c.id !== cat.id));
-          
-});
-}}
+          }}
         >
           <Trash2 className="size-4" />
         </Button>
@@ -131,7 +120,7 @@ return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
             <button
               aria-label={`Hapus ${it.name}`}
               className="text-muted-foreground hover:text-destructive"
-              onClick={() => confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => (patch((c) => ({ ...c, items: c.items.filter((x) => x.id !== it.id) }))))}
+              onClick={() => patch((c) => ({ ...c, items: c.items.filter((x) => x.id !== it.id) }))}
             >
               ×
             </button>
@@ -145,26 +134,20 @@ return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
           className="h-9"
           onChange={(e) => setItem(e.target.value)}
           onKeyDown={(e) => {
-return confirmedAction("Simpan perubahan ini?", () => {
             if (e.key === "Enter" && item.trim()) {
               patch((c) => ({ ...c, items: [...c.items, { id: uid("fi"), name: item.trim() }] }));
               setItem("");
             }
-          
-});
-}}
+          }}
         />
         <Button
           size="sm"
           variant="secondary"
           onClick={() => {
-return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
             if (!item.trim()) return;
             patch((c) => ({ ...c, items: [...c.items, { id: uid("fi"), name: item.trim() }] }));
             setItem("");
-          
-});
-}}
+          }}
         >
           Tambah
         </Button>
