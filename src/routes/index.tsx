@@ -38,7 +38,7 @@ import { serviceIcon } from "@/lib/pos/service-icons";
 import { categoryAllowed, isDiscountService, lineNeedsKitchen, productAllowsServiceDiscount, servicePrice, serviceOptionPrice } from "@/lib/pos/pricing";
 import { sortProductsForDisplay } from "@/lib/pos/product-sort";
 import { MemberPicker } from "@/components/pos/member-picker";
-import { TableActions, tableParts } from "@/components/pos/table-actions";
+import { ItemActions, TableActions, tableParts } from "@/components/pos/table-actions";
 import {
   loyaltyOf,
   maxRedeemable,
@@ -322,7 +322,13 @@ function KasirPage() {
     }
     setCart((prev) => {
       const existing = fixedPrice != null ? undefined : prev.lines.find(
-        (l) => l.productId === product.id && l.variantName === variantName && !l.note,
+        (l) =>
+          l.productId === product.id &&
+          l.variantName === variantName &&
+          !l.note &&
+          !l.sentToKitchen &&
+          !l.voided &&
+          (l.tableName ?? "") === (tableParts(prev.tableName).length > 1 ? tableParts(prev.tableName)[0] : (l.tableName ?? "")),
       );
       if (existing) {
         return {
@@ -332,6 +338,7 @@ function KasirPage() {
           ),
         };
       }
+      const parts = tableParts(prev.tableName);
       const line: CartLine = {
         lineId: uid("ln"),
         productId: product.id,
@@ -342,6 +349,7 @@ function KasirPage() {
         note: "",
         discount: 0,
         staffName: "",
+        ...(parts.length > 1 ? { tableName: parts[0] } : {}),
       };
       return { ...prev, lines: [...prev.lines, line] };
     });
@@ -591,6 +599,18 @@ function KasirPage() {
         : [entry, ...current.heldOrders],
     }));
     return id;
+  }
+
+  /** Bayar sebagian item: sisa item tetap tertahan di meja yang sama. */
+  function paySelected(lineIds: string[]) {
+    if (!requireShift()) return;
+    const orderNo = ensureOrderNo();
+    const rest = cart.lines.filter((l) => !lineIds.includes(l.lineId));
+    const picked = cart.lines.filter((l) => lineIds.includes(l.lineId));
+    saveHeld({ lines: rest, orderNo });
+    setCart(({ heldId: _h, ...p }) => ({ ...p, orderNo, kitchenId: undefined, lines: picked }));
+    setPayOpen(true);
+    toast.info("Sisa item disimpan di Pesanan Tertahan.");
   }
 
   function holdOrder() {
@@ -903,6 +923,7 @@ function KasirPage() {
           onKitchen={sendToKitchen}
           onHold={holdOrder}
           onPrintLabels={printLabels}
+            onPaySelected={paySelected}
           memberDiscount={memberDisc}
           pointDiscount={pointDisc}
 
@@ -945,6 +966,7 @@ function KasirPage() {
             onKitchen={sendToKitchen}
             onHold={holdOrder}
             onPrintLabels={printLabels}
+            onPaySelected={paySelected}
             memberDiscount={memberDisc}
             pointDiscount={pointDisc}
 
@@ -1364,6 +1386,7 @@ function CartPanel({
   onKitchen,
   onHold,
   onPrintLabels,
+  onPaySelected,
   memberDiscount = 0,
   pointDiscount = 0,
   split = false,
@@ -1379,6 +1402,7 @@ function CartPanel({
   onKitchen: () => void;
   onHold: () => void;
   onPrintLabels: (lines: CartLine[]) => void;
+  onPaySelected: (lineIds: string[]) => void;
   memberDiscount?: number;
   pointDiscount?: number;
   split?: boolean;
@@ -1501,7 +1525,8 @@ function CartPanel({
           </p>
         ) : (
           <ul className="space-y-1">
-            <li className="flex justify-end px-1">
+            <li className="flex justify-end gap-2 px-1">
+              <ItemActions cart={cart} setCart={setCart} onPaySelected={onPaySelected} />
               <Button
                 size="sm"
                 variant="outline"
@@ -1529,6 +1554,25 @@ function CartPanel({
                     >
                       {line.name}
                     </p>
+                    {line.tableName && tableParts(cart.tableName).length > 1 && (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        title="Ketuk untuk ganti meja asal"
+                        className="inline-block rounded bg-primary/10 px-1.5 text-xs font-semibold text-primary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const parts = tableParts(cart.tableName);
+                          const next = parts[(parts.indexOf(line.tableName!) + 1) % parts.length];
+                          setCart((p) => ({
+                            ...p,
+                            lines: p.lines.map((l) => (l.lineId === line.lineId ? { ...l, tableName: next } : l)),
+                          }));
+                        }}
+                      >
+                        {line.tableName}
+                      </span>
+                    )}
                     {line.variantName && (
                       <p className="break-words text-xs text-muted-foreground">{line.variantName}</p>
                     )}
