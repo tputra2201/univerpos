@@ -11,6 +11,8 @@ import { recomputeStock } from "./stock";
 
 export const SYNC_CURSOR_KEY = "wo-pos-sync-cursor";
 export const SYNC_BASE_KEY = "wo-pos-sync-base";
+/** Penanda pemulihan: perangkat ini menjadi sumber kebenaran, semua data lokal dikirim ulang ke server. */
+export const RECOVERY_KEY = "wo-pos-recovery";
 
 const COLLECTIONS = [
   "users",
