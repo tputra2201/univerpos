@@ -322,7 +322,13 @@ function KasirPage() {
     }
     setCart((prev) => {
       const existing = fixedPrice != null ? undefined : prev.lines.find(
-        (l) => l.productId === product.id && l.variantName === variantName && !l.note,
+        (l) =>
+          l.productId === product.id &&
+          l.variantName === variantName &&
+          !l.note &&
+          !l.sentToKitchen &&
+          !l.voided &&
+          (l.tableName ?? "") === (tableParts(prev.tableName).length > 1 ? tableParts(prev.tableName)[0] : (l.tableName ?? "")),
       );
       if (existing) {
         return {
@@ -332,6 +338,7 @@ function KasirPage() {
           ),
         };
       }
+      const parts = tableParts(prev.tableName);
       const line: CartLine = {
         lineId: uid("ln"),
         productId: product.id,
@@ -342,6 +349,7 @@ function KasirPage() {
         note: "",
         discount: 0,
         staffName: "",
+        ...(parts.length > 1 ? { tableName: parts[0] } : {}),
       };
       return { ...prev, lines: [...prev.lines, line] };
     });
