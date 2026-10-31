@@ -190,6 +190,45 @@ export type Database = {
           },
         ]
       }
+      store_record_versions: {
+        Row: {
+          archived_at: string
+          collection: string
+          data: Json | null
+          deleted: boolean
+          id: number
+          operation: string
+          record_id: string
+          source_device_id: string | null
+          source_seq: number
+          store_id: string
+        }
+        Insert: {
+          archived_at?: string
+          collection: string
+          data?: Json | null
+          deleted: boolean
+          id?: never
+          operation: string
+          record_id: string
+          source_device_id?: string | null
+          source_seq: number
+          store_id: string
+        }
+        Update: {
+          archived_at?: string
+          collection?: string
+          data?: Json | null
+          deleted?: boolean
+          id?: never
+          operation?: string
+          record_id?: string
+          source_device_id?: string | null
+          source_seq?: number
+          store_id?: string
+        }
+        Relationships: []
+      }
       store_records: {
         Row: {
           collection: string
@@ -298,6 +337,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sync_deletion_audit: {
+        Row: {
+          accepted_at: string
+          action_at: string
+          collection: string
+          device_id: string
+          id: number
+          record_id: string
+          reported_actor: string
+          store_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          action_at: string
+          collection: string
+          device_id: string
+          id?: never
+          record_id: string
+          reported_actor: string
+          store_id: string
+        }
+        Update: {
+          accepted_at?: string
+          action_at?: string
+          collection?: string
+          device_id?: string
+          id?: never
+          record_id?: string
+          reported_actor?: string
+          store_id?: string
+        }
+        Relationships: []
       }
       update_requests: {
         Row: {
