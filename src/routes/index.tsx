@@ -38,6 +38,7 @@ import { serviceIcon } from "@/lib/pos/service-icons";
 import { categoryAllowed, isDiscountService, lineNeedsKitchen, productAllowsServiceDiscount, servicePrice, serviceOptionPrice } from "@/lib/pos/pricing";
 import { sortProductsForDisplay } from "@/lib/pos/product-sort";
 import { MemberPicker } from "@/components/pos/member-picker";
+import { TableActions, tableParts } from "@/components/pos/table-actions";
 import {
   loyaltyOf,
   maxRedeemable,
@@ -1271,7 +1272,7 @@ function ServicePicker({
       {mode === "dinein" && (
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
           {db.tables.map((t) => {
-            const held = db.heldOrders.find((h) => !!h.tableName && h.tableName === t.name);
+            const held = db.heldOrders.find((h) => tableParts(h.tableName).includes(t.name));
             return (
               <button
                 key={t.id}
@@ -1411,27 +1412,7 @@ function CartPanel({
         )}
         {(getServiceTypes(db).find((x) => x.id === cart.serviceId)?.kind === "dinein" ||
           (!cart.serviceId && cart.orderType === "Dine In")) && (
-          <div className="flex flex-wrap gap-2">
-            {db.tables.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() =>
-                  setCart((prev) => ({
-                    ...prev,
-                    tableName: t.name,
-                  }))
-                }
-                className={`rounded-lg border px-3 py-1.5 text-xs font-medium ${
-                  cart.tableName === t.name
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border hover:bg-muted"
-                }`}
-              >
-                {t.name}
-              </button>
-            ))}
-          </div>
+          <TableActions cart={cart} setCart={setCart} />
         )}
         {cart.orderNo && (
           <p className="tabular font-mono text-xs font-semibold text-primary">
