@@ -1,3 +1,4 @@
+import { confirmedAction } from "@/lib/pos/action-confirmation";
 /** Dialog pencatatan Other Income / Expense / Paid-In / Paid-Out. */
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -59,6 +60,7 @@ export function FinanceForm({
   }, [open, initialKind, entry]);
 
   function submit(): void {
+return confirmedAction("Simpan catatan Finance ini?", () => {
     const value = Number(amount) || 0;
     const method = methods.find((m) => m.id === methodId);
     if (!cat) { toast.error("Pilih kategori."); return; }
@@ -98,7 +100,9 @@ export function FinanceForm({
     update((cur) => ({ ...cur, financeEntries: [newEntry, ...(cur.financeEntries ?? [])] }));
     toast.success(`${meta.label} tercatat.`);
     onOpenChange(false);
-  }
+  
+});
+}
 
   function remove(): void {
     if (!entry) return;

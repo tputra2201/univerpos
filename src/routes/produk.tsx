@@ -1,3 +1,5 @@
+import { confirmedAction } from "@/lib/pos/action-confirmation";
+import { CommitInput } from "@/components/pos/commit-input";
 import { productRule, type CommissionRule } from "@/lib/pos/commission";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
@@ -103,6 +105,7 @@ function ProdukPage() {
   }, [db.products, query, sortAlpha]);
 
   function saveProduct(product: Product) {
+return confirmedAction("Simpan perubahan produk atau kategori?", () => {
     if (!product.name.trim()) {
       toast.error("Nama produk wajib diisi.");
       return;
@@ -119,18 +122,24 @@ function ProdukPage() {
     }));
     setEditing(null);
     toast.success("Produk disimpan.");
-  }
+  
+});
+}
 
   function removeProduct(id: string) {
+return confirmedAction("Simpan perubahan produk atau kategori?", () => {
     update((current) => ({ ...current, products: current.products.filter((p) => p.id !== id) }));
     toast.success("Produk dihapus.");
-  }
+  
+});
+}
 
   function exportProducts() {
     void exportProductsExcel(db).catch(() => toast.error("Gagal membuat file Excel."));
   }
 
   async function importProducts(file: File) {
+return confirmedAction("Simpan perubahan produk atau kategori?", async () => {
     try {
       if (file.name.toLowerCase().endsWith(".json")) {
         const parsed = JSON.parse(await file.text()) as {
@@ -158,7 +167,9 @@ function ProdukPage() {
     } catch {
       toast.error("Berkas tidak dapat dibaca. Gunakan file Excel hasil ekspor aplikasi ini.");
     }
-  }
+  
+});
+}
 
   return (
     <div>
@@ -179,10 +190,13 @@ function ProdukPage() {
               accept=".xlsx,.xls,.csv,.json"
               className="hidden"
               onChange={(e) => {
+return confirmedAction("Simpan perubahan ini?", () => {
                 const file = e.target.files?.[0];
                 if (file) void importProducts(file);
                 e.target.value = "";
-              }}
+              
+});
+}}
             />
             <Button
               className="gap-2"
@@ -220,7 +234,7 @@ function ProdukPage() {
               <Switch
                 checked={sortAlpha}
                 onCheckedChange={(v) =>
-                  update((c) => ({ ...c, settings: { ...c.settings, sortProductsAlphabetical: v } }))
+                  confirmedAction("Simpan perubahan ini?", () => (update((c) => ({ ...c, settings: { ...c.settings, sortProductsAlphabetical: v } }))))
                 }
               />
               Urutkan A-Z
@@ -277,7 +291,7 @@ function ProdukPage() {
           <SortableList
             ids={items.map((p) => p.id)}
             onReorder={(ids) =>
-              update((current) => ({ ...current, products: applyOrder(current.products, ids) }))
+              confirmedAction("Simpan perubahan ini?", () => (update((current) => ({ ...current, products: applyOrder(current.products, ids) }))))
             }
           >
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
@@ -310,7 +324,7 @@ function ProdukPage() {
                     <Button size="icon" variant="ghost" aria-label="Ubah" onClick={() => setEditing(product)}>
                       <Pencil className="size-4" />
                     </Button>
-                    <Button size="icon" variant="ghost" aria-label="Hapus" onClick={() => removeProduct(product.id)}>
+                    <Button size="icon" variant="ghost" aria-label="Hapus" onClick={() => confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => (removeProduct(product.id)))}>
                       <Trash2 className="size-4" />
                     </Button>
                   </div>
@@ -335,13 +349,16 @@ function ProdukPage() {
             />
             <Button
               onClick={() => {
+return confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => {
                 if (!newCategory.trim()) return;
                 update((current) => ({
                   ...current,
                   categories: [...current.categories, { id: uid("cat"), name: newCategory.trim() }],
                 }));
                 setNewCategory("");
-              }}
+              
+});
+}}
             >
               Tambah
             </Button>
@@ -350,7 +367,7 @@ function ProdukPage() {
           <SortableList
             ids={db.categories.map((c) => c.id)}
             onReorder={(ids) =>
-              update((current) => ({ ...current, categories: applyOrder(current.categories, ids) }))
+              confirmedAction("Simpan perubahan ini?", () => (update((current) => ({ ...current, categories: applyOrder(current.categories, ids) }))))
             }
           >
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
@@ -360,15 +377,15 @@ function ProdukPage() {
                 <SortableItem key={c.id} id={c.id}>
                 <div className="space-y-3 rounded-xl border bg-card p-3">
                   <div className="flex items-center gap-2">
-                    <Input
+                    <CommitInput
                       value={c.name}
                       onChange={(e) =>
-                        update((current) => ({
+                        confirmedAction("Simpan perubahan ini?", () => (update((current) => ({
                           ...current,
                           categories: current.categories.map((x) =>
                             x.id === c.id ? { ...x, name: e.target.value } : x,
                           ),
-                        }))
+                        }))))
                       }
                       className="h-9"
                     />
@@ -377,10 +394,10 @@ function ProdukPage() {
                       variant="ghost"
                       aria-label="Hapus kategori"
                       onClick={() =>
-                        update((current) => ({
+                        confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => (update((current) => ({
                           ...current,
                           categories: current.categories.filter((x) => x.id !== c.id),
-                        }))
+                        }))))
                       }
                     >
                       <Trash2 className="size-4" />
@@ -397,7 +414,7 @@ function ProdukPage() {
                           <Checkbox
                             checked={picked.length === 0 || picked.includes(s.id)}
                             onCheckedChange={(v) =>
-                              update((current) => ({
+                              confirmedAction("Simpan perubahan ini?", () => (update((current) => ({
                                 ...current,
                                 categories: current.categories.map((x) => {
                                   if (x.id !== c.id) return x;
@@ -410,7 +427,7 @@ function ProdukPage() {
                                     : base.filter((id) => id !== s.id);
                                   return { ...x, serviceIds: next };
                                 }),
-                              }))
+                              }))))
                             }
                           />
                           {s.name}
@@ -424,7 +441,7 @@ function ProdukPage() {
                       className="h-8 rounded-md border border-input bg-background px-2 text-sm"
                       value={c.sendToKitchen == null ? "" : c.sendToKitchen ? "yes" : "no"}
                       onChange={(e) =>
-                        update((current) => ({
+                        confirmedAction("Simpan perubahan ini?", () => (update((current) => ({
                           ...current,
                           categories: current.categories.map((x) => {
                             if (x.id !== c.id) return x;
@@ -432,7 +449,7 @@ function ProdukPage() {
                             const v = e.target.value;
                             return v === "" ? rest : { ...rest, sendToKitchen: v === "yes" };
                           }),
-                        }))
+                        }))))
                       }
                     >
                       <option value="">Ikuti jenis layanan</option>
@@ -531,6 +548,7 @@ function ModifiersPanel() {
   const [editing, setEditing] = useState<Modifier | null>(null);
 
   function save(m: Modifier) {
+return confirmedAction("Simpan perubahan produk atau kategori?", () => {
     if (!m.name.trim()) { toast.error("Nama modifier wajib diisi."); return; }
     const options = m.options.filter((o) => o.name.trim());
     if (!options.length) { toast.error("Isi modifier minimal satu pilihan."); return; }
@@ -546,9 +564,12 @@ function ModifiersPanel() {
     });
     setEditing(null);
     toast.success("Modifier disimpan.");
-  }
+  
+});
+}
 
   function duplicate(m: Modifier) {
+return confirmedAction("Simpan perubahan produk atau kategori?", () => {
     const names = new Set(modifiers.map((x) => x.name));
     let name = `${m.name} (Salin)`;
     let n = 2;
@@ -566,10 +587,13 @@ function ModifiersPanel() {
       ],
     }));
     toast.success(`"${name}" dibuat.`);
-  }
+  
+});
+}
 
 
   function remove(m: Modifier) {
+return confirmedAction("Simpan perubahan produk atau kategori?", () => {
     const used = db.products.filter((p) => p.modifierIds?.includes(m.id)).length;
     if (used && !window.confirm(`Modifier dipakai ${used} produk. Hapus dan lepas dari produk?`))
       return;
@@ -583,7 +607,9 @@ function ModifiersPanel() {
       ),
     }));
     toast.success("Modifier dihapus.");
-  }
+  
+});
+}
 
   return (
     <div className="space-y-3">
@@ -634,11 +660,11 @@ function ModifiersPanel() {
                     size="icon"
                     variant="ghost"
                     aria-label="Duplikat"
-                    onClick={() => duplicate(m)}
+                    onClick={() => confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => (duplicate(m)))}
                   >
                     <Copy className="size-4" />
                   </Button>
-                  <Button size="icon" variant="ghost" aria-label="Hapus" onClick={() => remove(m)}>
+                  <Button size="icon" variant="ghost" aria-label="Hapus" onClick={() => confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => (remove(m)))}>
                     <Trash2 className="size-4" />
                   </Button>
                 </div>
@@ -766,7 +792,7 @@ function ModifiersPanel() {
               />
             </div>
             <DialogFooter>
-              <Button className="h-11 w-full" onClick={() => save(editing)}>
+              <Button className="h-11 w-full" onClick={() => confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => (save(editing)))}>
                 Simpan Modifier
               </Button>
             </DialogFooter>
