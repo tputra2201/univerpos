@@ -10,7 +10,8 @@ import { daysLeft, formatExpiry } from "@/lib/pos/expiry";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Bluetooth, Download, Plus, Trash2, Upload, Printer } from "lucide-react";
+import { Bluetooth, CloudUpload, Download, Plus, Trash2, Upload, Printer } from "lucide-react";
+import { requestRestore, rebuildSyncBase } from "@/lib/pos/sync";
 import { toast } from "sonner";
 import { DevContact, PosGate } from "@/components/pos/pos-gate";
 import { AppShell, PageHeader } from "@/components/pos/app-shell";
@@ -127,10 +128,29 @@ function PengaturanPage() {
       const parsed = JSON.parse(await file.text()) as PosDatabase;
       if (!parsed.settings || !Array.isArray(parsed.products)) throw new Error("format");
       replaceAll(parsed);
+      // Bangun ulang basis sinkron agar data yang dikembalikan tidak dianggap terhapus.
+      rebuildSyncBase(parsed);
       toast.success("Data berhasil dipulihkan dari cadangan.");
     } catch {
       toast.error("Berkas cadangan tidak valid.");
     }
+  }
+
+  function restoreToServer() {
+    if (db.settings.storeMode !== "online" || !db.settings.activated) {
+      toast.error("Pemulihan ke server hanya untuk store mode online.");
+      return;
+    }
+    if (
+      !window.confirm(
+        "Kirim ulang SELURUH data di perangkat ini ke server pusat?\n\nGunakan hanya jika data pusat hilang/kosong tetapi perangkat ini masih memiliki data lengkap. Data di perangkat lain akan mengikuti data perangkat ini.",
+      )
+    )
+      return;
+    requestRestore();
+    toast.success("Pemulihan dimulai — data perangkat ini sedang dikirim ke server. Biarkan aplikasi terbuka dan online sampai selesai.", {
+      duration: 10000,
+    });
   }
 
   function confirmReset(label: string): boolean {
@@ -1050,6 +1070,11 @@ function PengaturanPage() {
               <Button variant="secondary" className="gap-2" onClick={() => fileRef.current?.click()}>
                 <Upload className="size-4" /> Pulihkan dari berkas
               </Button>
+              {db.settings.storeMode === "online" && db.settings.activated && (
+                <Button variant="outline" className="gap-2" onClick={restoreToServer}>
+                  <CloudUpload className="size-4" /> Pulihkan data ke server
+                </Button>
+              )}
               <input
                 ref={fileRef}
                 type="file"

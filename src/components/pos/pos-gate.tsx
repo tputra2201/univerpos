@@ -19,14 +19,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ChangePinForm } from "@/components/pos/change-pin";
 import { normalizeEmail, normalizeWa, pinMessage, randomPin, deliverPin } from "@/lib/pos/pin";
 import { daysLeft, formatExpiry } from "@/lib/pos/expiry";
-import { SYNC_BASE_KEY, SYNC_CURSOR_KEY, useCentralSync } from "@/lib/pos/sync";
+import { SYNC_BASE_KEY, SYNC_CURSOR_KEY, RECOVERY_KEY, useCentralSync } from "@/lib/pos/sync";
 
 const DEVICE_TOKEN_KEY = "wo-pos-device-token";
 
 /** Hapus seluruh data store di perangkat ini lalu kembali ke halaman aktivasi. */
 async function resetDevice(message?: string) {
   await clearDatabase().catch(() => undefined);
-  for (const k of ["wo-pos-session", "wo-pos-cart", "wo-pos-update-request", DEVICE_TOKEN_KEY, SYNC_CURSOR_KEY, SYNC_BASE_KEY]) {
+  for (const k of ["wo-pos-session", "wo-pos-cart", "wo-pos-update-request", DEVICE_TOKEN_KEY, SYNC_CURSOR_KEY, SYNC_BASE_KEY, RECOVERY_KEY]) {
     window.localStorage.removeItem(k);
   }
   if (message) window.sessionStorage.setItem("wo-pos-reset-msg", message);
@@ -366,6 +366,7 @@ function ActivationFlow() {
         // Store online sudah punya data pusat: perangkat ini cukup mengunduhnya.
         localStorage.removeItem(SYNC_CURSOR_KEY);
         localStorage.removeItem(SYNC_BASE_KEY);
+        localStorage.removeItem(RECOVERY_KEY);
         update((current) => ({
           ...current,
           users: [],
@@ -407,6 +408,9 @@ function ActivationFlow() {
     }
 
     const owner = { id: uid("usr"), name: ownerName.trim(), role: "owner" as const, pin };
+    localStorage.removeItem(SYNC_CURSOR_KEY);
+    localStorage.removeItem(SYNC_BASE_KEY);
+    localStorage.removeItem(RECOVERY_KEY);
     update((current) => {
       const seeded = seedForBusiness(current, type);
       return {

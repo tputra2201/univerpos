@@ -11,6 +11,8 @@ import { recomputeStock } from "./stock";
 
 export const SYNC_CURSOR_KEY = "wo-pos-sync-cursor";
 export const SYNC_BASE_KEY = "wo-pos-sync-base";
+/** Penanda pemulihan: perangkat ini menjadi sumber kebenaran, semua data lokal dikirim ulang ke server. */
+export const RECOVERY_KEY = "wo-pos-recovery";
 
 const COLLECTIONS = [
   "users",
@@ -133,6 +135,31 @@ async function pullAll(code: string, token: string, since: number): Promise<Pull
   return all;
 }
 
+/** Tandai perangkat ini sebagai sumber data: seluruh data lokal dikirim ulang ke server pusat.
+ *  Dipakai untuk memulihkan data store setelah data pusat hilang/kosong. */
+export function requestRestore() {
+  try {
+    localStorage.setItem(RECOVERY_KEY, "1");
+    localStorage.removeItem(SYNC_BASE_KEY);
+  } catch {
+    /* abaikan */
+  }
+  requestSync();
+}
+
+/** Bangun ulang basis sinkron dari data lokal (setelah pulihkan dari berkas), agar
+ *  perangkat tidak menandai data sebagai terhapus karena basis lama sudah basi. */
+export function rebuildSyncBase(db: PosDatabase) {
+  try {
+    const nb: Record<string, string> = {};
+    for (const r of records(db).values()) nb[r.key] = hash(r.d);
+    localStorage.setItem(SYNC_BASE_KEY, JSON.stringify(nb));
+    localStorage.removeItem(RECOVERY_KEY);
+  } catch {
+    /* abaikan */
+  }
+}
+
 function applyRows(cur: PosDatabase, rows: PullRow[], replace: boolean, skip: Set<string>): PosDatabase {
   const next: PosDatabase = { ...cur };
   const maps = new Map<Col, Map<string, unknown>>();
@@ -180,8 +207,58 @@ export function useCentralSync() {
 
     const cycle = async () => {
       if (running.current || !alive) return;
+      // Jaga-jaga: jangan jalankan siklus yang masih memegang store lama setelah pindah store.
+      if (dbRef.current.settings.storeCode !== code) return;
       const base = readJson<Record<string, string>>(SYNC_BASE_KEY, {});
       const local = records(dbRef.current);
+      const hasLocalData = [...local.values()].some((r) => r.c !== "settings");
+
+      // Mode pemulihan: perangkat ini sumber kebenaran. Kirim semua data lokal,
+      // lalu majukan cursor melewati seluruh isi server tanpa menerapkannya.
+      if (localStorage.getItem(RECOVERY_KEY) === "1") {
+        if (!navigator.onLine) {
+          setStatus({ state: "offline", pending: local.size });
+          return;
+        }
+        running.current = true;
+        setStatus({ state: "syncing" });
+        try {
+          const payload = [...local.values()].map((r) => ({ c: r.c, id: r.id, d: r.d }));
+          for (let i = 0; i < payload.length; i += 200) {
+            const { error } = await rpc("sync_push", {
+              _code: code,
+              _token: token,
+              _records: payload.slice(i, i + 200),
+            });
+            if (error) throw new Error(error.message);
+          }
+          const rows = await pullAll(code, token, 0);
+          const maxSeq = rows.length > 0 ? rows[rows.length - 1]!.seq : Number(localStorage.getItem(SYNC_CURSOR_KEY) ?? "0") || 0;
+          const nb: Record<string, string> = {};
+          for (const r of local.values()) nb[r.key] = hash(r.d);
+          localStorage.setItem(SYNC_BASE_KEY, JSON.stringify(nb));
+          localStorage.setItem(SYNC_CURSOR_KEY, String(maxSeq));
+          localStorage.removeItem(RECOVERY_KEY);
+          setStatus({ state: "idle", pending: 0, lastSync: new Date().toISOString() });
+        } catch (e) {
+          setStatus({
+            state: "error",
+            pending: local.size,
+            message: e instanceof Error ? e.message.replace(/^.*?SYNC_DENIED:\s*/, "") : "Pemulihan gagal",
+          });
+        } finally {
+          running.current = false;
+        }
+        return;
+      }
+
+      // Pengaman: basis sinkron basi (perangkat direset/pindah store) tidak boleh
+      // menandai seluruh data store sebagai terhapus — unduh ulang sebagai gantinya.
+      if (!hasLocalData && Object.keys(base).length > 0) {
+        localStorage.removeItem(SYNC_BASE_KEY);
+        localStorage.removeItem(SYNC_CURSOR_KEY);
+        return;
+      }
       const dirty: Rec[] = [];
       for (const r of local.values()) if (base[r.key] !== hash(r.d)) dirty.push(r);
       const deleted = Object.keys(base).filter((k) => !local.has(k));
