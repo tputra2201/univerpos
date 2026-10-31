@@ -259,7 +259,7 @@ export interface CartLine {
   voidReason?: string;
   voidedBy?: string;
   /** Meja asal item (untuk meja gabungan); dipakai saat antar & pisah meja. */
-  tableName?: string;
+  tableName?: string | undefined;
 }
 
 export interface SalePayment {
