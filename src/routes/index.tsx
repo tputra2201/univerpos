@@ -36,6 +36,8 @@ import type { PrinterRole } from "@/lib/pos/types";
 import { getServiceTypes } from "@/lib/pos/seed";
 import { serviceIcon } from "@/lib/pos/service-icons";
 import { categoryAllowed, isDiscountService, lineNeedsKitchen, productAllowsServiceDiscount, servicePrice, serviceOptionPrice } from "@/lib/pos/pricing";
+import { confirmAction } from "@/lib/pos/action-confirmation";
+import { heldAfterSelectedPayment, selectPaymentItems } from "@/lib/pos/selected-payment";
 import { sortProductsForDisplay } from "@/lib/pos/product-sort";
 import { MemberPicker } from "@/components/pos/member-picker";
 import { ItemActions, TableActions, tableParts } from "@/components/pos/table-actions";
@@ -175,6 +177,7 @@ function KasirPage() {
   const [editLine, setEditLine] = useState<CartLine | null>(null);
   const [voidTarget, setVoidTarget] = useState<CartLine | null>(null);
   const [payOpen, setPayOpen] = useState(false);
+  const [paymentOriginal, setPaymentOriginal] = useState<CartState | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [heldOpen, setHeldOpen] = useState(false);
   const [kitchenOpen, setKitchenOpen] = useState(false);
@@ -382,6 +385,7 @@ function KasirPage() {
       toast.error("Item sudah dikirim ke dapur. Gunakan Void untuk membatalkan.");
       return;
     }
+    if (!confirmAction(`Ubah jumlah ${target.name} dari ${target.qty} menjadi ${Math.max(0, target.qty + delta)}?`)) return;
     setCart((prev) => ({
       ...prev,
       lines: prev.lines
@@ -398,10 +402,12 @@ function KasirPage() {
       setVoidTarget(target);
       return;
     }
+    if (!confirmAction(`Hapus ${target.name} dari pesanan ${cart.tableName || "ini"}?`)) return;
     setCart((prev) => ({ ...prev, lines: prev.lines.filter((l) => l.lineId !== lineId) }));
   }
 
   function saveLine(updated: CartLine) {
+    if (!confirmAction(`Simpan perubahan item ${updated.name}?`)) return;
     setCart((prev) => ({
       ...prev,
       lines: prev.lines.map((l) => (l.lineId === updated.lineId ? updated : l)),
@@ -486,6 +492,7 @@ function KasirPage() {
   }
 
   function sendToKitchen() {
+    if (!confirmAction(`Kirim pesanan ${cart.tableName || "ini"} ke Tiket Stasiun?`)) return;
     if (cart.lines.filter((l) => !l.voided).length === 0) return;
     const orderNo = ensureOrderNo();
     const lines = cart.lines.map((l) => ({ ...l, sentToKitchen: true }));
@@ -601,19 +608,27 @@ function KasirPage() {
     return id;
   }
 
-  /** Bayar sebagian item: sisa item tetap tertahan di meja yang sama. */
+  /** Selected payment never changes held orders until payment completes. */
   function paySelected(lineIds: string[]) {
     if (!requireShift()) return;
-    const orderNo = ensureOrderNo();
-    const rest = cart.lines.filter((l) => !lineIds.includes(l.lineId));
-    const picked = cart.lines.filter((l) => lineIds.includes(l.lineId));
-    saveHeld({ lines: rest, orderNo });
-    setCart(({ heldId: _h, ...p }) => ({ ...p, orderNo, kitchenId: undefined, lines: picked }));
+    const selected = selectPaymentItems(cart, lineIds);
+    if (!selected) return;
+    if (!confirmAction(`Bayar terpisah ${selected.lines.length} item dari ${cart.tableName || "pesanan ini"}?`)) return;
+    setPaymentOriginal(cart);
+    setCart(selected);
     setPayOpen(true);
-    toast.info("Sisa item disimpan di Pesanan Tertahan.");
+  }
+
+  function changePaymentOpen(open: boolean) {
+    if (!open && paymentOriginal) {
+      setCart(paymentOriginal);
+      setPaymentOriginal(null);
+    }
+    setPayOpen(open);
   }
 
   function holdOrder() {
+    if (!confirmAction(`Tahan pesanan ${cart.tableName || "ini"}?`)) return;
     if (cart.lines.length === 0) return;
     ensureOrderNo();
     saveHeld();
@@ -737,7 +752,9 @@ function KasirPage() {
       ...current,
       ...applyStock(current, sale.items, -1, { note: `Penjualan ${sale.code}`, saleCode: sale.code, userName: sale.userName, serviceId: cart.serviceId, orderType: sale.orderType }),
       sales: [sale, ...current.sales],
-      heldOrders: cart.heldId
+      heldOrders: paymentOriginal
+        ? heldAfterSelectedPayment(current.heldOrders, paymentOriginal, sale.items.map((item) => item.lineId), sale.id + "-rest", now)
+        : cart.heldId
         ? current.heldOrders.filter((h) => h.id !== cart.heldId)
         : current.heldOrders,
       members: sale.memberId
@@ -762,6 +779,7 @@ function KasirPage() {
     }));
 
     setCart(EMPTY_CART);
+    setPaymentOriginal(null);
     setPayOpen(false);
     setCartOpen(false);
     // Tanpa dialog pratinjau: kasir langsung kembali ke layar utama.
@@ -1078,7 +1096,7 @@ function KasirPage() {
 
       <PaymentDialog
         open={payOpen}
-        onOpenChange={setPayOpen}
+        onOpenChange={changePaymentOpen}
         total={totals.total}
         serviceId={cart.serviceId}
         onComplete={completeSale}
@@ -1563,7 +1581,8 @@ function CartPanel({
                         onClick={(e) => {
                           e.stopPropagation();
                           const parts = tableParts(cart.tableName);
-                          const next = parts[(parts.indexOf(line.tableName!) + 1) % parts.length];
+                          const next = parts[(parts.indexOf(line.tableName ?? "") + 1) % parts.length];
+                          if (!confirmAction(`Ubah tanda meja ${line.name} ke ${next}?`)) return;
                           setCart((p) => ({
                             ...p,
                             lines: p.lines.map((l) => (l.lineId === line.lineId ? { ...l, tableName: next } : l)),
