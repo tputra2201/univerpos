@@ -41,6 +41,8 @@ export const Route = createFileRoute("/produk")({
   head: () => ({
     meta: [
       { title: "Produk & Kategori — POS UKM" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       {
         name: "description",
         content: "Kelola kategori, produk, harga, varian, satuan, dan stok untuk kasir UKM.",

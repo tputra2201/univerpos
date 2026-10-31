@@ -485,7 +485,8 @@ export interface StockMove {
 }
 
 export interface PosDatabase {
-
+  /** Durable, device-local queue of explicit deletions. Never sync this field as a record. */
+  syncDeletes?: { c: string; id: string; at: string; actor: string }[];
   version: number;
   settings: StoreSettings;
   printer: PrinterSettings;

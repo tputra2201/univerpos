@@ -29,6 +29,8 @@ export const Route = createFileRoute("/transaksi")({
   head: () => ({
     meta: [
       { title: "Riwayat Transaksi — POS UKM" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       {
         name: "description",
         content: "Riwayat penjualan, detail struk, cetak ulang, pembatalan, dan refund.",

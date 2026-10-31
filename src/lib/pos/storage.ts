@@ -4,7 +4,9 @@
  * Mengganti ke penyimpanan online nanti cukup mengubah file ini.
  */
 import type { PosDatabase } from "./types";
+import { closedArchiveEvents } from "./sync-safety";
 
+export const ARCHIVE_STORE = "archives";
 const DB_NAME = "wo-pos";
 const STORE_NAME = "kv";
 const KEY = "database";
@@ -12,10 +14,11 @@ const PRINTER_KEY = "wo-pos-printer-settings";
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1);
+    const req = indexedDB.open(DB_NAME, 2);
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME);
+      if (!db.objectStoreNames.contains(ARCHIVE_STORE)) db.createObjectStore(ARCHIVE_STORE);
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
@@ -24,32 +27,62 @@ function openDb(): Promise<IDBDatabase> {
 
 export async function loadDatabase(): Promise<PosDatabase | null> {
   if (typeof indexedDB === "undefined") return null;
+  const db = await openDb();
   try {
-    const db = await openDb();
     return await new Promise<PosDatabase | null>((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, "readonly");
       const req = tx.objectStore(STORE_NAME).get(KEY);
       req.onsuccess = () => resolve((req.result as PosDatabase) ?? null);
       req.onerror = () => reject(req.error);
     });
-  } catch {
-    return null;
-  }
+  } finally { db.close(); }
 }
 
-export async function saveDatabase(data: PosDatabase): Promise<void> {
-  if (typeof indexedDB === "undefined") return;
+let saveQueue: Promise<void> = Promise.resolve();
+export function saveDatabase(data: PosDatabase): Promise<void> {
+  const task = saveQueue.catch(() => undefined).then(() => persistDatabase(data));
+  saveQueue = task;
+  return task;
+}
+
+export interface LocalArchive { id: string; storeCode: string; savedAt: string; event: string; data: PosDatabase }
+
+export async function listLocalArchives(storeCode: string): Promise<LocalArchive[]> {
+  const db = await openDb();
   try {
-    const db = await openDb();
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction(ARCHIVE_STORE, "readonly");
+      const req = tx.objectStore(ARCHIVE_STORE).getAll();
+      req.onsuccess = () => resolve((req.result as LocalArchive[]).filter((a) => a.storeCode === storeCode).sort((a,b) => b.savedAt.localeCompare(a.savedAt)));
+      req.onerror = () => reject(req.error);
+    });
+  } finally { db.close(); }
+}
+
+async function persistDatabase(data: PosDatabase): Promise<void> {
+  if (typeof indexedDB === "undefined") return;
+  const db = await openDb();
+  try {
     await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(STORE_NAME, "readwrite");
-      tx.objectStore(STORE_NAME).put(data, KEY);
+      const tx = db.transaction([STORE_NAME, ARCHIVE_STORE], "readwrite");
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.get(KEY);
+      req.onsuccess = () => {
+        const previous = (req.result as PosDatabase | undefined) ?? null;
+        for (const event of closedArchiveEvents(previous, data)) {
+          const id = `${data.settings.storeCode}:${event}`;
+          const archives = tx.objectStore(ARCHIVE_STORE);
+          const existing = archives.get(id);
+          existing.onsuccess = () => {
+            if (!existing.result) archives.put({ id, storeCode: data.settings.storeCode, savedAt: new Date().toISOString(), event, data }, id);
+          };
+        }
+        store.put(data, KEY);
+      };
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
-  } catch {
-    /* penyimpanan tidak tersedia */
-  }
+  } finally { db.close(); }
 }
 
 export async function clearDatabase(): Promise<void> {
