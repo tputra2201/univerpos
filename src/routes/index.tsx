@@ -36,7 +36,7 @@ import type { PrinterRole } from "@/lib/pos/types";
 import { getServiceTypes } from "@/lib/pos/seed";
 import { serviceIcon } from "@/lib/pos/service-icons";
 import { categoryAllowed, isDiscountService, lineNeedsKitchen, productAllowsServiceDiscount, servicePrice, serviceOptionPrice } from "@/lib/pos/pricing";
-import { CommitInput } from "@/components/pos/commit-input";
+import { CommitInput, CommitTextarea } from "@/components/pos/commit-input";
 import { confirmAction } from "@/lib/pos/action-confirmation";
 import { heldAfterSelectedPayment, selectPaymentItems } from "@/lib/pos/selected-payment";
 import { sortProductsForDisplay } from "@/lib/pos/product-sort";
@@ -1532,10 +1532,10 @@ function CartPanel({
           }
         />
 
-        <Textarea
+        <CommitTextarea
           id="order-note"
           value={cart.note}
-          onChange={(e) => setCart((prev) => ({ ...prev, note: e.target.value }))}
+          onChange={(e) => { if (confirmAction("Simpan catatan pesanan ini?")) setCart((prev) => ({ ...prev, note: e.target.value })); }}
           placeholder="Catatan pesanan (opsional)"
           className="min-h-9"
           rows={2}
