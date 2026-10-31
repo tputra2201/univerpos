@@ -608,7 +608,7 @@ function KasirPage() {
     const rest = cart.lines.filter((l) => !lineIds.includes(l.lineId));
     const picked = cart.lines.filter((l) => lineIds.includes(l.lineId));
     saveHeld({ lines: rest, orderNo });
-    setCart((p) => ({ ...p, orderNo, heldId: undefined, kitchenId: undefined, lines: picked }));
+    setCart(({ heldId: _h, ...p }) => ({ ...p, orderNo, kitchenId: undefined, lines: picked }));
     setPayOpen(true);
     toast.info("Sisa item disimpan di Pesanan Tertahan.");
   }
