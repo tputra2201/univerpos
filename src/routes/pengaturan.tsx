@@ -1070,6 +1070,11 @@ function PengaturanPage() {
               <Button variant="secondary" className="gap-2" onClick={() => fileRef.current?.click()}>
                 <Upload className="size-4" /> Pulihkan dari berkas
               </Button>
+              {db.settings.storeMode === "online" && db.settings.activated && (
+                <Button variant="outline" className="gap-2" onClick={restoreToServer}>
+                  <CloudUpload className="size-4" /> Pulihkan data ke server
+                </Button>
+              )}
               <input
                 ref={fileRef}
                 type="file"
