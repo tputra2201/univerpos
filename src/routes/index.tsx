@@ -36,6 +36,7 @@ import type { PrinterRole } from "@/lib/pos/types";
 import { getServiceTypes } from "@/lib/pos/seed";
 import { serviceIcon } from "@/lib/pos/service-icons";
 import { categoryAllowed, isDiscountService, lineNeedsKitchen, productAllowsServiceDiscount, servicePrice, serviceOptionPrice } from "@/lib/pos/pricing";
+import { sortProductsForDisplay } from "@/lib/pos/product-sort";
 import { MemberPicker } from "@/components/pos/member-picker";
 import {
   loyaltyOf,
@@ -264,7 +265,7 @@ function KasirPage() {
   const products = useMemo(() => {
     const q = query.trim().toLowerCase();
     const allowed = new Set(visibleCategories.map((c) => c.id));
-    return db.products.filter((p) => {
+    const filtered = db.products.filter((p) => {
       if (!p.active) return false;
       if (
         p.categoryId &&
@@ -277,6 +278,7 @@ function KasirPage() {
       if (!q) return true;
       return p.name.toLowerCase().includes(q) || p.barcode.includes(q);
     });
+    return sortProductsForDisplay(filtered, !!db.settings.sortProductsAlphabetical);
   }, [db, visibleCategories, query, categoryId, discountLocked, cart.serviceId]);
 
   const shiftOpen = !!activeShiftOf(db);

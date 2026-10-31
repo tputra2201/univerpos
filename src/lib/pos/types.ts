@@ -41,6 +41,8 @@ export interface StoreSettings {
   loyalty?: LoyaltySettings;
   /** Preset tema warna store ("logo" = ikuti ikon aplikasi). */
   themeId?: string;
+  /** Urutkan menu item A-Z (Setup Produk & Kasir). Mati = urutan manual. */
+  sortProductsAlphabetical?: boolean;
   /** Mode tampilan: terang, gelap, atau ikut perangkat. */
   themeMode?: "light" | "dark" | "system";
   /** Master kategori stok (bahan & kemasan). */
