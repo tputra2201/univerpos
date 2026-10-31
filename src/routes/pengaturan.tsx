@@ -12,6 +12,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Bluetooth, CloudUpload, Download, Plus, Trash2, Upload, Printer } from "lucide-react";
 import { requestRestore, rebuildSyncBase } from "@/lib/pos/sync";
+import { listLocalArchives } from "@/lib/pos/storage";
 import { toast } from "sonner";
 import { DevContact, PosGate } from "@/components/pos/pos-gate";
 import { AppShell, PageHeader } from "@/components/pos/app-shell";
@@ -127,13 +128,32 @@ function PengaturanPage() {
     try {
       const parsed = JSON.parse(await file.text()) as PosDatabase;
       if (!parsed.settings || !Array.isArray(parsed.products)) throw new Error("format");
-      replaceAll(parsed);
+      if (parsed.settings.storeCode !== db.settings.storeCode) {
+        toast.error("Cadangan berasal dari store berbeda. Data tidak diubah.");
+        return;
+      }
+      const restored = { ...parsed, syncDeletes: [], settings: { ...parsed.settings, storeCode: db.settings.storeCode, activated: db.settings.activated, storeMode: db.settings.storeMode, deviceToken: db.settings.deviceToken, deviceName: db.settings.deviceName } };
+      replaceAll(restored);
       // Bangun ulang basis sinkron agar data yang dikembalikan tidak dianggap terhapus.
-      rebuildSyncBase(parsed);
+      rebuildSyncBase(restored);
       toast.success("Data berhasil dipulihkan dari cadangan.");
     } catch {
       toast.error("Berkas cadangan tidak valid.");
     }
+  }
+
+  async function downloadArchives() {
+    try {
+      const archives = await listLocalArchives(db.settings.storeCode);
+      if (!archives.length) { toast.info("Belum ada arsip Close Out atau End of Day di perangkat ini."); return; }
+      const url = URL.createObjectURL(new Blob([JSON.stringify(archives)], { type: "application/json" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `arsip-${db.settings.storeCode}-${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`${archives.length} arsip diunduh.`);
+    } catch { toast.error("Arsip perangkat tidak dapat dibaca."); }
   }
 
   function restoreToServer() {
@@ -159,6 +179,7 @@ function PengaturanPage() {
   }
 
   function resetTransactions() {
+    if (db.settings.storeMode === "online") { toast.error("Reset store online diblokir untuk melindungi riwayat transaksi dan kas."); return; }
     if (!confirmReset("Hapus SELURUH transaksi, pesanan tertahan, shift dan hari usaha?")) return;
     update((cur) => ({
       ...cur,
@@ -179,6 +200,7 @@ function PengaturanPage() {
   }
 
   function resetSystem() {
+    if (db.settings.storeMode === "online") { toast.error("Reset store online diblokir untuk melindungi riwayat transaksi dan kas."); return; }
     if (!confirmReset("Hapus SELURUH transaksi DAN pengaturan store (produk, kategori, dll)?")) return;
     update((cur) => {
       const fresh = emptyDatabase();
@@ -1067,6 +1089,9 @@ function PengaturanPage() {
               <Button className="gap-2" onClick={backup}>
                 <Download className="size-4" /> Unduh cadangan (.posbak)
               </Button>
+              <Button variant="outline" className="gap-2" onClick={() => void downloadArchives()}>
+                <Download className="size-4" /> Unduh arsip Close Out & EOD
+              </Button>
               <Button variant="secondary" className="gap-2" onClick={() => fileRef.current?.click()}>
                 <Upload className="size-4" /> Pulihkan dari berkas
               </Button>
@@ -1115,13 +1140,13 @@ function PengaturanPage() {
                   <p className="text-muted-foreground">
                     <b className="text-foreground">Reset transaksi</b> — hapus seluruh transaksi, pesanan tertahan, dapur, shift & hari usaha. Produk dan pengaturan tetap.
                   </p>
-                  <Button variant="destructive" onClick={resetTransactions}>Reset transaksi</Button>
+                  <Button variant="destructive" disabled={db.settings.storeMode === "online"} onClick={resetTransactions}>Reset transaksi</Button>
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-muted-foreground">
                     <b className="text-foreground">Reset system</b> — hapus seluruh transaksi dan pengaturan (produk, kategori, modifier, pajak, layanan, meja, pembayaran, hak akses). Aktivasi store dan akun pengguna tetap.
                   </p>
-                  <Button variant="destructive" onClick={resetSystem}>Reset system</Button>
+                  <Button variant="destructive" disabled={db.settings.storeMode === "online"} onClick={resetSystem}>Reset system</Button>
                 </div>
               </CardContent>
             </Card>
