@@ -64,7 +64,7 @@ function itemLines(sale: Sale, width: number, withPrice: boolean): string[] {
   const out: string[] = [];
   for (const item of sale.items) {
     if (item.voided) continue;
-    const title = item.variantName ? `${item.name} (${item.variantName})` : item.name;
+    const title = (item.variantName ? `${item.name} (${item.variantName})` : item.name) + (item.tableName ? ` [${item.tableName}]` : "");
     wrap(title, width).forEach((l) => out.push(l));
     if (withPrice) {
       out.push(
@@ -107,7 +107,7 @@ export function buildReceipt(
     sale.items.filter((i) => !i.voided).forEach((item, idx) => {
       if (idx > 0) out.push(divider(width, "="));
       out.push(center(sale.orderNo || sale.customerName || sale.tableName || sale.code, width));
-      wrap(item.variantName ? `${item.name} - ${item.variantName}` : item.name, width).forEach(
+      wrap((item.variantName ? `${item.name} - ${item.variantName}` : item.name) + (item.tableName ? ` [${item.tableName}]` : ""), width).forEach(
         (l) => out.push(l),
       );
       if (item.note) wrap("Note: " + item.note, width).forEach((l) => out.push(l));
