@@ -34,7 +34,10 @@ export function TableActions<T extends CartLike>({
   function pick(name: string) {
     const other = heldAt(name);
     if (mode === "move") {
-      if (other) return toast.error(`${name} sedang terisi. Gunakan Gabung Meja.`);
+      if (other) {
+        toast.error(`${name} sedang terisi. Gunakan Gabung Meja.`);
+        return;
+      }
       setCart((p) => ({ ...p, tableName: name }));
       if (cart.heldId) {
         update((c) => ({
