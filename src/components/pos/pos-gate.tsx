@@ -366,6 +366,7 @@ function ActivationFlow() {
         // Store online sudah punya data pusat: perangkat ini cukup mengunduhnya.
         localStorage.removeItem(SYNC_CURSOR_KEY);
         localStorage.removeItem(SYNC_BASE_KEY);
+        localStorage.removeItem(RECOVERY_KEY);
         update((current) => ({
           ...current,
           users: [],
@@ -407,6 +408,9 @@ function ActivationFlow() {
     }
 
     const owner = { id: uid("usr"), name: ownerName.trim(), role: "owner" as const, pin };
+    localStorage.removeItem(SYNC_CURSOR_KEY);
+    localStorage.removeItem(SYNC_BASE_KEY);
+    localStorage.removeItem(RECOVERY_KEY);
     update((current) => {
       const seeded = seedForBusiness(current, type);
       return {
