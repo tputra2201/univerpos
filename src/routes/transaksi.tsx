@@ -1,4 +1,3 @@
-import { confirmedAction } from "@/lib/pos/action-confirmation";
 import { applyStock } from "@/lib/pos/stock";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
@@ -62,7 +61,6 @@ function TransaksiPage() {
   const [editPay, setEditPay] = useState<string[] | null>(null);
 
   function savePayments() {
-return confirmedAction("Simpan perubahan metode pembayaran nota ini?", () => {
     if (!detail || !editPay) return;
     const payments = detail.payments.map((p, i) => {
       const m = db.paymentMethods.find((x) => x.id === editPay[i]);
@@ -76,9 +74,7 @@ return confirmedAction("Simpan perubahan metode pembayaran nota ini?", () => {
     setDetail(next);
     setEditPay(null);
     toast.success("Metode pembayaran diperbarui.");
-  
-});
-}
+  }
 
   const today = useMemo(() => defaultRange(db.settings), [db.settings]);
   const daySales = useMemo(() => db.sales.filter((s) => inRange(s.createdAt, today)), [db.sales, today]);

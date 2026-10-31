@@ -1,4 +1,3 @@
-import { confirmedAction } from "@/lib/pos/action-confirmation";
 import { useState } from "react";
 import { Plus, Pencil, Trash2, PackagePlus, ClipboardCheck, Tags } from "lucide-react";
 import { toast } from "sonner";
@@ -42,7 +41,6 @@ export function StockSettings() {
 
 
   function save(item: StockItem) {
-return confirmedAction("Simpan perubahan stok ini?", () => {
     if (!canManage) { toast.error("Akun Anda tidak berhak mengubah data bahan."); return; }
     if (!item.name.trim()) { toast.error("Nama bahan wajib diisi."); return; }
     update((cur) => {
@@ -53,9 +51,7 @@ return confirmedAction("Simpan perubahan stok ini?", () => {
     });
     setEditing(null);
     toast.success("Bahan stok disimpan.");
-  
-});
-}
+  }
 
   function remove(id: string) {
     if (!canManage) { toast.error("Akun Anda tidak berhak menghapus data bahan."); return; }
@@ -64,7 +60,6 @@ return confirmedAction("Simpan perubahan stok ini?", () => {
   }
 
   function applyAdjust() {
-return confirmedAction("Simpan perubahan stok ini?", () => {
     if (!adjust) return;
     if (adjust.mode === "in" ? !canIn : !canAdjust) { toast.error("Akun Anda tidak berhak melakukan ini."); return; }
     const v = num(adjQty);
@@ -90,9 +85,7 @@ return confirmedAction("Simpan perubahan stok ini?", () => {
     }));
     setAdjust(null);
     toast.success("Stok diperbarui.");
-  
-});
-}
+  }
 
   return (
     <>
@@ -218,7 +211,7 @@ return confirmedAction("Simpan perubahan stok ini?", () => {
           <DialogHeader>
             <DialogTitle>Bahan stok</DialogTitle>
           </DialogHeader>
-          {editing && <StockForm value={editing} onChange={setEditing} onSave={() => confirmedAction("Simpan perubahan ini?", () => (save(editing)))} />}
+          {editing && <StockForm value={editing} onChange={setEditing} onSave={() => save(editing)} />}
         </DialogContent>
       </Dialog>
     </>
@@ -415,18 +408,14 @@ function GroupManager({ open, onOpenChange }: { open: boolean; onOpenChange: (o:
   const used = (g: string) => (db.stockItems ?? []).filter((x) => x.group?.trim() === g).length;
 
   function add() {
-return confirmedAction("Simpan perubahan stok ini?", () => {
     const n = name.trim();
     if (!n) return;
     if (groups.some((g) => g.toLowerCase() === n.toLowerCase())) { toast.error("Kategori sudah ada."); return; }
     update((cur) => ({ ...cur, settings: { ...cur.settings, stockGroups: [...groupList(cur), n] } }));
     setName("");
     toast.success("Kategori stok ditambahkan.");
-  
-});
-}
+  }
   function rename(g: string) {
-return confirmedAction("Simpan perubahan stok ini?", () => {
     const n = window.prompt("Nama baru kategori", g)?.trim();
     if (!n || n === g) return;
     if (groups.some((x) => x !== g && x.toLowerCase() === n.toLowerCase())) { toast.error("Kategori sudah ada."); return; }
@@ -435,9 +424,7 @@ return confirmedAction("Simpan perubahan stok ini?", () => {
       settings: { ...cur.settings, stockGroups: groupList(cur).map((x) => (x === g ? n : x)) },
       stockItems: (cur.stockItems ?? []).map((x) => (x.group?.trim() === g ? { ...x, group: n } : x)),
     }));
-  
-});
-}
+  }
   function del(g: string) {
     const c = used(g);
     if (!window.confirm(c ? `Hapus kategori "${g}"? ${c} bahan akan pindah ke "Lainnya".` : `Hapus kategori "${g}"?`)) return;
@@ -453,7 +440,7 @@ return confirmedAction("Simpan perubahan stok ini?", () => {
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Kategori Stok</DialogTitle></DialogHeader>
         <div className="flex gap-2">
-          <Input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => confirmedAction("Simpan perubahan ini?", () => (e.key === "Enter" && add()))} placeholder="Mis. Kemasan, Bahan Minuman" />
+          <Input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="Mis. Kemasan, Bahan Minuman" />
           <Button onClick={add}><Plus className="mr-1 h-4 w-4" /> Tambah</Button>
         </div>
         <div className="space-y-1">
@@ -462,7 +449,7 @@ return confirmedAction("Simpan perubahan stok ini?", () => {
             <div key={g} className="flex items-center gap-2 rounded-lg border p-2">
               <span className="flex-1 font-medium">{g}</span>
               <span className="text-xs text-muted-foreground">{used(g)} bahan</span>
-              <Button size="icon" variant="outline" title="Ganti nama" onClick={() => confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => (rename(g)))}><Pencil className="h-4 w-4" /></Button>
+              <Button size="icon" variant="outline" title="Ganti nama" onClick={() => rename(g)}><Pencil className="h-4 w-4" /></Button>
               <Button size="icon" variant="outline" title="Hapus" onClick={() => del(g)}><Trash2 className="h-4 w-4" /></Button>
             </div>
           ))}

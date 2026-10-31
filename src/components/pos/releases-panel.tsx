@@ -1,4 +1,3 @@
-import { confirmedAction } from "@/lib/pos/action-confirmation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
@@ -38,7 +37,6 @@ export function ReleasesPanel() {
   useEffect(() => { void load(); }, [load]);
 
   async function add(): Promise<unknown> {
-return confirmedAction("Simpan perubahan pengaturan atau data ini?", async () => {
     const version = form.version.trim();
     if (!version) return toast.error("Isi nomor versi.");
     const { error } = await supabase.from("app_releases").insert({ version, notes: form.notes.trim() });
@@ -47,18 +45,13 @@ return confirmedAction("Simpan perubahan pengaturan atau data ini?", async () =>
     toast.success(`Rilis ${version} diterbitkan.`);
     void load();
     return undefined;
-  
-});
-}
+  }
 
   async function decide(id: string, status: "approved" | "rejected") {
-return confirmedAction("Simpan perubahan pengaturan atau data ini?", async () => {
     const { error } = await supabase.from("update_requests").update({ status, decided_at: new Date().toISOString() }).eq("id", id);
     if (error) toast.error(error.message);
     void load();
-  
-});
-}
+  }
 
   async function removeRelease(r: Release) {
     if (!confirm(`Hapus rilis ${r.version}?`)) return;
@@ -90,8 +83,8 @@ return confirmedAction("Simpan perubahan pengaturan atau data ini?", async () =>
               <Badge variant={q.status === "pending" ? "default" : "secondary"}>{statusLabel[q.status] ?? q.status}</Badge>
               {q.status === "pending" && (
                 <>
-                  <Button size="sm" onClick={() => confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => (void decide(q.id, "approved")))}>Setujui</Button>
-                  <Button size="sm" variant="outline" onClick={() => confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => (void decide(q.id, "rejected")))}>Tolak</Button>
+                  <Button size="sm" onClick={() => void decide(q.id, "approved")}>Setujui</Button>
+                  <Button size="sm" variant="outline" onClick={() => void decide(q.id, "rejected")}>Tolak</Button>
                 </>
               )}
             </div>
@@ -113,7 +106,7 @@ return confirmedAction("Simpan perubahan pengaturan atau data ini?", async () =>
             <Label htmlFor="rel-n">Catatan rilis</Label>
             <Textarea id="rel-n" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
           </div>
-          <Button className="justify-self-start" onClick={() => confirmedAction("Lanjutkan aksi ini dan simpan perubahan?", () => (void add()))}>Terbitkan</Button>
+          <Button className="justify-self-start" onClick={() => void add()}>Terbitkan</Button>
           <div className="space-y-2 pt-2">
             {releases.map((r) => (
               <div key={r.id} className="flex flex-wrap items-start gap-2 rounded-md border p-3 text-sm">
