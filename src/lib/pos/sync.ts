@@ -135,6 +135,18 @@ async function pullAll(code: string, token: string, since: number): Promise<Pull
   return all;
 }
 
+/** Tandai perangkat ini sebagai sumber data: seluruh data lokal dikirim ulang ke server pusat.
+ *  Dipakai untuk memulihkan data store setelah data pusat hilang/kosong. */
+export function requestRestore() {
+  try {
+    localStorage.setItem(RECOVERY_KEY, "1");
+    localStorage.removeItem(SYNC_BASE_KEY);
+  } catch {
+    /* abaikan */
+  }
+  requestSync();
+}
+
 function applyRows(cur: PosDatabase, rows: PullRow[], replace: boolean, skip: Set<string>): PosDatabase {
   const next: PosDatabase = { ...cur };
   const maps = new Map<Col, Map<string, unknown>>();
