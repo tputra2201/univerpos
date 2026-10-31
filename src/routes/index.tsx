@@ -318,7 +318,6 @@ function KasirPage() {
 
   function addProduct(product: Product, variantName = "", priceDelta = 0, fixedPrice?: number) {
     if (!requireShift()) return;
-    if (!confirmAction(`Tambahkan ${product.name} ke pesanan ${cart.tableName || "ini"}?`)) return;
     const svc = ensureService();
     if (svc === undefined) {
       toast.error("Pilih jenis layanan dulu.");
@@ -387,7 +386,6 @@ function KasirPage() {
       toast.error("Item sudah dikirim ke dapur. Gunakan Void untuk membatalkan.");
       return;
     }
-    if (!confirmAction(`Ubah jumlah ${target.name} dari ${target.qty} menjadi ${Math.max(0, target.qty + delta)}?`)) return;
     setCart((prev) => ({
       ...prev,
       lines: prev.lines
@@ -404,12 +402,10 @@ function KasirPage() {
       setVoidTarget(target);
       return;
     }
-    if (!confirmAction(`Hapus ${target.name} dari pesanan ${cart.tableName || "ini"}?`)) return;
     setCart((prev) => ({ ...prev, lines: prev.lines.filter((l) => l.lineId !== lineId) }));
   }
 
   function saveLine(updated: CartLine) {
-    if (!confirmAction(`Simpan perubahan item ${updated.name}?`)) return;
     setCart((prev) => ({
       ...prev,
       lines: prev.lines.map((l) => (l.lineId === updated.lineId ? updated : l)),
@@ -615,7 +611,6 @@ function KasirPage() {
     if (!requireShift()) return;
     const selected = selectPaymentItems(cart, lineIds);
     if (!selected) return;
-    if (!confirmAction(`Bayar terpisah ${selected.lines.length} item dari ${cart.tableName || "pesanan ini"}?`)) return;
     setPaymentOriginal(cart);
     setCart(selected);
     setPayOpen(true);
@@ -630,7 +625,6 @@ function KasirPage() {
   }
 
   function holdOrder() {
-    if (!confirmAction(`Tahan pesanan ${cart.tableName || "ini"}?`)) return;
     if (cart.lines.length === 0) return;
     ensureOrderNo();
     saveHeld();
@@ -1052,7 +1046,6 @@ function KasirPage() {
         }}
         onAdd={(label, extra) => {
           if (variantProduct && optionLine) {
-            if (!confirmAction(`Simpan perubahan pilihan ${variantProduct.name}?`)) return;
             const base = {
               ...optionLine,
               variantName: label,
@@ -1115,7 +1108,6 @@ function KasirPage() {
           </DialogHeader>
           <ServicePicker
             onPick={(orderType, tableName, serviceId) => {
-              if (!confirmAction(`Gunakan layanan ${orderType}${tableName ? " di " + tableName : ""} untuk pesanan ini?`)) return;
               const services = getServiceTypes(db);
               setCart((prev) => {
                 const oldSvc = services.find((s) => s.id === prev.serviceId);
@@ -1470,7 +1462,7 @@ function CartPanel({
         )}
         <CommitInput
           value={cart.customerName}
-          onChange={(e) => { if (confirmAction("Ubah nama pelanggan pesanan ini?")) setCart((prev) => ({ ...prev, customerName: e.target.value })); }}
+          onChange={(e) => { setCart((prev) => ({ ...prev, customerName: e.target.value })); }}
           placeholder={type === "jasa" ? "Nama pelanggan" : "Nama pelanggan (opsional)"}
           className="h-10"
         />
@@ -1493,7 +1485,7 @@ function CartPanel({
                     variant="ghost"
                     className="h-8"
                     onClick={() =>
-                      confirmAction("Lepaskan member dari pesanan ini?") && setCart((prev) => ({
+                      setCart((prev) => ({
                         ...prev,
                         memberId: undefined,
                         memberName: "",
@@ -1521,7 +1513,7 @@ function CartPanel({
           open={memberOpen}
           onOpenChange={setMemberOpen}
           onPick={(m) =>
-            confirmAction(`Gunakan member ${m.name} pada pesanan ini?`) && setCart((prev) => ({
+            setCart((prev) => ({
               ...prev,
               memberId: m.id,
               memberName: m.name,
@@ -1535,7 +1527,7 @@ function CartPanel({
         <CommitTextarea
           id="order-note"
           value={cart.note}
-          onChange={(e) => { if (confirmAction("Simpan catatan pesanan ini?")) setCart((prev) => ({ ...prev, note: e.target.value })); }}
+          onChange={(e) => { setCart((prev) => ({ ...prev, note: e.target.value })); }}
           placeholder="Catatan pesanan (opsional)"
           className="min-h-9"
           rows={2}
@@ -1589,7 +1581,6 @@ function CartPanel({
                           e.stopPropagation();
                           const parts = tableParts(cart.tableName);
                           const next = parts[(parts.indexOf(line.tableName ?? "") + 1) % parts.length];
-                          if (!confirmAction(`Ubah tanda meja ${line.name} ke ${next}?`)) return;
                           setCart((p) => ({
                             ...p,
                             lines: p.lines.map((l) => (l.lineId === line.lineId ? { ...l, tableName: next } : l)),
@@ -1699,7 +1690,7 @@ function CartPanel({
               inputMode="numeric"
               value={cart.billDiscount ? String(cart.billDiscount) : ""}
               onChange={(e) =>
-                confirmAction("Ubah diskon transaksi ini?") && setCart((prev) => ({
+                setCart((prev) => ({
                   ...prev,
                   billDiscount: Number(e.target.value.replace(/\D/g, "")) || 0,
                 }))
@@ -1726,7 +1717,6 @@ function CartPanel({
                 inputMode="numeric"
                 value={cart.redeemPoints ? String(cart.redeemPoints) : ""}
                 onChange={(e) => {
-                  if (!confirmAction("Ubah poin yang ditukar untuk pesanan ini?")) return;
                   const wanted = Number(e.target.value.replace(/\D/g, "")) || 0;
                   const cap = maxRedeemable(
                     member,
