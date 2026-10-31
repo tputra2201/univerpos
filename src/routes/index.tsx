@@ -318,6 +318,7 @@ function KasirPage() {
 
   function addProduct(product: Product, variantName = "", priceDelta = 0, fixedPrice?: number) {
     if (!requireShift()) return;
+    if (!confirmAction(`Tambahkan ${product.name} ke pesanan ${cart.tableName || "ini"}?`)) return;
     const svc = ensureService();
     if (svc === undefined) {
       toast.error("Pilih jenis layanan dulu.");
@@ -1051,6 +1052,7 @@ function KasirPage() {
         }}
         onAdd={(label, extra) => {
           if (variantProduct && optionLine) {
+            if (!confirmAction(`Simpan perubahan pilihan ${variantProduct.name}?`)) return;
             const base = {
               ...optionLine,
               variantName: label,
@@ -1113,6 +1115,7 @@ function KasirPage() {
           </DialogHeader>
           <ServicePicker
             onPick={(orderType, tableName, serviceId) => {
+              if (!confirmAction(`Gunakan layanan ${orderType}${tableName ? " di " + tableName : ""} untuk pesanan ini?`)) return;
               const services = getServiceTypes(db);
               setCart((prev) => {
                 const oldSvc = services.find((s) => s.id === prev.serviceId);
@@ -1490,7 +1493,7 @@ function CartPanel({
                     variant="ghost"
                     className="h-8"
                     onClick={() =>
-                      setCart((prev) => ({
+                      confirmAction("Lepaskan member dari pesanan ini?") && setCart((prev) => ({
                         ...prev,
                         memberId: undefined,
                         memberName: "",
@@ -1518,7 +1521,7 @@ function CartPanel({
           open={memberOpen}
           onOpenChange={setMemberOpen}
           onPick={(m) =>
-            setCart((prev) => ({
+            confirmAction(`Gunakan member ${m.name} pada pesanan ini?`) && setCart((prev) => ({
               ...prev,
               memberId: m.id,
               memberName: m.name,

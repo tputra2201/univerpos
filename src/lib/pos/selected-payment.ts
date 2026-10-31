@@ -13,7 +13,9 @@ export function selectPaymentItems<T extends PaymentOrder>(order: T, lineIds: st
 export function heldAfterSelectedPayment(held: HeldOrder[], original: PaymentOrder, paidIds: string[], remainderId: string, at: string): HeldOrder[] {
   const ids = new Set(paidIds);
   const existing = held.find((order) => order.id === original.heldId);
-  const items = (existing?.items ?? original.lines).filter((line) => !ids.has(line.lineId));
+  const originalIds = new Set(original.lines.map((line) => line.lineId));
+  const added = (existing?.items ?? []).filter((line) => !originalIds.has(line.lineId));
+  const items = [...original.lines, ...added].filter((line) => !ids.has(line.lineId));
   const others = held.filter((order) => order.id !== original.heldId);
   if (!items.length) return others;
   return [{
