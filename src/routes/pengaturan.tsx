@@ -1039,7 +1039,7 @@ return confirmedAction("Simpan perubahan ini?", () => {
                           <option value="percent">%</option>
                           <option value="amount">Rp</option>
                         </select>
-                        <input
+                        <CommitInput
                           type="number"
                           inputMode="decimal"
                           min={0}

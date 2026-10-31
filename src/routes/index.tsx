@@ -36,6 +36,7 @@ import type { PrinterRole } from "@/lib/pos/types";
 import { getServiceTypes } from "@/lib/pos/seed";
 import { serviceIcon } from "@/lib/pos/service-icons";
 import { categoryAllowed, isDiscountService, lineNeedsKitchen, productAllowsServiceDiscount, servicePrice, serviceOptionPrice } from "@/lib/pos/pricing";
+import { CommitInput } from "@/components/pos/commit-input";
 import { confirmAction } from "@/lib/pos/action-confirmation";
 import { heldAfterSelectedPayment, selectPaymentItems } from "@/lib/pos/selected-payment";
 import { sortProductsForDisplay } from "@/lib/pos/product-sort";
@@ -195,8 +196,8 @@ function KasirPage() {
   }, []);
 
   useEffect(() => {
-    if (hydrated) writeLocal(CART_STORAGE_KEY, cart);
-  }, [cart, hydrated]);
+    if (hydrated) writeLocal(CART_STORAGE_KEY, paymentOriginal ?? cart);
+  }, [cart, hydrated, paymentOriginal]);
 
   const loyalty = useMemo(() => loyaltyOf(settings), [settings]);
   const member = useMemo(
@@ -635,6 +636,7 @@ function KasirPage() {
     setCart(EMPTY_CART);
     setCartOpen(false);
     toast.success("Pesanan ditahan. Silakan buka pesanan baru.");
+    return true;
   }
 
   function voidLine(lineId: string, reason: string, byName: string) {
@@ -692,6 +694,7 @@ function KasirPage() {
   }
 
   function recallOrder(id: string) {
+    if (cart.lines.length && cart.heldId !== id && !confirmAction("Buka pesanan tertahan dan ganti keranjang aktif?")) return;
     const held = db.heldOrders.find((h) => h.id === id);
     if (!held) return;
     setCart({
@@ -803,8 +806,9 @@ function KasirPage() {
 
   function newOrder() {
     if (!requireShift()) return;
-    if (cart.lines.length > 0) holdOrder();
-    else setCart(EMPTY_CART);
+    if (cart.lines.length > 0) {
+      if (!holdOrder()) return;
+    } else setCart(EMPTY_CART);
     setPickerOpen(true);
   }
 
@@ -1461,9 +1465,9 @@ function CartPanel({
             Nomor order {cart.orderNo}
           </p>
         )}
-        <Input
+        <CommitInput
           value={cart.customerName}
-          onChange={(e) => setCart((prev) => ({ ...prev, customerName: e.target.value }))}
+          onChange={(e) => { if (confirmAction("Ubah nama pelanggan pesanan ini?")) setCart((prev) => ({ ...prev, customerName: e.target.value })); }}
           placeholder={type === "jasa" ? "Nama pelanggan" : "Nama pelanggan (opsional)"}
           className="h-10"
         />
@@ -1687,12 +1691,12 @@ function CartPanel({
             <span className="text-muted-foreground">
               Diskon transaksi{isDiscountService(cartService) ? " (dikunci layanan)" : ""}
             </span>
-            <Input
+            <CommitInput
               disabled={isDiscountService(cartService)}
               inputMode="numeric"
               value={cart.billDiscount ? String(cart.billDiscount) : ""}
               onChange={(e) =>
-                setCart((prev) => ({
+                confirmAction("Ubah diskon transaksi ini?") && setCart((prev) => ({
                   ...prev,
                   billDiscount: Number(e.target.value.replace(/\D/g, "")) || 0,
                 }))
@@ -1715,10 +1719,11 @@ function CartPanel({
                   (maks {maxRedeemable(member, Math.max(0, totals.subtotal - totals.discount + memberDiscount + pointDiscount), loyalty)})
                 </span>
               </span>
-              <Input
+              <CommitInput
                 inputMode="numeric"
                 value={cart.redeemPoints ? String(cart.redeemPoints) : ""}
                 onChange={(e) => {
+                  if (!confirmAction("Ubah poin yang ditukar untuk pesanan ini?")) return;
                   const wanted = Number(e.target.value.replace(/\D/g, "")) || 0;
                   const cap = maxRedeemable(
                     member,
