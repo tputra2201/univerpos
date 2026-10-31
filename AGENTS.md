@@ -18,3 +18,5 @@
 - Report date ranges and shift/business-day math live in `src/lib/pos/report-range.ts` and `src/lib/pos/shift.ts`; report UIs in `src/components/pos/reports.tsx` consume them. Why: keeps business-day (operating-hours) logic in one place so every report and close-out agrees.
 - Finance (income/expense/paid-in/paid-out) lives in src/lib/pos/finance.ts; entries feed shift expected cash via financeOfShift in shift.ts. Why: one source for cash math.
 - Stock balance (StockItem.qty) is derived from stockMoves via recomputeStock in src/lib/pos/stock.ts after every sync pull (opname = absolute reset, baseQty = opening). Why: devices must not overwrite each other’s stock with stale absolute values.
+- Selected-item payment is a temporary cart view; keep the original cart persisted and update remaining held items atomically with the paid sale. Why: closing payment or refreshing must not lose unpaid items.
+- Confirm user mutations at action boundaries, never in the shared store updater; persisted inline fields commit on blur. Why: cancelling must skip all side effects without interrupting sync or prompting on every keystroke.
