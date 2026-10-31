@@ -1,7 +1,7 @@
 import type { CartLine, HeldOrder } from "./types";
 export interface PaymentOrder {
   lines: CartLine[]; tableName: string; customerName: string; orderType: string;
-  serviceId?: string; heldId?: string; kitchenId?: string; orderNo: string;
+  serviceId?: string | undefined; heldId?: string | undefined; kitchenId?: string | undefined; orderNo: string;
   note: string; sentToKitchen: boolean;
 }
 /** Selection is a view only; held orders change atomically with a paid sale. */
