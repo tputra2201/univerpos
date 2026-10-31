@@ -147,6 +147,19 @@ export function requestRestore() {
   requestSync();
 }
 
+/** Bangun ulang basis sinkron dari data lokal (setelah pulihkan dari berkas), agar
+ *  perangkat tidak menandai data sebagai terhapus karena basis lama sudah basi. */
+export function rebuildSyncBase(db: PosDatabase) {
+  try {
+    const nb: Record<string, string> = {};
+    for (const r of records(db).values()) nb[r.key] = hash(r.d);
+    localStorage.setItem(SYNC_BASE_KEY, JSON.stringify(nb));
+    localStorage.removeItem(RECOVERY_KEY);
+  } catch {
+    /* abaikan */
+  }
+}
+
 function applyRows(cur: PosDatabase, rows: PullRow[], replace: boolean, skip: Set<string>): PosDatabase {
   const next: PosDatabase = { ...cur };
   const maps = new Map<Col, Map<string, unknown>>();
