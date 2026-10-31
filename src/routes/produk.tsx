@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { sortProductsForDisplay } from "@/lib/pos/product-sort";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -92,12 +93,14 @@ function ProdukPage() {
   const services = useMemo(() => getServiceTypes(db).filter((s) => s.active), [db]);
 
 
+  const sortAlpha = !!db.settings.sortProductsAlphabetical;
   const list = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return db.products.filter(
-      (p) => !q || p.name.toLowerCase().includes(q) || p.barcode.includes(q),
+    return sortProductsForDisplay(
+      db.products.filter((p) => !q || p.name.toLowerCase().includes(q) || p.barcode.includes(q)),
+      sortAlpha,
     );
-  }, [db.products, query]);
+  }, [db.products, query, sortAlpha]);
 
   function saveProduct(product: Product) {
     if (!product.name.trim()) {
@@ -213,6 +216,15 @@ function ProdukPage() {
               className="h-10 pl-9"
             />
             </div>
+            <Label className="flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm">
+              <Switch
+                checked={sortAlpha}
+                onCheckedChange={(v) =>
+                  update((c) => ({ ...c, settings: { ...c.settings, sortProductsAlphabetical: v } }))
+                }
+              />
+              Urutkan A-Z
+            </Label>
             <Button variant="outline" size="sm" onClick={() => setOpenCats(new Set([...db.categories.map((c) => c.id), "__none"]))}>
               Buka semua
             </Button>
