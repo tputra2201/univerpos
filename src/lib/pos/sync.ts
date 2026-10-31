@@ -8,36 +8,14 @@ import { supabase } from "@/integrations/supabase/client";
 import type { PosDatabase, StoreSettings } from "./types";
 import { usePos } from "./store";
 import { recomputeStock } from "./stock";
+import { SYNC_COLLECTIONS, sameSyncStore } from "./sync-safety";
 
 export const SYNC_CURSOR_KEY = "wo-pos-sync-cursor";
 export const SYNC_BASE_KEY = "wo-pos-sync-base";
 /** Penanda pemulihan: perangkat ini menjadi sumber kebenaran, semua data lokal dikirim ulang ke server. */
 export const RECOVERY_KEY = "wo-pos-recovery";
 
-const COLLECTIONS = [
-  "users",
-  "categories",
-  "products",
-  "modifiers",
-  "paymentMethods",
-  "tables",
-  "staff",
-  "onlineChannels",
-  "serviceTypes",
-  "sales",
-  "heldOrders",
-  "kitchenOrders",
-  "shifts",
-  "businessDays",
-  "members",
-  "memberPoints",
-  "financeCategories",
-  "financeEntries",
-  "deletedFinance",
-  "stockItems",
-  "stockMoves",
-
-] as const;
+const COLLECTIONS = SYNC_COLLECTIONS;
 type Col = (typeof COLLECTIONS)[number];
 
 /** Field pengaturan yang khusus perangkat ini (tidak disinkronkan). */
@@ -130,7 +108,9 @@ async function pullAll(code: string, token: string, since: number): Promise<Pull
     const rows = (data as PullRow[]) ?? [];
     all.push(...rows);
     if (rows.length < 1000) break;
-    cur = rows[rows.length - 1]!.seq;
+    const last = rows.at(-1);
+    if (!last) break;
+    cur = last.seq;
   }
   return all;
 }
@@ -185,7 +165,7 @@ function applyRows(cur: PosDatabase, rows: PullRow[], replace: boolean, skip: Se
     if (r.deleted) m.delete(r.record_id);
     else m.set(r.record_id, r.data);
   }
-  for (const c of COLLECTIONS) (next as unknown as Record<string, unknown>)[c] = [...maps.get(c)!.values()];
+  for (const c of COLLECTIONS) (next as unknown as Record<string, unknown>)[c] = [...(maps.get(c)?.values() ?? [])];
   next.settings = settings;
   return recomputeStock(next);
 }
@@ -204,11 +184,12 @@ export function useCentralSync() {
   useEffect(() => {
     if (!enabled || !code || !token) return;
     let alive = true;
+    const stillCurrent = () => alive && sameSyncStore(dbRef.current, code, token);
 
     const cycle = async () => {
       if (running.current || !alive) return;
       // Jaga-jaga: jangan jalankan siklus yang masih memegang store lama setelah pindah store.
-      if (dbRef.current.settings.storeCode !== code) return;
+      if (!sameSyncStore(dbRef.current, code, token)) return;
       const base = readJson<Record<string, string>>(SYNC_BASE_KEY, {});
       const local = records(dbRef.current);
       const hasLocalData = [...local.values()].some((r) => r.c !== "settings");
@@ -230,10 +211,12 @@ export function useCentralSync() {
               _token: token,
               _records: payload.slice(i, i + 200),
             });
+            if (!stillCurrent()) return;
             if (error) throw new Error(error.message);
           }
           const rows = await pullAll(code, token, 0);
-          const maxSeq = rows.length > 0 ? rows[rows.length - 1]!.seq : Number(localStorage.getItem(SYNC_CURSOR_KEY) ?? "0") || 0;
+          if (!stillCurrent()) return;
+          const maxSeq = rows.length > 0 ? (rows.at(-1)?.seq ?? 0) : Number(localStorage.getItem(SYNC_CURSOR_KEY) ?? "0") || 0;
           const nb: Record<string, string> = {};
           for (const r of local.values()) nb[r.key] = hash(r.d);
           localStorage.setItem(SYNC_BASE_KEY, JSON.stringify(nb));
@@ -254,14 +237,14 @@ export function useCentralSync() {
 
       // Pengaman: basis sinkron basi (perangkat direset/pindah store) tidak boleh
       // menandai seluruh data store sebagai terhapus — unduh ulang sebagai gantinya.
-      if (!hasLocalData && Object.keys(base).length > 0) {
+      if (!hasLocalData && (Object.keys(base).length > 0 || localStorage.getItem(SYNC_CURSOR_KEY) !== null)) {
         localStorage.removeItem(SYNC_BASE_KEY);
         localStorage.removeItem(SYNC_CURSOR_KEY);
         return;
       }
       const dirty: Rec[] = [];
       for (const r of local.values()) if (base[r.key] !== hash(r.d)) dirty.push(r);
-      const deleted = Object.keys(base).filter((k) => !local.has(k));
+      const deleted = (dbRef.current.syncDeletes ?? []).filter((d) => !local.has(`${d.c}:${d.id}`));
       const cursorRaw = localStorage.getItem(SYNC_CURSOR_KEY);
       if (!navigator.onLine) {
         setStatus({ state: "offline", pending: cursorRaw === null ? 0 : dirty.length + deleted.length });
@@ -273,14 +256,18 @@ export function useCentralSync() {
         if (cursorRaw === null) {
           // Pertama tersambung: kalau server sudah punya data, data server dipakai.
           const rows = await pullAll(code, token, 0);
+          if (!stillCurrent()) return;
           if (rows.length > 0) {
             let nextDb: PosDatabase | null = null;
-            update((cur) => (nextDb = applyRows(cur, rows, true, new Set())));
-            const merged = nextDb ?? applyRows(dbRef.current, rows, true, new Set());
+            if (!hasLocalData && !rows.some((r) => !r.deleted && r.collection === "users")) {
+              throw new Error("SYNC_SAFETY: Data pengguna belum tersedia. Jangan reset perangkat; pulihkan cadangan store ini.");
+            }
+            update((cur) => sameSyncStore(cur, code, token) ? (nextDb = applyRows(cur, rows, !hasLocalData, new Set(dirty.filter((r) => hasLocalData && r.c !== "settings").map((r) => r.key)))) : cur, { source: "sync" });
+            const merged = nextDb ?? applyRows(dbRef.current, rows, !hasLocalData, new Set(dirty.filter((r) => hasLocalData && r.c !== "settings").map((r) => r.key)));
             const nb: Record<string, string> = {};
-            for (const r of records(merged).values()) nb[r.key] = hash(r.d);
+            for (const r of records(merged).values()) if (!hasLocalData || !dirty.some((d) => d.key === r.key && r.c !== "settings")) nb[r.key] = hash(r.d);
             localStorage.setItem(SYNC_BASE_KEY, JSON.stringify(nb));
-            localStorage.setItem(SYNC_CURSOR_KEY, String(rows[rows.length - 1]!.seq));
+            localStorage.setItem(SYNC_CURSOR_KEY, String((rows.at(-1)?.seq ?? 0)));
             setStatus({ state: "idle", pending: 0, lastSync: new Date().toISOString() });
             return;
           }
@@ -290,10 +277,7 @@ export function useCentralSync() {
         // 1) Kirim perubahan lokal.
         const payload = [
           ...dirty.map((r) => ({ c: r.c, id: r.id, d: r.d, h: hash(r.d), key: r.key })),
-          ...deleted.map((k) => {
-            const [c, ...rest] = k.split(":");
-            return { c: c!, id: rest.join(":"), del: true, key: k, h: "" };
-          }),
+          ...deleted.map((d) => ({ ...d, intent: "explicit-delete-v1", del: true, key: `${d.c}:${d.id}`, h: "" })),
         ];
         for (let i = 0; i < payload.length; i += 200) {
           const chunk = payload.slice(i, i + 200);
@@ -302,7 +286,10 @@ export function useCentralSync() {
             _token: token,
             _records: chunk.map(({ key: _k, h: _h, ...rest }) => rest),
           });
+          if (!stillCurrent()) return;
           if (error) throw new Error(error.message);
+          const acknowledged = new Set(chunk.filter((p) => "del" in p).map((p) => p.key));
+          if (acknowledged.size) update((cur) => sameSyncStore(cur, code, token) ? ({ ...cur, syncDeletes: (cur.syncDeletes ?? []).filter((d) => !acknowledged.has(`${d.c}:${d.id}`)) }) : cur, { source: "sync" });
           for (const p of chunk) {
             if ("del" in p) delete base[p.key];
             else base[p.key] = p.h;
@@ -313,13 +300,14 @@ export function useCentralSync() {
         // 2) Ambil perubahan dari perangkat lain.
         const since = Number(localStorage.getItem(SYNC_CURSOR_KEY) ?? "0") || 0;
         const rows = await pullAll(code, token, since);
+        if (!stillCurrent()) return;
         if (rows.length > 0) {
           // Record yang diubah lagi di perangkat ini sejak kirim tadi tidak ditimpa.
           const now = records(dbRef.current);
-          const skip = new Set<string>();
+          const skip = new Set<string>((dbRef.current.syncDeletes ?? []).map((d) => `${d.c}:${d.id}`));
           for (const r of now.values()) if (base[r.key] !== undefined && base[r.key] !== hash(r.d)) skip.add(r.key);
           let nextDb: PosDatabase | null = null;
-          update((cur) => (nextDb = applyRows(cur, rows, false, skip)));
+          update((cur) => sameSyncStore(cur, code, token) ? (nextDb = applyRows(cur, rows, false, skip)) : cur, { source: "sync" });
           const merged = records(nextDb ?? applyRows(dbRef.current, rows, false, skip));
           for (const r of rows) {
             const key = `${r.collection}:${r.record_id}`;
@@ -329,10 +317,11 @@ export function useCentralSync() {
             else delete base[key];
           }
           localStorage.setItem(SYNC_BASE_KEY, JSON.stringify(base));
-          localStorage.setItem(SYNC_CURSOR_KEY, String(rows[rows.length - 1]!.seq));
+          localStorage.setItem(SYNC_CURSOR_KEY, String((rows.at(-1)?.seq ?? 0)));
         }
         setStatus({ state: "idle", pending: 0, lastSync: new Date().toISOString(), message: "" });
       } catch (e) {
+        if (!stillCurrent()) return;
         setStatus({
           state: "error",
           pending: dirty.length + deleted.length,
@@ -370,7 +359,7 @@ export function useCentralSync() {
     const t = setTimeout(() => {
       const base = readJson<Record<string, string>>(SYNC_BASE_KEY, {});
       const local = records(dbRef.current);
-      let dirty = Object.keys(base).some((k) => !local.has(k));
+      let dirty = (dbRef.current.syncDeletes?.length ?? 0) > 0;
       if (!dirty) for (const r of local.values()) if (base[r.key] !== hash(r.d)) { dirty = true; break; }
       if (!dirty) return;
       const sig = String(local.size) + Date.now();
