@@ -10,6 +10,8 @@ import {
   type ReactNode,
 } from "react";
 import type { PosDatabase, PosUser } from "./types";
+import { trackExplicitDeletes } from "./sync-safety";
+import { toast } from "sonner";
 import { emptyDatabase } from "./seed";
 import {
   loadDatabase,
@@ -25,7 +27,7 @@ import {
 interface PosContextValue {
   ready: boolean;
   db: PosDatabase;
-  update: (updater: (db: PosDatabase) => PosDatabase) => void;
+  update: (updater: (db: PosDatabase) => PosDatabase, options?: { source: "sync" }) => void;
   replaceAll: (db: PosDatabase) => void;
   currentUser: PosUser | null;
   signIn: (user: PosUser) => void;
@@ -60,7 +62,7 @@ export function PosProvider({ children }: { children: ReactNode }) {
       }
       setUserId(readLocal<string>(SESSION_STORAGE_KEY));
       setReady(true);
-    });
+    }).catch(() => toast.error("Data perangkat tidak dapat dibaca. Jangan reset atau aktivasi ulang; periksa penyimpanan perangkat."));
     return () => {
       alive = false;
     };
@@ -68,8 +70,7 @@ export function PosProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!ready || !dirty.current) return;
-    const t = setTimeout(() => void saveDatabase(db), 120);
-    return () => clearTimeout(t);
+    void saveDatabase(db).catch(() => toast.error("Data belum tersimpan di perangkat. Jangan tutup aplikasi; periksa ruang penyimpanan."));
   }, [db, ready]);
 
   useEffect(() => {
@@ -77,9 +78,14 @@ export function PosProvider({ children }: { children: ReactNode }) {
     savePrinterSettings(db.printer);
   }, [db.printer, ready]);
 
-  const update = useCallback((updater: (current: PosDatabase) => PosDatabase) => {
+  const update = useCallback((updater: (current: PosDatabase) => PosDatabase, options?: { source: "sync" }) => {
     dirty.current = true;
-    setDb((current) => updater(current));
+    const at = new Date().toISOString();
+    const actor = readLocal<string>(SESSION_STORAGE_KEY) ?? "System";
+    setDb((current) => {
+      const next = updater(current);
+      return options?.source === "sync" ? next : trackExplicitDeletes(current, next, actor, at);
+    });
   }, []);
 
   const replaceAll = useCallback((next: PosDatabase) => {
