@@ -1,3 +1,4 @@
+import { confirmAction } from "@/lib/pos/action-confirmation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +28,7 @@ export function BrandingPanel() {
 
   async function save(): Promise<unknown> {
     if (!name.trim()) return toast.error("Isi nama aplikasi.");
+    if (!confirmAction("Simpan nama dan ikon aplikasi untuk semua store?")) return;
     setBusy(true);
     const { error } = await db.from("app_settings").upsert({ id: 1, app_name: name.trim(), app_icon: icon, updated_at: new Date().toISOString() });
     setBusy(false);

@@ -1,3 +1,4 @@
+import { confirmedAction } from "@/lib/pos/action-confirmation";
 /** Pilih atau daftarkan member cepat dari layar kasir. */
 import { useState } from "react";
 import { Search, UserPlus } from "lucide-react";
@@ -49,6 +50,7 @@ export function MemberPicker({
   const results = searchMembers(db, query);
 
   function register() {
+return confirmedAction("Simpan perubahan pengaturan atau data ini?", () => {
     if (!name.trim()) {
       toast.error("Nama member wajib diisi.");
       return;
@@ -71,7 +73,9 @@ export function MemberPicker({
     onPick(member);
     reset();
     onOpenChange(false);
-  }
+  
+});
+}
 
   function reset() {
     setQuery("");

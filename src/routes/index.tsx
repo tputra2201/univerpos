@@ -36,6 +36,9 @@ import type { PrinterRole } from "@/lib/pos/types";
 import { getServiceTypes } from "@/lib/pos/seed";
 import { serviceIcon } from "@/lib/pos/service-icons";
 import { categoryAllowed, isDiscountService, lineNeedsKitchen, productAllowsServiceDiscount, servicePrice, serviceOptionPrice } from "@/lib/pos/pricing";
+import { CommitInput, CommitTextarea } from "@/components/pos/commit-input";
+import { confirmAction } from "@/lib/pos/action-confirmation";
+import { heldAfterSelectedPayment, selectPaymentItems } from "@/lib/pos/selected-payment";
 import { sortProductsForDisplay } from "@/lib/pos/product-sort";
 import { MemberPicker } from "@/components/pos/member-picker";
 import { ItemActions, TableActions, tableParts } from "@/components/pos/table-actions";
@@ -175,6 +178,7 @@ function KasirPage() {
   const [editLine, setEditLine] = useState<CartLine | null>(null);
   const [voidTarget, setVoidTarget] = useState<CartLine | null>(null);
   const [payOpen, setPayOpen] = useState(false);
+  const [paymentOriginal, setPaymentOriginal] = useState<CartState | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [heldOpen, setHeldOpen] = useState(false);
   const [kitchenOpen, setKitchenOpen] = useState(false);
@@ -192,8 +196,8 @@ function KasirPage() {
   }, []);
 
   useEffect(() => {
-    if (hydrated) writeLocal(CART_STORAGE_KEY, cart);
-  }, [cart, hydrated]);
+    if (hydrated) writeLocal(CART_STORAGE_KEY, paymentOriginal ?? cart);
+  }, [cart, hydrated, paymentOriginal]);
 
   const loyalty = useMemo(() => loyaltyOf(settings), [settings]);
   const member = useMemo(
@@ -314,6 +318,7 @@ function KasirPage() {
 
   function addProduct(product: Product, variantName = "", priceDelta = 0, fixedPrice?: number) {
     if (!requireShift()) return;
+    if (!confirmAction(`Tambahkan ${product.name} ke pesanan ${cart.tableName || "ini"}?`)) return;
     const svc = ensureService();
     if (svc === undefined) {
       toast.error("Pilih jenis layanan dulu.");
@@ -382,6 +387,7 @@ function KasirPage() {
       toast.error("Item sudah dikirim ke dapur. Gunakan Void untuk membatalkan.");
       return;
     }
+    if (!confirmAction(`Ubah jumlah ${target.name} dari ${target.qty} menjadi ${Math.max(0, target.qty + delta)}?`)) return;
     setCart((prev) => ({
       ...prev,
       lines: prev.lines
@@ -398,10 +404,12 @@ function KasirPage() {
       setVoidTarget(target);
       return;
     }
+    if (!confirmAction(`Hapus ${target.name} dari pesanan ${cart.tableName || "ini"}?`)) return;
     setCart((prev) => ({ ...prev, lines: prev.lines.filter((l) => l.lineId !== lineId) }));
   }
 
   function saveLine(updated: CartLine) {
+    if (!confirmAction(`Simpan perubahan item ${updated.name}?`)) return;
     setCart((prev) => ({
       ...prev,
       lines: prev.lines.map((l) => (l.lineId === updated.lineId ? updated : l)),
@@ -486,6 +494,7 @@ function KasirPage() {
   }
 
   function sendToKitchen() {
+    if (!confirmAction(`Kirim pesanan ${cart.tableName || "ini"} ke Tiket Stasiun?`)) return;
     if (cart.lines.filter((l) => !l.voided).length === 0) return;
     const orderNo = ensureOrderNo();
     const lines = cart.lines.map((l) => ({ ...l, sentToKitchen: true }));
@@ -601,25 +610,34 @@ function KasirPage() {
     return id;
   }
 
-  /** Bayar sebagian item: sisa item tetap tertahan di meja yang sama. */
+  /** Selected payment never changes held orders until payment completes. */
   function paySelected(lineIds: string[]) {
     if (!requireShift()) return;
-    const orderNo = ensureOrderNo();
-    const rest = cart.lines.filter((l) => !lineIds.includes(l.lineId));
-    const picked = cart.lines.filter((l) => lineIds.includes(l.lineId));
-    saveHeld({ lines: rest, orderNo });
-    setCart(({ heldId: _h, ...p }) => ({ ...p, orderNo, kitchenId: undefined, lines: picked }));
+    const selected = selectPaymentItems(cart, lineIds);
+    if (!selected) return;
+    if (!confirmAction(`Bayar terpisah ${selected.lines.length} item dari ${cart.tableName || "pesanan ini"}?`)) return;
+    setPaymentOriginal(cart);
+    setCart(selected);
     setPayOpen(true);
-    toast.info("Sisa item disimpan di Pesanan Tertahan.");
+  }
+
+  function changePaymentOpen(open: boolean) {
+    if (!open && paymentOriginal) {
+      setCart(paymentOriginal);
+      setPaymentOriginal(null);
+    }
+    setPayOpen(open);
   }
 
   function holdOrder() {
+    if (!confirmAction(`Tahan pesanan ${cart.tableName || "ini"}?`)) return;
     if (cart.lines.length === 0) return;
     ensureOrderNo();
     saveHeld();
     setCart(EMPTY_CART);
     setCartOpen(false);
     toast.success("Pesanan ditahan. Silakan buka pesanan baru.");
+    return true;
   }
 
   function voidLine(lineId: string, reason: string, byName: string) {
@@ -677,6 +695,7 @@ function KasirPage() {
   }
 
   function recallOrder(id: string) {
+    if (cart.lines.length && cart.heldId !== id && !confirmAction("Buka pesanan tertahan dan ganti keranjang aktif?")) return;
     const held = db.heldOrders.find((h) => h.id === id);
     if (!held) return;
     setCart({
@@ -737,7 +756,9 @@ function KasirPage() {
       ...current,
       ...applyStock(current, sale.items, -1, { note: `Penjualan ${sale.code}`, saleCode: sale.code, userName: sale.userName, serviceId: cart.serviceId, orderType: sale.orderType }),
       sales: [sale, ...current.sales],
-      heldOrders: cart.heldId
+      heldOrders: paymentOriginal
+        ? heldAfterSelectedPayment(current.heldOrders, paymentOriginal, sale.items.map((item) => item.lineId), sale.id + "-rest", now)
+        : cart.heldId
         ? current.heldOrders.filter((h) => h.id !== cart.heldId)
         : current.heldOrders,
       members: sale.memberId
@@ -762,6 +783,7 @@ function KasirPage() {
     }));
 
     setCart(EMPTY_CART);
+    setPaymentOriginal(null);
     setPayOpen(false);
     setCartOpen(false);
     // Tanpa dialog pratinjau: kasir langsung kembali ke layar utama.
@@ -785,8 +807,9 @@ function KasirPage() {
 
   function newOrder() {
     if (!requireShift()) return;
-    if (cart.lines.length > 0) holdOrder();
-    else setCart(EMPTY_CART);
+    if (cart.lines.length > 0) {
+      if (!holdOrder()) return;
+    } else setCart(EMPTY_CART);
     setPickerOpen(true);
   }
 
@@ -1029,6 +1052,7 @@ function KasirPage() {
         }}
         onAdd={(label, extra) => {
           if (variantProduct && optionLine) {
+            if (!confirmAction(`Simpan perubahan pilihan ${variantProduct.name}?`)) return;
             const base = {
               ...optionLine,
               variantName: label,
@@ -1078,7 +1102,7 @@ function KasirPage() {
 
       <PaymentDialog
         open={payOpen}
-        onOpenChange={setPayOpen}
+        onOpenChange={changePaymentOpen}
         total={totals.total}
         serviceId={cart.serviceId}
         onComplete={completeSale}
@@ -1091,6 +1115,7 @@ function KasirPage() {
           </DialogHeader>
           <ServicePicker
             onPick={(orderType, tableName, serviceId) => {
+              if (!confirmAction(`Gunakan layanan ${orderType}${tableName ? " di " + tableName : ""} untuk pesanan ini?`)) return;
               const services = getServiceTypes(db);
               setCart((prev) => {
                 const oldSvc = services.find((s) => s.id === prev.serviceId);
@@ -1443,9 +1468,9 @@ function CartPanel({
             Nomor order {cart.orderNo}
           </p>
         )}
-        <Input
+        <CommitInput
           value={cart.customerName}
-          onChange={(e) => setCart((prev) => ({ ...prev, customerName: e.target.value }))}
+          onChange={(e) => { if (confirmAction("Ubah nama pelanggan pesanan ini?")) setCart((prev) => ({ ...prev, customerName: e.target.value })); }}
           placeholder={type === "jasa" ? "Nama pelanggan" : "Nama pelanggan (opsional)"}
           className="h-10"
         />
@@ -1468,7 +1493,7 @@ function CartPanel({
                     variant="ghost"
                     className="h-8"
                     onClick={() =>
-                      setCart((prev) => ({
+                      confirmAction("Lepaskan member dari pesanan ini?") && setCart((prev) => ({
                         ...prev,
                         memberId: undefined,
                         memberName: "",
@@ -1496,7 +1521,7 @@ function CartPanel({
           open={memberOpen}
           onOpenChange={setMemberOpen}
           onPick={(m) =>
-            setCart((prev) => ({
+            confirmAction(`Gunakan member ${m.name} pada pesanan ini?`) && setCart((prev) => ({
               ...prev,
               memberId: m.id,
               memberName: m.name,
@@ -1507,10 +1532,10 @@ function CartPanel({
           }
         />
 
-        <Textarea
+        <CommitTextarea
           id="order-note"
           value={cart.note}
-          onChange={(e) => setCart((prev) => ({ ...prev, note: e.target.value }))}
+          onChange={(e) => { if (confirmAction("Simpan catatan pesanan ini?")) setCart((prev) => ({ ...prev, note: e.target.value })); }}
           placeholder="Catatan pesanan (opsional)"
           className="min-h-9"
           rows={2}
@@ -1563,7 +1588,8 @@ function CartPanel({
                         onClick={(e) => {
                           e.stopPropagation();
                           const parts = tableParts(cart.tableName);
-                          const next = parts[(parts.indexOf(line.tableName!) + 1) % parts.length];
+                          const next = parts[(parts.indexOf(line.tableName ?? "") + 1) % parts.length];
+                          if (!confirmAction(`Ubah tanda meja ${line.name} ke ${next}?`)) return;
                           setCart((p) => ({
                             ...p,
                             lines: p.lines.map((l) => (l.lineId === line.lineId ? { ...l, tableName: next } : l)),
@@ -1668,12 +1694,12 @@ function CartPanel({
             <span className="text-muted-foreground">
               Diskon transaksi{isDiscountService(cartService) ? " (dikunci layanan)" : ""}
             </span>
-            <Input
+            <CommitInput
               disabled={isDiscountService(cartService)}
               inputMode="numeric"
               value={cart.billDiscount ? String(cart.billDiscount) : ""}
               onChange={(e) =>
-                setCart((prev) => ({
+                confirmAction("Ubah diskon transaksi ini?") && setCart((prev) => ({
                   ...prev,
                   billDiscount: Number(e.target.value.replace(/\D/g, "")) || 0,
                 }))
@@ -1696,10 +1722,11 @@ function CartPanel({
                   (maks {maxRedeemable(member, Math.max(0, totals.subtotal - totals.discount + memberDiscount + pointDiscount), loyalty)})
                 </span>
               </span>
-              <Input
+              <CommitInput
                 inputMode="numeric"
                 value={cart.redeemPoints ? String(cart.redeemPoints) : ""}
                 onChange={(e) => {
+                  if (!confirmAction("Ubah poin yang ditukar untuk pesanan ini?")) return;
                   const wanted = Number(e.target.value.replace(/\D/g, "")) || 0;
                   const cap = maxRedeemable(
                     member,
