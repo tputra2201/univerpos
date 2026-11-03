@@ -31,3 +31,37 @@ export function closedArchiveEvents(before: PosDatabase | null, after: PosDataba
   }
   return events;
 }
+function same(a: unknown, b: unknown): boolean {
+  return a === b || JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+}
+
+/** Record only rows/fields that a real action on this device changed. Opening, refreshing or
+ *  loading cached data never marks anything, so stale or default values are never uploaded. */
+export function trackActionChanges(before: PosDatabase, after: PosDatabase): PosDatabase {
+  if (before.settings.storeCode !== after.settings.storeCode) return after;
+  const dirty: Record<string, true | string[]> = { ...(after.syncDirty ?? before.syncDirty ?? {}) };
+  let changed = false;
+  for (const c of SYNC_COLLECTIONS) {
+    const prev = before[c] as { id: string }[] | undefined;
+    const next = after[c] as { id: string }[] | undefined;
+    if (prev === next || !next) continue;
+    const old = new Map((prev ?? []).map((r) => [r.id, r]));
+    for (const row of next) {
+      if (!row?.id) continue;
+      const o = old.get(row.id);
+      if (o === row || (o && same(o, row))) continue;
+      dirty[`${c}:${row.id}`] = true;
+      changed = true;
+    }
+  }
+  if (before.settings !== after.settings) {
+    const fields = new Set(Array.isArray(dirty["settings:main"]) ? (dirty["settings:main"] as string[]) : []);
+    const keys = new Set([...Object.keys(before.settings), ...Object.keys(after.settings)]);
+    for (const k of keys) {
+      if (k === "deviceToken" || k === "deviceName" || k === "activated") continue;
+      if (!same((before.settings as unknown as Record<string, unknown>)[k], (after.settings as unknown as Record<string, unknown>)[k])) fields.add(k);
+    }
+    if (fields.size) { dirty["settings:main"] = [...fields]; changed = true; }
+  }
+  return changed ? { ...after, syncDirty: dirty } : after;
+}

@@ -20,3 +20,5 @@
 - Stock balance (StockItem.qty) is derived from stockMoves via recomputeStock in src/lib/pos/stock.ts after every sync pull (opname = absolute reset, baseQty = opening). Why: devices must not overwrite each other’s stock with stale absolute values.
 - Selected-item payment is a temporary cart view; keep the original cart persisted and update remaining held items atomically with the paid sale. Why: closing payment or refreshing must not lose unpaid items.
 - Do not add generic confirmation prompts to inputs, settings or routine cashier actions; inline fields save directly. Why: prompts slowed cashiers and fired on every keystroke.
+- Sync uploads only records marked in `db.syncDirty` by real user actions (`trackActionChanges` in store `update`); pull runs before push and settings merge per field. Never upload by diffing local cache vs sync-base hashes. Why: opening/refreshing a device with stale or default data overwrote commissions and reopened closed shifts.
+- Server `sync_push` ignores updates that reopen closed shifts/businessDays or move finished sales back. Why: stale copies must not change cash history.

@@ -491,6 +491,9 @@ export interface StockMove {
 export interface PosDatabase {
   /** Durable, device-local queue of explicit deletions. Never sync this field as a record. */
   syncDeletes?: { c: string; id: string; at: string; actor: string }[];
+  /** Catatan yang benar-benar diubah oleh tindakan di perangkat ini dan belum terkirim.
+   *  Nilai `true` = seluruh catatan; daftar string = hanya field pengaturan tersebut. */
+  syncDirty?: Record<string, true | string[]>;
   version: number;
   settings: StoreSettings;
   printer: PrinterSettings;

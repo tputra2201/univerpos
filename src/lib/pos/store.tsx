@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import type { PosDatabase, PosUser } from "./types";
-import { trackExplicitDeletes } from "./sync-safety";
+import { trackActionChanges, trackExplicitDeletes } from "./sync-safety";
 import { toast } from "sonner";
 import { emptyDatabase } from "./seed";
 import {
@@ -84,7 +84,7 @@ export function PosProvider({ children }: { children: ReactNode }) {
     const actor = readLocal<string>(SESSION_STORAGE_KEY) ?? "System";
     setDb((current) => {
       const next = updater(current);
-      return options?.source === "sync" ? next : trackExplicitDeletes(current, next, actor, at);
+      return options?.source === "sync" ? next : trackActionChanges(current, trackExplicitDeletes(current, next, actor, at));
     });
   }, []);
 

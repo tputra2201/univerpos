@@ -15,6 +15,10 @@ export const SYNC_CURSOR_KEY = "wo-pos-sync-cursor";
 export const SYNC_BASE_KEY = "wo-pos-sync-base";
 /** Penanda pemulihan: perangkat ini menjadi sumber kebenaran, semua data lokal dikirim ulang ke server. */
 export const RECOVERY_KEY = "wo-pos-recovery";
+/** Penanda sudah memakai pengiriman berbasis tindakan (bukan perbandingan cache). */
+const SYNC_V2_KEY = "wo-pos-sync-v2";
+/** Saat peralihan, hanya transaksi kasir yang belum terkirim yang ikut dikirim. */
+const LEGACY_PENDING = new Set(["sales", "heldOrders", "kitchenOrders", "financeEntries", "deletedFinance", "stockMoves", "memberPoints", "members"]);
 
 const COLLECTIONS = SYNC_COLLECTIONS;
 type Col = (typeof COLLECTIONS)[number];
@@ -241,52 +245,77 @@ export function useCentralSync() {
         return;
       }
 
-      // Pengaman: basis sinkron basi (perangkat direset/pindah store) tidak boleh
-      // menandai seluruh data store sebagai terhapus — unduh ulang sebagai gantinya.
+      // Pengaman: perangkat kosong/direset hanya mengunduh, tidak pernah mengirim.
       if (!hasLocalData && (Object.keys(base).length > 0 || localStorage.getItem(SYNC_CURSOR_KEY) !== null)) {
         localStorage.removeItem(SYNC_BASE_KEY);
         localStorage.removeItem(SYNC_CURSOR_KEY);
         return;
       }
+      // Peralihan sekali: transaksi kasir yang belum terkirim di versi lama tetap dikirim.
+      if (localStorage.getItem(SYNC_V2_KEY) !== "1") {
+        const legacy: Record<string, true> = {};
+        if (localStorage.getItem(SYNC_CURSOR_KEY) !== null) {
+          for (const r of local.values()) if (LEGACY_PENDING.has(r.c) && base[r.key] !== hash(r.d)) legacy[r.key] = true;
+        }
+        update((cur) => sameSyncStore(cur, code, token) ? { ...cur, syncDirty: { ...legacy, ...(cur.syncDirty ?? {}) } } : cur, { source: "sync" });
+        localStorage.setItem(SYNC_V2_KEY, "1");
+        return;
+      }
+      // Hanya catatan yang benar-benar diubah oleh tindakan di perangkat ini yang dikirim.
+      const marks = { ...(dbRef.current.syncDirty ?? {}) };
       const dirty: Rec[] = [];
-      for (const r of local.values()) if (base[r.key] !== hash(r.d)) dirty.push(r);
+      for (const key of Object.keys(marks)) {
+        const r = local.get(key);
+        if (r) dirty.push(r);
+      }
       const deleted = (dbRef.current.syncDeletes ?? []).filter((d) => !local.has(`${d.c}:${d.id}`));
       const cursorRaw = localStorage.getItem(SYNC_CURSOR_KEY);
       if (!navigator.onLine) {
-        setStatus({ state: "offline", pending: cursorRaw === null ? 0 : dirty.length + deleted.length });
+        setStatus({ state: "offline", pending: dirty.length + deleted.length });
         return;
       }
       running.current = true;
       setStatus({ state: "syncing" });
       try {
-        if (cursorRaw === null) {
-          // Pertama tersambung: kalau server sudah punya data, data server dipakai.
-          const rows = await pullAll(code, token, 0);
-          if (!stillCurrent()) return;
-          if (rows.length > 0) {
-            let nextDb: PosDatabase | null = null;
-            if (!hasLocalData && !rows.some((r) => !r.deleted && r.collection === "users")) {
-              throw new Error("SYNC_SAFETY: Data pengguna belum tersedia. Jangan reset perangkat; pulihkan cadangan store ini.");
+        // 1) Ambil data terbaru dari server lebih dulu. Catatan yang sedang diubah di
+        //    perangkat ini tidak ditimpa; pengaturan digabung per field.
+        const firstTime = cursorRaw === null;
+        const rows = await pullAll(code, token, firstTime ? 0 : Number(cursorRaw) || 0);
+        if (!stillCurrent()) return;
+        if (firstTime && rows.length > 0 && !hasLocalData && !rows.some((r) => !r.deleted && r.collection === "users")) {
+          throw new Error("SYNC_SAFETY: Data pengguna belum tersedia. Jangan reset perangkat; pulihkan cadangan store ini.");
+        }
+        if (rows.length > 0) {
+          let nextDb: PosDatabase | null = null;
+          update((cur) => {
+            if (!sameSyncStore(cur, code, token)) return cur;
+            const curMarks = cur.syncDirty ?? {};
+            const skip = new Set<string>([...Object.keys(curMarks), ...(cur.syncDeletes ?? []).map((d) => `${d.c}:${d.id}`)]);
+            skip.delete("settings:main");
+            const applied = applyRows(cur, rows, firstTime && !hasLocalData, skip);
+            const fields = curMarks["settings:main"];
+            if (fields) {
+              const keep = Array.isArray(fields) ? fields : Object.keys(cur.settings);
+              const s = { ...applied.settings } as unknown as Record<string, unknown>;
+              for (const k of keep) s[k] = (cur.settings as unknown as Record<string, unknown>)[k];
+              applied.settings = s as unknown as StoreSettings;
             }
-            update((cur) => sameSyncStore(cur, code, token) ? (nextDb = applyRows(cur, rows, !hasLocalData, new Set(dirty.filter((r) => hasLocalData && r.c !== "settings").map((r) => r.key)))) : cur, { source: "sync" });
-            const merged = nextDb ?? applyRows(dbRef.current, rows, !hasLocalData, new Set(dirty.filter((r) => hasLocalData && r.c !== "settings").map((r) => r.key)));
-            await saveDatabase(merged);
-            if (!stillCurrent()) return;
-            const nb: Record<string, string> = {};
-            for (const r of records(merged).values()) if (!hasLocalData || !dirty.some((d) => d.key === r.key && r.c !== "settings")) nb[r.key] = hash(r.d);
-            localStorage.setItem(SYNC_BASE_KEY, JSON.stringify(nb));
-            localStorage.setItem(SYNC_CURSOR_KEY, String((rows.at(-1)?.seq ?? 0)));
-            setStatus({ state: "idle", pending: 0, lastSync: new Date().toISOString() });
-            return;
-          }
+            nextDb = applied;
+            return applied;
+          }, { source: "sync" });
+          await saveDatabase(nextDb ?? dbRef.current);
+          if (!stillCurrent()) return;
+          localStorage.setItem(SYNC_CURSOR_KEY, String(rows.at(-1)?.seq ?? 0));
+        } else if (firstTime) {
           localStorage.setItem(SYNC_CURSOR_KEY, "0");
         }
 
-        // 1) Kirim perubahan lokal.
-        await saveDatabase(dbRef.current);
-        if (!stillCurrent()) return;
+        // 2) Kirim hanya perubahan nyata (dibaca ulang setelah penggabungan).
+        const fresh = records(dbRef.current);
+        const curMarks = dbRef.current.syncDirty ?? {};
+        const send = Object.keys(curMarks).map((k) => fresh.get(k)).filter((r): r is Rec => !!r);
         const payload = [
-          ...dirty.map((r) => ({ c: r.c, id: r.id, d: r.d, h: hash(r.d), key: r.key })),
+          ...send.map((r) => ({ c: r.c, id: r.id, d: r.d, h: hash(r.d), key: r.key })),
           ...deleted.map((d) => ({ ...d, intent: "explicit-delete-v1", del: true, key: `${d.c}:${d.id}`, h: "" })),
         ];
         for (let i = 0; i < payload.length; i += 200) {
@@ -298,41 +327,20 @@ export function useCentralSync() {
           });
           if (!stillCurrent()) return;
           if (error) throw new Error(error.message);
+          const sentHash = new Map(chunk.filter((p) => !("del" in p)).map((p) => [p.key, p.h]));
           const acknowledged = new Set(chunk.filter((p) => "del" in p).map((p) => p.key));
-          if (acknowledged.size) update((cur) => sameSyncStore(cur, code, token) ? ({ ...cur, syncDeletes: (cur.syncDeletes ?? []).filter((d) => !acknowledged.has(`${d.c}:${d.id}`)) }) : cur, { source: "sync" });
-          for (const p of chunk) {
-            if ("del" in p) delete base[p.key];
-            else base[p.key] = p.h;
-          }
-          localStorage.setItem(SYNC_BASE_KEY, JSON.stringify(base));
+          update((cur) => {
+            if (!sameSyncStore(cur, code, token)) return cur;
+            const now = records(cur);
+            const left = { ...(cur.syncDirty ?? {}) };
+            // Hapus tanda hanya bila belum diubah lagi sejak dikirim.
+            for (const [k, h] of sentHash) if (hash(now.get(k)?.d) === h) delete left[k];
+            return { ...cur, syncDirty: left, syncDeletes: (cur.syncDeletes ?? []).filter((d) => !acknowledged.has(`${d.c}:${d.id}`)) };
+          }, { source: "sync" });
         }
-
-        // 2) Ambil perubahan dari perangkat lain.
-        const since = Number(localStorage.getItem(SYNC_CURSOR_KEY) ?? "0") || 0;
-        const rows = await pullAll(code, token, since);
-        if (!stillCurrent()) return;
-        if (rows.length > 0) {
-          // Record yang diubah lagi di perangkat ini sejak kirim tadi tidak ditimpa.
-          const now = records(dbRef.current);
-          const skip = new Set<string>((dbRef.current.syncDeletes ?? []).map((d) => `${d.c}:${d.id}`));
-          for (const r of now.values()) if (base[r.key] !== undefined && base[r.key] !== hash(r.d)) skip.add(r.key);
-          let nextDb: PosDatabase | null = null;
-          update((cur) => sameSyncStore(cur, code, token) ? (nextDb = applyRows(cur, rows, false, skip)) : cur, { source: "sync" });
-          const mergedDb = nextDb ?? applyRows(dbRef.current, rows, false, skip);
-          await saveDatabase(mergedDb);
-          if (!stillCurrent()) return;
-          const merged = records(mergedDb);
-          for (const r of rows) {
-            const key = `${r.collection}:${r.record_id}`;
-            if (skip.has(key)) continue;
-            const m = merged.get(key);
-            if (m) base[key] = hash(m.d);
-            else delete base[key];
-          }
-          localStorage.setItem(SYNC_BASE_KEY, JSON.stringify(base));
-          localStorage.setItem(SYNC_CURSOR_KEY, String((rows.at(-1)?.seq ?? 0)));
-        }
+        void base;
         setStatus({ state: "idle", pending: 0, lastSync: new Date().toISOString(), message: "" });
+        return;
       } catch (e) {
         if (!stillCurrent()) return;
         setStatus({
@@ -344,7 +352,6 @@ export function useCentralSync() {
         running.current = false;
       }
     };
-
     // Sinkron berbasis peristiwa: saat dibuka, saat internet kembali, saat aplikasi
     // kembali aktif, dan setelah ada perubahan data. Polling cadangan jarang (2 menit).
     void cycle();
@@ -364,23 +371,13 @@ export function useCentralSync() {
     };
   }, [enabled, code, token, update]);
 
-  // Kirim setelah ada perubahan lokal (transaksi, produk, pengaturan, dll).
-  // Perubahan beruntun digabung jadi satu kiriman setelah 4 detik tenang.
-  const lastHash = useRef<string>("");
+  // Kirim beberapa detik setelah ada tindakan nyata (simpan, bayar, tutup shift, dll).
+  const pendingCount = Object.keys(db.syncDirty ?? {}).length + (db.syncDeletes?.length ?? 0);
   useEffect(() => {
-    if (!enabled) return;
-    const t = setTimeout(() => {
-      const base = readJson<Record<string, string>>(SYNC_BASE_KEY, {});
-      const local = records(dbRef.current);
-      let dirty = (dbRef.current.syncDeletes?.length ?? 0) > 0;
-      if (!dirty) for (const r of local.values()) if (base[r.key] !== hash(r.d)) { dirty = true; break; }
-      if (!dirty) return;
-      const sig = String(local.size) + Date.now();
-      lastHash.current = sig;
-      (globalThis as { __posSyncNow?: () => void }).__posSyncNow?.();
-    }, 4000);
+    if (!enabled || pendingCount === 0) return;
+    const t = setTimeout(() => (globalThis as { __posSyncNow?: () => void }).__posSyncNow?.(), 3000);
     return () => clearTimeout(t);
-  }, [db, enabled]);
+  }, [db, enabled, pendingCount]);
 }
 
 /** Minta sinkron segera (mis. sebelum checkout atau setelah transaksi). */

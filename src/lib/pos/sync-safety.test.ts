@@ -37,3 +37,20 @@ describe("POS data protection", () => {
     expect(closedArchiveEvents(after, after)).toEqual([]);
   });
 });
+import { trackActionChanges } from "./sync-safety";
+describe("only real actions are uploaded", () => {
+  it("opening/refreshing with cached default commission marks nothing", () => {
+    const db = emptyDatabase(); db.settings.storeCode = "TS";
+    expect(trackActionChanges(db, { ...db }).syncDirty).toBeUndefined();
+  });
+  it("changing Grab commission to 25 marks only GrabFood", () => {
+    const db = emptyDatabase(); db.settings.storeCode = "TS";
+    const after = { ...db, serviceTypes: db.serviceTypes!.map((s) => s.id === "svc_grab" ? { ...s, priceAdjustValue: 25 } : s) };
+    expect(Object.keys(trackActionChanges(db, after).syncDirty ?? {})).toEqual(["serviceTypes:svc_grab"]);
+  });
+  it("a settings edit marks only the edited field", () => {
+    const db = emptyDatabase(); db.settings.storeCode = "TS";
+    const after = { ...db, settings: { ...db.settings, name: "FRUITBOX TS" } };
+    expect(trackActionChanges(db, after).syncDirty).toEqual({ "settings:main": ["name"] });
+  });
+});
