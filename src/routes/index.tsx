@@ -38,6 +38,7 @@ import { serviceIcon } from "@/lib/pos/service-icons";
 import { categoryAllowed, isDiscountService, lineNeedsKitchen, productAllowsServiceDiscount, servicePrice, serviceOptionPrice } from "@/lib/pos/pricing";
 import { heldAfterSelectedPayment, selectPaymentItems } from "@/lib/pos/selected-payment";
 import { sortProductsForDisplay } from "@/lib/pos/product-sort";
+import { needsDiningTable } from "@/lib/pos/order-requirements";
 import { MemberPicker } from "@/components/pos/member-picker";
 import { ItemActions, TableActions, tableParts } from "@/components/pos/table-actions";
 import {
@@ -298,9 +299,18 @@ function KasirPage() {
    * Mengembalikan undefined bila kasir masih harus memilih layanan.
    */
   function ensureService() {
-    if (cart.orderType) return activeService ?? null;
-    const svc = getServiceTypes(db).find((s) => s.active && s.isDefault);
-    if (!svc) return undefined;
+    const svc = cart.orderType ? activeService : defaultService;
+    if (needsDiningTable(svc, cart.orderType, cart.tableName)) {
+      toast.error("Pilih meja untuk Dine In dulu.");
+      setPickerOpen(true);
+      return undefined;
+    }
+    if (cart.orderType) return svc ?? null;
+    if (!svc) {
+      toast.error("Pilih jenis layanan dulu.");
+      setPickerOpen(true);
+      return undefined;
+    }
     setCart((prev) =>
       prev.orderType
         ? prev
@@ -318,8 +328,6 @@ function KasirPage() {
     if (!requireShift()) return;
     const svc = ensureService();
     if (svc === undefined) {
-      toast.error("Pilih jenis layanan dulu.");
-      setPickerOpen(true);
       return;
     }
     setCart((prev) => {
@@ -360,8 +368,6 @@ function KasirPage() {
   function onProductClick(product: Product) {
     if (!requireShift()) return;
     if (ensureService() === undefined) {
-      toast.error("Pilih jenis layanan dulu.");
-      setPickerOpen(true);
       return;
     }
     if (product.openPrice) {
@@ -605,7 +611,7 @@ function KasirPage() {
 
   /** Selected payment never changes held orders until payment completes. */
   function paySelected(lineIds: string[]) {
-    if (!requireShift()) return;
+    if (!requireShift() || ensureService() === undefined) return;
     const selected = selectPaymentItems(cart, lineIds);
     if (!selected) return;
     setPaymentOriginal(cart);
@@ -706,6 +712,7 @@ function KasirPage() {
   }
 
   function completeSale(payments: SalePayment[]) {
+    if (!requireShift() || ensureService() === undefined) return;
     const paid = payments.reduce((sum, p) => sum + (p.tendered ?? p.amount), 0);
     const sale: Sale = {
       ...draftSale(),
@@ -896,7 +903,7 @@ function KasirPage() {
                   key={product.id}
                   type="button"
                   onClick={() => onProductClick(product)}
-                  aria-disabled={!shiftOpen || (!cart.orderType && !defaultService)}
+                  aria-disabled={!shiftOpen || (!cart.orderType && !defaultService) || needsDiningTable(priceService, cart.orderType, cart.tableName)}
                   className="flex min-h-16 aria-disabled:opacity-50 flex-col justify-between rounded-lg border bg-card p-2 text-left shadow-sm transition-all hover:border-primary hover:shadow-md active:scale-[0.98]"
                 >
                   <span className="line-clamp-2 text-xs font-semibold leading-tight sm:text-sm">{product.name}</span>
@@ -931,7 +938,7 @@ function KasirPage() {
           onEditLine={setEditLine}
           onChangeQty={changeQty}
           onRemoveLine={removeLine}
-          onPay={() => requireShift() && setPayOpen(true)}
+          onPay={() => requireShift() && ensureService() !== undefined && setPayOpen(true)}
           onBill={printBill}
           onKitchen={sendToKitchen}
           onHold={holdOrder}
@@ -974,7 +981,7 @@ function KasirPage() {
             onEditLine={setEditLine}
             onChangeQty={changeQty}
             onRemoveLine={removeLine}
-            onPay={() => requireShift() && setPayOpen(true)}
+            onPay={() => requireShift() && ensureService() !== undefined && setPayOpen(true)}
             onBill={printBill}
             onKitchen={sendToKitchen}
             onHold={holdOrder}
@@ -1103,6 +1110,7 @@ function KasirPage() {
             <DialogTitle>New Order</DialogTitle>
           </DialogHeader>
           <ServicePicker
+            initialService={cart.orderType ? activeService : defaultService}
             onPick={(orderType, tableName, serviceId) => {
               const services = getServiceTypes(db);
               setCart((prev) => {
@@ -1249,14 +1257,16 @@ function KasirPage() {
 }
 
 function ServicePicker({
+  initialService,
   onPick,
   onOpenHeld,
 }: {
+  initialService?: ServiceType | undefined;
   onPick: (orderType: string, tableName: string, serviceId: string) => void;
   onOpenHeld: (id: string) => void;
 }) {
   const { db } = usePos();
-  const [picked, setPicked] = useState<ServiceType | null>(null);
+  const [picked, setPicked] = useState<ServiceType | null>(initialService?.kind === "dinein" ? initialService : null);
   const mode = picked?.kind === "dinein" ? "dinein" : "";
   const services = getServiceTypes(db).filter((x) => x.active);
 
@@ -1317,7 +1327,10 @@ function ServicePicker({
                   " min-h-20" +
                   (held ? " border-accent bg-accent text-accent-foreground hover:bg-accent/80" : "")
                 }
-                onClick={() => (held ? onOpenHeld(held.id) : onPick(picked!.name, t.name, picked!.id))}
+                onClick={() => {
+                  if (held) onOpenHeld(held.id);
+                  else if (picked) onPick(picked.name, t.name, picked.id);
+                }}
               >
                 <span className="text-lg font-semibold">{t.name}</span>
                 {held && (

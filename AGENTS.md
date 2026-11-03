@@ -11,6 +11,8 @@
 
 ## Rules
 
+- Validate the Dine In table requirement through `order-requirements.ts` at product selection, item insertion, payment opening, and completion, including default and restored carts. Why: no entry path may bypass table selection.
+
 - Sync deletions must originate from durable explicit action tombstones, never missing local records or sync hashes; server rejects deletion of financial history and archives record versions. Why: refresh, partial storage and store switching cannot become destructive sync requests.
 - Close Out and End of Day snapshots live in a separate IndexedDB object store and local writes are serialized; keep archives out of synchronized/reset collections. Why: preserve local close-out evidence across app resets, while recognizing browser-data clearing still removes local archives.
 - Online bulk reset is disabled; restoration must match the active store and retain its device identity. Why: prevent cross-store overwrites and unsupervised deletion of shared business history.
