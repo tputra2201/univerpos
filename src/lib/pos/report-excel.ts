@@ -5,6 +5,7 @@ import { kindLabel } from "./finance";
 import { DAY_NAMES, businessDate, inRange, rangeLabel, type ReportRange } from "./report-range";
 import { stockSummary } from "@/components/pos/stock-report";
 import { salesOfShift, summarize, financeOfShift } from "./shift";
+import { saleAdjust } from "./service-adjust";
 
 const isCash = (name: string) => /tunai|cash/i.test(name);
 
@@ -21,7 +22,9 @@ export async function exportReportExcel(db: PosDatabase, range: ReportRange) {
     { Keterangan: "Diskon", Nilai: paid.reduce((a, s) => a + s.discount, 0) },
     { Keterangan: "Pajak", Nilai: paid.reduce((a, s) => a + s.tax, 0) },
     { Keterangan: "Biaya layanan", Nilai: paid.reduce((a, s) => a + s.service, 0) },
-    { Keterangan: "Net Sales", Nilai: paid.reduce((a, s) => a + s.total, 0) },
+    { Keterangan: "Total Sales", Nilai: paid.reduce((a, s) => a + s.total, 0) },
+    { Keterangan: "Komisi/Diskon layanan", Nilai: paid.reduce((a, s) => a + (saleAdjust(db, s)?.amount ?? 0), 0) },
+    { Keterangan: "Net Sales", Nilai: paid.reduce((a, s) => a + s.total - (saleAdjust(db, s)?.amount ?? 0), 0) },
   ];
 
   const transaksi = paid.map((s) => ({
